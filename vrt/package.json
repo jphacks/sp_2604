@@ -1,0 +1,13 @@
+{
+  "name": "dareda-vrt",
+  "private": true,
+  "scripts": {
+    "reg-suit": "reg-suit run"
+  },
+  "devDependencies": {
+    "reg-keygen-git-hash-plugin": "0.14.4",
+    "reg-notify-github-with-api-plugin": "0.14.4",
+    "reg-publish-gcs-plugin": "0.14.4",
+    "reg-suit": "0.14.4"
+  }
+}

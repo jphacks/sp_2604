@@ -2,6 +2,8 @@
 minimum_release_age = "7d"
 
 [tools]
+jq = "1.8.1"
+node = "24.11.1"
 "npm:rulesync" = "29.0.0"
 ruby = "3.4.11"
 terraform = "1.16.4"
@@ -61,6 +63,15 @@ xcodebuild test \
   -skipPackagePluginValidation \
   CODE_SIGN_IDENTITY=-
 """
+
+[tasks.vrt]
+description = "UI テストのスクリーンショットを reg-suit で比較する (test:ui の後に実行する)"
+dir = "{{config_root}}/vrt"
+run = [
+  "bash extract-screenshots.sh ../TestResults.xcresult actual",
+  "npm install --no-audit --no-fund",
+  "npx reg-suit run",
+]
 
 [tasks."terraform:init"]
 description = "terraform init を実行する (例: mise run terraform:init google)"

@@ -15,8 +15,16 @@ jobs:
   ui-test:
     runs-on: xcode-27
     timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+      statuses: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # reg-keygen-git-hash-plugin が比較対象のコミットを探すため、履歴を全て取得する
+          fetch-depth: 0
 
       - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
@@ -36,6 +44,20 @@ jobs:
 
       - name: UI テストを実行
         run: mise run test:ui
+
+      - name: Google Cloud に認証 (Workload Identity Federation)
+        if: ${{ !cancelled() && hashFiles('TestResults.xcresult/Info.plist') != '' }}
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.FIREBASE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.VRT_SERVICE_ACCOUNT }}
+
+      - name: VRT (reg-suit)
+        if: ${{ !cancelled() && hashFiles('TestResults.xcresult/Info.plist') != '' }}
+        env:
+          VRT_BUCKET_NAME: ${{ vars.VRT_BUCKET_NAME }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mise run vrt
 
       - name: テスト結果をアップロード
         if: failure()
