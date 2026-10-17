@@ -8,17 +8,16 @@ struct ProcessingScreen: View {
     let onRerecord: () -> Void
 
     init(
-        recording: Recording, mode: RecordingViewModel.Mode,
+        recording: Recording,
         onFinished: @escaping (Profile.ID?) -> Void, onRerecord: @escaping () -> Void
     ) {
-        _viewModel = State(initialValue: ProcessingViewModel(recording: recording, mode: mode))
+        _viewModel = State(initialValue: ProcessingViewModel(recording: recording))
         self.onFinished = onFinished
         self.onRerecord = onRerecord
     }
 
     var body: some View {
         ProcessingContent(
-            mode: viewModel.mode,
             stages: viewModel.stages.map { ($0, viewModel.status(of: $0)) },
             errorMessage: viewModel.errorMessage,
             canRetry: viewModel.failedStage != nil,

@@ -15,27 +15,14 @@ final class RecordingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test録音中はモードを表示せず停止後に新規登録を選べる() {
+    func test停止するとすぐに処理を開始する() {
         let app = start()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["recording.registrationButton"].exists)
-        XCTAssertFalse(app.buttons["recording.searchButton"].exists)
         attach(app, name: "recording-after")
         app.buttons["recording.stopButton"].tap()
-        XCTAssertTrue(app.buttons["recording.registrationButton"].waitForExistence(timeout: 5))
-        app.buttons["recording.registrationButton"].tap()
         XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["processing.stage.transcribing"].exists)
         attach(app, name: "recording-choice-after")
-    }
-
-    @MainActor
-    func test停止後に人物を探すを選べる() {
-        let app = start()
-        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
-        app.buttons["recording.stopButton"].tap()
-        XCTAssertTrue(app.buttons["recording.searchButton"].waitForExistence(timeout: 5))
-        app.buttons["recording.searchButton"].tap()
-        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -43,15 +30,15 @@ final class RecordingScreenTests: XCTestCase {
         let app = start(scenario: "recordingLimit")
         XCTAssertTrue(app.staticTexts["recording.remainingMinuteNotice"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["recording.limitNotice"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["recording.registrationButton"].exists)
+        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["recording.stopButton"].exists)
     }
 
     @MainActor
-    func test中断すると録音済み部分を保持して操作を選べる() {
+    func test中断すると録音済み部分を保持して処理を開始する() {
         let app = start(scenario: "recordingInterrupted")
         XCTAssertTrue(app.staticTexts["recording.interruptionNotice"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.buttons["recording.searchButton"].exists)
+        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["recording.stopButton"].exists)
     }
 
@@ -61,7 +48,7 @@ final class RecordingScreenTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["recording.errorNotice"].waitForExistence(timeout: 5))
         app.buttons["recording.retryButton"].tap()
         XCTAssertTrue(app.staticTexts["recording.errorNotice"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["recording.registrationButton"].exists)
+        XCTAssertFalse(app.buttons["processing.cancelButton"].exists)
     }
 
     @MainActor
@@ -72,7 +59,7 @@ final class RecordingScreenTests: XCTestCase {
         XCTAssertTrue(app.buttons["recording.cancelDiscardButton"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["recording.cancelDiscardButton"].firstMatch.tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["recording.registrationButton"].exists)
+        XCTAssertFalse(app.buttons["processing.cancelButton"].exists)
     }
 
     @MainActor

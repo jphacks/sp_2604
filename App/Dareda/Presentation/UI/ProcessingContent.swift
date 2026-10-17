@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ProcessingContent: View {
-    let mode: RecordingViewModel.Mode
     let stages: [(stage: ConversationAnalysisStage, status: ProcessingViewModel.StageStatus)]
     let errorMessage: LocalizedStringResource?
     let canRetry: Bool
@@ -63,12 +62,28 @@ struct ProcessingContent: View {
                 }
             }
         }
-        .navigationTitle(mode == .registration ? "新規登録" : "人物を探す")
+        .navigationTitle(registrationSource != nil ? "新規登録" : "人物を探す")
         .navigationBarBackButtonHidden()
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(role: .cancel) { send(.cancelButtonTapped) }
                     .accessibilityIdentifier("processing.cancelButton")
+                    // iPad ではポップオーバーの起点になるため、トリガーのボタンに付ける
+                    .confirmationDialog(
+                        "処理をキャンセルしますか？",
+                        isPresented: Binding(
+                            get: { isCancelConfirmationPresented },
+                            set: { send(.cancelConfirmationChanged($0)) }
+                        ),
+                        titleVisibility: .visible
+                    ) {
+                        Button("キャンセルする", role: .destructive) { send(.cancelConfirmed) }
+                            .accessibilityIdentifier("processing.confirmDiscardButton")
+                        Button("続ける", role: .cancel) { send(.cancelConfirmationChanged(false)) }
+                            .accessibilityIdentifier("processing.cancelDiscardButton")
+                    } message: {
+                        Text("録音と処理中のデータは削除され、元に戻せません。")
+                    }
             }
         }
         .sheet(isPresented: Binding(
@@ -87,21 +102,6 @@ struct ProcessingContent: View {
                 onFinished: { _ in send(.additionalRecordingPresentedChanged(false)) },
                 onAdded: { send(.additionalRecordingAdded($0)) }
             )
-        }
-        .sheet(isPresented: Binding(
-            get: { isCancelConfirmationPresented },
-            set: { send(.cancelConfirmationChanged($0)) }
-        )) {
-            CancelConfirmation(
-                title: "処理をキャンセルしますか？",
-                message: "録音と処理中のデータは削除され、元に戻せません。",
-                confirmTitle: "キャンセルする",
-                keepTitle: "続ける",
-                identifierPrefix: "processing",
-                onConfirm: { send(.cancelConfirmed) },
-                onKeep: { send(.cancelConfirmationChanged(false)) }
-            )
-            .presentationDetents([.medium])
         }
     }
 }
@@ -200,7 +200,6 @@ private struct ProcessingStageRow: View {
 #Preview("処理中") {
     NavigationStack {
         ProcessingContent(
-            mode: .registration,
             stages: [(.transcribing, .completed), (.identifyingSpeakers, .processing), (.summarizing, .waiting)],
             errorMessage: nil, canRetry: false, isCompleted: false,
             isCancelConfirmationPresented: false, send: { _ in }
@@ -211,8 +210,7 @@ private struct ProcessingStageRow: View {
 #Preview("失敗") {
     NavigationStack {
         ProcessingContent(
-            mode: .search,
-            stages: [(.transcribing, .completed), (.identifyingSpeakers, .failed)],
+            stages: [(.transcribing, .completed), (.identifyingSpeakers, .failed), (.summarizing, .waiting)],
             errorMessage: "処理に失敗しました。もう一度お試しください。", canRetry: true,
             isCompleted: false,
             isCancelConfirmationPresented: false, send: { _ in }
@@ -223,7 +221,6 @@ private struct ProcessingStageRow: View {
 #Preview("本人の手動選択") {
     NavigationStack {
         ProcessingContent(
-            mode: .registration,
             stages: [(.transcribing, .completed), (.identifyingSpeakers, .completed), (.summarizing, .waiting)],
             errorMessage: nil, canRetry: false, isCompleted: false,
             selfSelectionAnalysis: ConversationAnalysis(

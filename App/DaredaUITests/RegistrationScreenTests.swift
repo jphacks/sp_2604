@@ -3,9 +3,9 @@ import XCTest
 final class RegistrationScreenTests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
-    /// 録音を停止して新規登録を選び、登録画面が表示されるまで進める。
+    /// 録音を停止して処理を始める。
     @MainActor
-    private func startRegistration(scenario: String = "registration") -> XCUIApplication {
+    private func stopRecording(scenario: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["UI_TEST_SCENARIO"] = scenario
         app.launch()
@@ -15,8 +15,15 @@ final class RegistrationScreenTests: XCTestCase {
         let stopButton = app.buttons["recording.stopButton"]
         XCTAssertTrue(stopButton.waitForExistence(timeout: 5))
         stopButton.tap()
-        let registrationButton = app.buttons["recording.registrationButton"]
-        XCTAssertTrue(registrationButton.waitForExistence(timeout: 5))
+        return app
+    }
+
+    /// 録音を停止して処理を終え、候補の提示後に該当なしとして新規登録に進む。
+    @MainActor
+    private func startRegistration(scenario: String = "registration") -> XCUIApplication {
+        let app = stopRecording(scenario: scenario)
+        let registrationButton = app.buttons["personSearch.newRegistrationButton"]
+        XCTAssertTrue(registrationButton.waitForExistence(timeout: 30))
         registrationButton.tap()
         return app
     }
@@ -100,9 +107,8 @@ final class RegistrationScreenTests: XCTestCase {
 
     @MainActor
     func test相手の声を検出できないと登録に進めない() {
-        let app = startRegistration(scenario: "registrationNoPartner")
+        let app = stopRecording(scenario: "registrationNoPartner")
         XCTAssertTrue(app.staticTexts["processing.errorNotice"].waitForExistence(timeout: 30))
-        XCTAssertFalse(app.buttons["processing.retryButton"].exists)
         XCTAssertFalse(app.textFields["registration.nameTextField"].exists)
     }
 
