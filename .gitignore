@@ -148,3 +148,10 @@ fastlane/.env
 .bundle/
 vendor/bundle/
 TestResults.xcresult/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.auto.tfvars

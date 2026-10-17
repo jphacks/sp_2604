@@ -35,4 +35,43 @@ platform :ios do
       match(type: type, readonly: false)
     end
   end
+
+  desc "Ad Hoc ビルドを Firebase App Distribution にアップロードし、developers グループに配信する"
+  lane :distribute do
+    setup_ci
+    # GitHub App のインストールトークンを Basic 認証 (x-access-token:<token>) の形にする
+    ENV["MATCH_GIT_BASIC_AUTHORIZATION"] = Base64.strict_encode64("x-access-token:#{ENV.fetch("MATCH_GIT_BASIC_AUTHORIZATION")}")
+    match(type: "adhoc", readonly: true)
+
+    profile_name = ENV.fetch("sigh_com.kantacky.Dareda_adhoc_profile-name")
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App/Dareda.xcodeproj",
+      targets: ["Dareda"],
+      team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
+      code_sign_identity: "Apple Distribution",
+      profile_name: profile_name,
+    )
+
+    build_number = ENV.fetch("GITHUB_RUN_NUMBER")
+    build_app(
+      workspace: "Dareda.xcworkspace",
+      scheme: "Dareda",
+      configuration: "Release",
+      export_method: "ad-hoc",
+      export_options: {
+        provisioningProfiles: { "com.kantacky.Dareda" => profile_name },
+      },
+      xcargs: "CURRENT_PROJECT_VERSION=#{build_number} -skipMacroValidation -skipPackagePluginValidation",
+      output_directory: "build",
+      output_name: "Dareda.ipa",
+    )
+
+    # 認証は Application Default Credentials (google-github-actions/auth が設定) を使う
+    firebase_app_distribution(
+      app: ENV.fetch("FIREBASE_APP_ID"),
+      groups: "developers",
+      release_notes: ENV.fetch("RELEASE_NOTES", ""),
+    )
+  end
 end

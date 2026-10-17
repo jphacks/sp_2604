@@ -25,6 +25,8 @@ nonisolated extension SearchPersonUseCase {
 nonisolated struct PersonSearchRecording: Sendable, Equatable {
     var recording: Recording
     var session: ProcessingSession
+    /// 本人を自動判定できず、手動で選んだ本人の話者。指定すると自動判定の結果より優先する。
+    var selfSpeakerID: AnalyzedSpeaker.ID?
 }
 
 nonisolated enum PersonSearchResult: Sendable, Equatable {
@@ -35,8 +37,8 @@ nonisolated enum PersonSearchResult: Sendable, Equatable {
 }
 
 nonisolated enum PersonSearchError: Error, Equatable {
-    /// 本人を自動判定できなかった。手動選択 (#17) が必要。
-    case selfNotIdentified
+    /// 本人を自動判定できなかった。解析結果から本人を手動で選び、`selfSpeakerID` を指定して呼び直す。
+    case selfNotIdentified(ConversationAnalysis)
     /// 本人以外の話者を検出できなかった。
     case partnerNotDetected
 }
@@ -91,7 +93,9 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
         var partnerEmbedding: VoiceEmbedding?
         for target in recordings {
             let analysis = try await analyze(target, continuation)
-            guard let selfSpeakerID = analysis.selfSpeakerID else { throw PersonSearchError.selfNotIdentified }
+            guard let selfSpeakerID = target.selfSpeakerID ?? analysis.selfSpeakerID else {
+                throw PersonSearchError.selfNotIdentified(analysis)
+            }
             // 本人の発話は含めない
             guard let partner = analysis.partner(selfSpeakerID: selfSpeakerID) else { continue }
             let audio = try await audioFileGateway.samples(target.recording.fileURL)

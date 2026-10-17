@@ -16,6 +16,7 @@ final class RecordingViewModel {
         case retryButtonTapped
         /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
         case processingFinished(Profile.ID?)
+        case rerecordRequested
     }
 
     private(set) var recording: Recording?
@@ -61,6 +62,16 @@ final class RecordingViewModel {
         case let .processingFinished(profileID):
             registeredProfileID = profileID
             isFinished = true
+        case .rerecordRequested:
+            // 前の録音と処理データは処理状況画面で削除済み。操作選択前の状態に戻して新しく録音する
+            recording = nil
+            selectedMode = nil
+            elapsedTime = 0
+            wasInterrupted = false
+            reachedLimit = false
+            isOneMinuteRemaining = false
+            errorMessage = nil
+            start()
         case .discardButtonTapped:
             guard !isStarting else { return }
             isDiscardConfirmationPresented = true

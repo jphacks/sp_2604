@@ -84,7 +84,11 @@ struct RecordingContent: View {
             }
             .navigationDestination(isPresented: .constant(selectedMode != nil)) {
                 if let recording, let selectedMode {
-                    ProcessingScreen(recording: recording, mode: selectedMode) { send(.processingFinished($0)) }
+                    ProcessingScreen(
+                        recording: recording, mode: selectedMode,
+                        onFinished: { send(.processingFinished($0)) },
+                        onRerecord: { send(.rerecordRequested) }
+                    )
                 }
             }
         }

@@ -4,6 +4,7 @@ minimum_release_age = "7d"
 [tools]
 "npm:rulesync" = "29.0.0"
 ruby = "3.4.11"
+terraform = "1.16.4"
 xcodes = "2.1.0"
 
 [tasks.bootstrap]
@@ -60,3 +61,18 @@ xcodebuild test \
   -skipPackagePluginValidation \
   CODE_SIGN_IDENTITY=-
 """
+
+[tasks."terraform:init"]
+description = "terraform init を実行する (例: mise run terraform:init google)"
+usage = 'arg "<module>" help="root module 名 (terraform/ 配下)" {choices "github" "google"}'
+run = 'terraform -chdir="terraform/${usage_module}" init'
+
+[tasks."terraform:plan"]
+description = "terraform plan を実行する (例: mise run terraform:plan google)"
+usage = 'arg "<module>" help="root module 名 (terraform/ 配下)" {choices "github" "google"}'
+run = 'terraform -chdir="terraform/${usage_module}" init && terraform -chdir="terraform/${usage_module}" plan'
+
+[tasks."terraform:apply"]
+description = "terraform apply を実行する (例: mise run terraform:apply google)"
+usage = 'arg "<module>" help="root module 名 (terraform/ 配下)" {choices "github" "google"}'
+run = 'terraform -chdir="terraform/${usage_module}" init && terraform -chdir="terraform/${usage_module}" apply'

@@ -5,10 +5,15 @@ struct ProcessingScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     /// 新規登録で保存した場合はそのプロフィールの ID を渡す。
     let onFinished: (Profile.ID?) -> Void
+    let onRerecord: () -> Void
 
-    init(recording: Recording, mode: RecordingViewModel.Mode, onFinished: @escaping (Profile.ID?) -> Void) {
+    init(
+        recording: Recording, mode: RecordingViewModel.Mode,
+        onFinished: @escaping (Profile.ID?) -> Void, onRerecord: @escaping () -> Void
+    ) {
         _viewModel = State(initialValue: ProcessingViewModel(recording: recording, mode: mode))
         self.onFinished = onFinished
+        self.onRerecord = onRerecord
     }
 
     var body: some View {
@@ -19,7 +24,7 @@ struct ProcessingScreen: View {
             canRetry: viewModel.failedStage != nil,
             isCompleted: viewModel.isCompleted,
             isSuspended: viewModel.isSuspended,
-            needsSelfSelection: viewModel.needsSelfSelection,
+            selfSelectionAnalysis: viewModel.selfSelectionAnalysis,
             isCancelConfirmationPresented: viewModel.isCancelConfirmationPresented,
             registrationSource: viewModel.registrationSource,
             send: viewModel.send
@@ -30,6 +35,9 @@ struct ProcessingScreen: View {
         }
         .onChange(of: viewModel.isFinished) { _, finished in
             if finished { onFinished(viewModel.registeredProfileID) }
+        }
+        .onChange(of: viewModel.isRerecordRequested) { _, requested in
+            if requested { onRerecord() }
         }
     }
 }
