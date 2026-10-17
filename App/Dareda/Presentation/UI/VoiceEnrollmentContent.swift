@@ -25,7 +25,7 @@ struct VoiceEnrollmentContent: View {
                 .toolbar {
                     if isCancellable {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("キャンセル") { send(.cancelButtonTapped) }
+                            Button(role: .cancel) { send(.cancelButtonTapped) }
                                 .disabled(isProcessing)
                                 .accessibilityIdentifier("voiceEnrollment.cancelButton")
                         }

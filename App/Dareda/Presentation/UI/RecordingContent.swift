@@ -55,8 +55,7 @@ struct RecordingContent: View {
             .navigationTitle(isAdditional ? "追加録音" : "会話の録音")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    // 録音後の操作を選んだ後は、処理のキャンセルになる
-                    Button(selectedMode == nil ? "破棄して閉じる" : "キャンセル") { send(.discardButtonTapped) }
+                    Button(role: .cancel) { send(.discardButtonTapped) }
                         .disabled(isStarting)
                         .accessibilityIdentifier("recording.discardButton")
                 }

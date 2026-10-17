@@ -126,7 +126,7 @@ struct PersonSearchManualSelectionContent: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("閉じる") { send(.manualSelectionPresentedChanged(false)) }
+                    Button(role: .close) { send(.manualSelectionPresentedChanged(false)) }
                         .accessibilityIdentifier("personSearch.manualSelection.closeButton")
                 }
             }
