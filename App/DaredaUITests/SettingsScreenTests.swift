@@ -128,4 +128,20 @@ final class SettingsScreenTests: XCTestCase {
         app.swipeDown(velocity: .fast)
         XCTAssertEqual(openPrivateCloudComputeToggle(app).value as? String, "0")
     }
+
+    @MainActor
+    func test権限の許可状態が表示される() {
+        let app = launch(scenario: "settingsPermissions")
+        let settingsButton = app.buttons["root.settingsButton"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        settingsButton.tap()
+
+        let microphone = app.buttons["settings.microphonePermission"]
+        XCTAssertTrue(microphone.waitForExistence(timeout: 5))
+        let deniedPredicate = NSPredicate(format: "label CONTAINS '未許可'")
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation(for: deniedPredicate, evaluatedWith: microphone)], timeout: 5), .completed)
+        let notification = app.buttons["settings.notificationPermission"]
+        let grantedPredicate = NSPredicate(format: "label CONTAINS '許可' AND NOT label CONTAINS '未許可'")
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation(for: grantedPredicate, evaluatedWith: notification)], timeout: 5), .completed)
+    }
 }

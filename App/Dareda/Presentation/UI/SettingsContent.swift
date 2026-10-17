@@ -4,6 +4,8 @@ struct SettingsContent: View {
     let selfVoiceRegisteredAt: Date?
     let isVoiceReregistrationPresented: Bool
     let privateCloudComputeConsent: PrivateCloudComputeConsent
+    var recordingPermission: RecordingPermission?
+    var notificationPermission: NotificationPermission?
     let send: (SettingsViewModel.Action) -> Void
 
     var body: some View {
@@ -36,6 +38,23 @@ struct SettingsContent: View {
                 } footer: {
                     Text("会話が長く端末内で要約しきれない場合に限り、文字起こし全文（話者ラベル付き）と要約の指示をAppleのPrivate Cloud Computeへ送って要約します。音声・声の特徴・保存したプロフィール・位置情報は送信しません。オフにすると、端末内で分割して要約します。")
                 }
+
+                Section {
+                    Button { send(.permissionRowTapped) } label: {
+                        LabeledContent("マイク") { Text(Self.label(recordingPermission)) }
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityIdentifier("settings.microphonePermission")
+                    Button { send(.permissionRowTapped) } label: {
+                        LabeledContent("プッシュ通知") { Text(Self.label(notificationPermission)) }
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityIdentifier("settings.notificationPermission")
+                } header: {
+                    Text("権限")
+                } footer: {
+                    Text("タップすると設定アプリが開き、許可を変更できます。")
+                }
             }
             .navigationTitle("設定")
         }
@@ -45,6 +64,24 @@ struct SettingsContent: View {
                 onCompleted: { send(.voiceReregistrationFinished) },
                 onCancelled: { send(.voiceReregistrationFinished) }
             )
+        }
+    }
+
+    private static func label(_ permission: RecordingPermission?) -> LocalizedStringResource {
+        switch permission {
+        case .granted: "許可"
+        case .denied: "未許可"
+        case .undetermined: "未設定"
+        case nil: "-"
+        }
+    }
+
+    private static func label(_ permission: NotificationPermission?) -> LocalizedStringResource {
+        switch permission {
+        case .granted: "許可"
+        case .denied: "未許可"
+        case .undetermined: "未設定"
+        case nil: "-"
         }
     }
 }
@@ -63,6 +100,8 @@ struct SettingsContent: View {
         selfVoiceRegisteredAt: Date(timeIntervalSince1970: 1_790_000_000),
         isVoiceReregistrationPresented: false,
         privateCloudComputeConsent: .granted,
+        recordingPermission: .granted,
+        notificationPermission: .denied,
         send: { _ in }
     )
 }
