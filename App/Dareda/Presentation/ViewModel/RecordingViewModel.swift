@@ -29,6 +29,7 @@ final class RecordingViewModel {
     private(set) var isFinished = false
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
+    @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
     @ObservationIgnored private var elapsedTask: Task<Void, Never>?
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
@@ -50,6 +51,8 @@ final class RecordingViewModel {
         case .searchButtonTapped:
             guard recording != nil, !isRecording else { return }
             selectedMode = .search
+            // 検索結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で検索は続けられる
+            Task { _ = try? await requestNotificationPermissionUseCase.execute() }
         case .discardButtonTapped:
             guard !isStarting else { return }
             isDiscardConfirmationPresented = true
