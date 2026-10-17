@@ -1,7 +1,7 @@
 import Foundation
 
 /// 声の特徴を表すベクトル (話者埋め込み)。長さ 1 に正規化されている。
-nonisolated struct VoiceEmbedding: Sendable, Equatable {
+nonisolated struct VoiceEmbedding: Sendable, Equatable, Codable {
     /// 正規化済みのベクトル。`SelfVoice.vector` や `Profile.vector` にはこの値を保存する。
     var values: [Float]
 

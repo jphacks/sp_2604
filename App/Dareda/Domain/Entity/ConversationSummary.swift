@@ -1,5 +1,5 @@
 import Foundation
 
-nonisolated struct ConversationSummary: Sendable, Equatable {
+nonisolated struct ConversationSummary: Sendable, Equatable, Codable {
     var text: String
 }
