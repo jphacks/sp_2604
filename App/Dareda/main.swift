@@ -14,7 +14,18 @@ prepareDependencies {
         $0.defaultDatabase = database
         $0.audioRecorderClient = .inMemory()
         $0.appSettingsClient = .inMemory()
+        if scenario == "recordingCleanupFailure" {
+            let client = FileSystemClient.inMemory(removeFailures: 1)
+            try! client.createDirectory(client.temporaryDirectory().appending(path: "Recordings"))
+            $0.fileSystemClient = client
+        }
         switch scenario {
+        case "recordingLimit":
+            $0.audioRecorderClient = .inMemory(elapsedTimes: [0] + Array(repeating: 540, count: 20) + [600])
+        case "recordingInterrupted":
+            $0.audioRecorderClient = .inMemory(elapsedTimes: [42], interruptionDelay: .seconds(2))
+        case "recordingFailure":
+            $0.audioRecorderClient = .inMemory(failsToStart: true)
         case "microphoneGranted":
             $0.audioRecorderClient = .inMemory(permissions: [.granted], permissionAfterRequest: false)
         case "microphoneUndeterminedGranted":

@@ -6,6 +6,9 @@ struct RootContent: View {
     let settingsErrorMessage: String?
     let availability: DeviceAvailability?
     let isProfileListPresented: Bool
+    let isRecordingPresented: Bool
+    let isPreparedForRecording: Bool
+    let preparationErrorMessage: LocalizedStringResource?
     let send: (RootViewModel.Action) -> Void
 
     var body: some View {
@@ -24,8 +27,15 @@ struct RootContent: View {
                 // 録音・解析は利用可否が `available` のときのみ有効にする。
                 Button("録音") { send(.recordButtonTapped) }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!availability.isAvailable || isRequestingPermission)
+                    .disabled(!availability.isAvailable || !isPreparedForRecording || isRequestingPermission)
                     .accessibilityIdentifier("root.recordButton")
+
+                if let preparationErrorMessage {
+                    Text(preparationErrorMessage)
+                        .accessibilityIdentifier("root.preparationErrorNotice")
+                    Button("再試行") { send(.preparationRetryButtonTapped) }
+                        .accessibilityIdentifier("root.preparationRetryButton")
+                }
 
                 if recordingPermission == .denied {
                     Text("マイクの使用が許可されていません。設定アプリでDaredaのマイクを許可し、戻ってからもう一度録音ボタンを押してください。")
@@ -49,6 +59,12 @@ struct RootContent: View {
             }
         }
         .padding()
+        .fullScreenCover(isPresented: Binding(
+            get: { isRecordingPresented },
+            set: { if !$0 { send(.recordingFinished) } }
+        )) {
+            RecordingScreen { send(.recordingFinished) }
+        }
         .sheet(
             isPresented: Binding(
                 get: { isProfileListPresented },
@@ -67,6 +83,9 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .available,
         isProfileListPresented: false,
+        isRecordingPresented: false,
+        isPreparedForRecording: true,
+        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
@@ -78,6 +97,9 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .unsupported,
         isProfileListPresented: false,
+        isRecordingPresented: false,
+        isPreparedForRecording: true,
+        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
@@ -89,6 +111,9 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .temporarilyUnavailable(.modelNotReady),
         isProfileListPresented: false,
+        isRecordingPresented: false,
+        isPreparedForRecording: true,
+        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
@@ -100,6 +125,9 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .available,
         isProfileListPresented: false,
+        isRecordingPresented: false,
+        isPreparedForRecording: true,
+        preparationErrorMessage: nil,
         send: { _ in }
     )
 }

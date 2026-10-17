@@ -16,6 +16,7 @@ nonisolated struct AudioRecorderClient: Sendable {
     var start: @Sendable () async throws -> URL
     /// 録音を停止してファイルを確定し、録音済みの長さ (秒) を返す。録音中でなければ 0。
     var stop: @Sendable () -> TimeInterval = { 0 }
+    var elapsedTime: @Sendable () -> TimeInterval = { 0 }
     /// システムによるオーディオセッションの無効化 (電話などによる中断) を通知する。
     var interruptions: @Sendable () -> AsyncStream<Void> = { AsyncStream { $0.finish() } }
 }
@@ -28,6 +29,7 @@ nonisolated extension AudioRecorderClient: DependencyKey {
             requestRecordPermission: impl.requestRecordPermission,
             start: impl.start,
             stop: impl.stop,
+            elapsedTime: impl.elapsedTime,
             interruptions: impl.interruptions
         )
     }()
@@ -97,6 +99,10 @@ private nonisolated struct AudioRecorderClientImpl: Sendable {
         return duration
     }
 
+    func elapsedTime() -> TimeInterval {
+        handle.elapsedTime()
+    }
+
     func interruptions() -> AsyncStream<Void> {
         AsyncStream { continuation in
             let task = Task {
@@ -124,6 +130,10 @@ private nonisolated final class RecorderHandle: @unchecked Sendable {
 
     func set(_ recorder: AVAudioRecorder) {
         lock.withLock { self.recorder = recorder }
+    }
+
+    func elapsedTime() -> TimeInterval {
+        lock.withLock { recorder?.currentTime ?? 0 }
     }
 
     func take() -> AVAudioRecorder? {

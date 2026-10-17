@@ -2,6 +2,7 @@ import Foundation
 
 /// 録音中に発生するイベント。
 nonisolated enum RecordingEvent: Sendable, Equatable {
+    case elapsedTimeChanged(TimeInterval)
     /// 上限まで残り 1 分 (`RecordingConfiguration.warningRemaining`) になった。
     case oneMinuteRemaining
     /// 上限に達したため自動停止した。録音済みの内容が確定した `Recording` を持つ。
