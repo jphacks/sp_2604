@@ -6,6 +6,7 @@ struct RootContent: View {
     let settingsErrorMessage: String?
     let availability: DeviceAvailability?
     let isProfileListPresented: Bool
+    let isRecordingPresented: Bool
     let send: (RootViewModel.Action) -> Void
 
     var body: some View {
@@ -49,6 +50,12 @@ struct RootContent: View {
             }
         }
         .padding()
+        .fullScreenCover(isPresented: Binding(
+            get: { isRecordingPresented },
+            set: { if !$0 { send(.recordingFinished) } }
+        )) {
+            RecordingScreen { send(.recordingFinished) }
+        }
         .sheet(
             isPresented: Binding(
                 get: { isProfileListPresented },
@@ -67,6 +74,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .available,
         isProfileListPresented: false,
+        isRecordingPresented: false,
         send: { _ in }
     )
 }
@@ -78,6 +86,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .unsupported,
         isProfileListPresented: false,
+        isRecordingPresented: false,
         send: { _ in }
     )
 }
@@ -89,6 +98,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .temporarilyUnavailable(.modelNotReady),
         isProfileListPresented: false,
+        isRecordingPresented: false,
         send: { _ in }
     )
 }
@@ -100,6 +110,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .available,
         isProfileListPresented: false,
+        isRecordingPresented: false,
         send: { _ in }
     )
 }

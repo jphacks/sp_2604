@@ -10,6 +10,7 @@ struct RootScreen: View {
             settingsErrorMessage: viewModel.settingsErrorMessage,
             availability: viewModel.availability,
             isProfileListPresented: viewModel.isProfileListPresented,
+            isRecordingPresented: viewModel.isRecordingPresented,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }

@@ -10,6 +10,7 @@ final class RootViewModel {
         case settingsButtonTapped
         case profilesButtonTapped
         case profileListPresentedChanged(Bool)
+        case recordingFinished
     }
 
     private(set) var recordingPermission: RecordingPermission?
@@ -18,6 +19,7 @@ final class RootViewModel {
 
     private(set) var availability: DeviceAvailability?
     private(set) var isProfileListPresented = false
+    private(set) var isRecordingPresented = false
 
     @ObservationIgnored
     @Dependency(\.cleanUpTemporaryDataUseCase) private var cleanUpTemporaryDataUseCase
@@ -49,6 +51,7 @@ final class RootViewModel {
             Task {
                 recordingPermission = await requestRecordingPermissionUseCase.execute()
                 isRequestingPermission = false
+                isRecordingPresented = recordingPermission == .granted
             }
         case .settingsButtonTapped:
             Task {
@@ -59,6 +62,8 @@ final class RootViewModel {
                     settingsErrorMessage = "設定アプリを開けませんでした。設定アプリからDaredaのマイクを許可してください。"
                 }
             }
+        case .recordingFinished:
+            isRecordingPresented = false
         case .profilesButtonTapped:
             isProfileListPresented = true
         case let .profileListPresentedChanged(isPresented):
