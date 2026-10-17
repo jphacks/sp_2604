@@ -3,7 +3,8 @@ import SwiftUI
 struct RecordingScreen: View {
     @State private var viewModel = RecordingViewModel()
     @Environment(\.scenePhase) private var scenePhase
-    let onFinished: () -> Void
+    /// 新規登録で保存した場合はそのプロフィールの ID を渡す。
+    let onFinished: (Profile.ID?) -> Void
 
     var body: some View {
         RecordingContent(
@@ -21,6 +22,8 @@ struct RecordingScreen: View {
             isAnalysisCompleted: viewModel.isAnalysisCompleted,
             isAnalysisSuspended: viewModel.isAnalysisSuspended,
             analysisErrorMessage: viewModel.analysisErrorMessage,
+            registrationSource: viewModel.registrationSource,
+            registrationNotice: viewModel.registrationNotice,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }
@@ -28,7 +31,7 @@ struct RecordingScreen: View {
             if phase == .active { viewModel.send(.sceneBecameActive) }
         }
         .onChange(of: viewModel.isFinished) { _, finished in
-            if finished { onFinished() }
+            if finished { onFinished(viewModel.registeredProfileID) }
         }
     }
 }

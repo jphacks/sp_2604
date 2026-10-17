@@ -6,6 +6,7 @@ final class ProfileListViewModel {
     enum Action {
         case onAppear
         case pathChanged([Profile.ID])
+        case profileRegistered(Profile.ID)
     }
 
     private(set) var profiles: [Profile] = []
@@ -20,6 +21,9 @@ final class ProfileListViewModel {
             Task { await fetch() }
         case let .pathChanged(path):
             self.path = path
+        case let .profileRegistered(id):
+            path = [id]
+            Task { await fetch() }
         }
     }
 

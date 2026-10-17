@@ -13,7 +13,8 @@ final class RootViewModel {
         case privateCloudComputeSettingsPresentedChanged(Bool)
         case settingsMenuButtonTapped
         case settingsPresentedChanged(Bool)
-        case recordingFinished
+        /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
+        case recordingFinished(Profile.ID?)
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
         case personSearchNotificationTapped
@@ -30,6 +31,8 @@ final class RootViewModel {
     private(set) var isPreparedForRecording = false
     private(set) var preparationErrorMessage: LocalizedStringResource?
     private(set) var isVoiceEnrollmentPresented = false
+    /// 直近の新規登録で保存したプロフィール。一覧からその詳細を表示する。
+    private(set) var registeredProfileID: Profile.ID?
 
     @ObservationIgnored
     @Dependency(\.cleanUpTemporaryDataUseCase) private var cleanUpTemporaryDataUseCase
@@ -96,8 +99,9 @@ final class RootViewModel {
                     settingsErrorMessage = "設定アプリを開けませんでした。設定アプリからDaredaのマイクを許可してください。"
                 }
             }
-        case .recordingFinished:
+        case let .recordingFinished(profileID):
             isRecordingPresented = false
+            if let profileID { registeredProfileID = profileID }
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
         case .privateCloudComputeSettingsButtonTapped:

@@ -15,43 +15,56 @@ struct RecordingContent: View {
     var isAnalysisCompleted = false
     var isAnalysisSuspended = false
     var analysisErrorMessage: LocalizedStringResource?
+    var registrationSource: RegistrationViewModel.Source?
+    var registrationNotice: LocalizedStringResource?
     let send: (RecordingViewModel.Action) -> Void
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 28) {
-                    RecordingStatusContent(
-                        isRecording: isRecording, isStarting: isStarting, hasRecording: hasRecording,
-                        elapsedTime: elapsedTime, wasInterrupted: wasInterrupted,
-                        reachedLimit: reachedLimit, isOneMinuteRemaining: isOneMinuteRemaining
-                    )
-                    if isRecording {
-                        Button("録音を停止", systemImage: "stop.fill") { send(.stopButtonTapped) }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
-                            .accessibilityIdentifier("recording.stopButton")
-                    } else if hasRecording {
-                        RecordingChoiceContent(selectedMode: selectedMode, send: send)
-                        RecordingAnalysisContent(
-                            stage: analysisStage, isCompleted: isAnalysisCompleted,
-                            isSuspended: isAnalysisSuspended, errorMessage: analysisErrorMessage
-                        )
-                    }
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .foregroundStyle(.red)
-                            .accessibilityIdentifier("recording.errorNotice")
-                        if !hasRecording {
-                            Button("もう一度録音する") { send(.retryButtonTapped) }
-                                .accessibilityIdentifier("recording.retryButton")
+            Group {
+                if let registrationSource {
+                    RegistrationScreen(source: registrationSource) { send(.registrationSaved($0)) }
+                } else {
+                    ScrollView {
+                        VStack(spacing: 28) {
+                            RecordingStatusContent(
+                                isRecording: isRecording, isStarting: isStarting, hasRecording: hasRecording,
+                                elapsedTime: elapsedTime, wasInterrupted: wasInterrupted,
+                                reachedLimit: reachedLimit, isOneMinuteRemaining: isOneMinuteRemaining
+                            )
+                            if isRecording {
+                                Button("録音を停止", systemImage: "stop.fill") { send(.stopButtonTapped) }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.red)
+                                    .accessibilityIdentifier("recording.stopButton")
+                            } else if hasRecording {
+                                RecordingChoiceContent(selectedMode: selectedMode, send: send)
+                                RecordingAnalysisContent(
+                                    stage: analysisStage, isCompleted: isAnalysisCompleted,
+                                    isSuspended: isAnalysisSuspended, errorMessage: analysisErrorMessage
+                                )
+                                if let registrationNotice {
+                                    Text(registrationNotice)
+                                        .foregroundStyle(.red)
+                                        .accessibilityIdentifier("recording.registrationNotice")
+                                }
+                            }
+                            if let errorMessage {
+                                Text(errorMessage)
+                                    .foregroundStyle(.red)
+                                    .accessibilityIdentifier("recording.errorNotice")
+                                if !hasRecording {
+                                    Button("もう一度録音する") { send(.retryButtonTapped) }
+                                        .accessibilityIdentifier("recording.retryButton")
+                                }
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(24)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(24)
             }
-            .navigationTitle("会話の録音")
+            .navigationTitle(registrationSource == nil ? "会話の録音" : "新規登録")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     // 録音後の操作を選んだ後は、処理のキャンセルになる

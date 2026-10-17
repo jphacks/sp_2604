@@ -15,6 +15,7 @@ final class RecordingViewModel {
         case discardConfirmed
         case retryButtonTapped
         case sceneBecameActive
+        case registrationSaved(Profile.ID)
     }
 
     private(set) var recording: Recording?
@@ -32,6 +33,12 @@ final class RecordingViewModel {
     private(set) var isAnalysisCompleted = false
     private(set) var isAnalysisSuspended = false
     private(set) var analysisErrorMessage: LocalizedStringResource?
+    /// 新規登録の入力に進める解析結果。本人と相手の声がそろったときだけ値を持つ。
+    private(set) var registrationSource: RegistrationViewModel.Source?
+    /// 新規登録に進めない理由。
+    private(set) var registrationNotice: LocalizedStringResource?
+    /// 新規登録で保存したプロフィール。閉じた後に詳細を表示するために使う。
+    private(set) var registeredProfileID: Profile.ID?
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.processingSessionService) private var processingSessionService
@@ -65,6 +72,10 @@ final class RecordingViewModel {
             analyze()
             // 検索結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で検索は続けられる
             Task { _ = try? await requestNotificationPermissionUseCase.execute() }
+        case let .registrationSaved(profileID):
+            registeredProfileID = profileID
+            recording = nil
+            isFinished = true
         case .sceneBecameActive:
             // OS に打ち切られた解析は、アプリに戻ったら未完了の処理だけを再試行する。
             if isAnalysisSuspended { analyze() }
@@ -169,8 +180,11 @@ final class RecordingViewModel {
                     switch event {
                     case let .stageChanged(stage):
                         analysisStage = stage
-                    case .completed:
+                    case let .completed(analysis):
                         isAnalysisCompleted = true
+                        if selectedMode == .registration {
+                            prepareRegistration(analysis, recording, session)
+                        }
                     }
                 }
             } catch ConversationAnalysisError.suspended {
@@ -179,6 +193,27 @@ final class RecordingViewModel {
                 analysisErrorMessage = "解析に失敗しました。"
             }
         }
+    }
+
+    /// 本人が確定していれば、相手の声とともに新規登録の入力へ進める。
+    private func prepareRegistration(
+        _ analysis: ConversationAnalysis, _ recording: Recording, _ session: ProcessingSession
+    ) {
+        // TODO: #17 で手動選択した本人から登録へ進めるようにする
+        guard let selfSpeakerID = analysis.selfSpeakerID else {
+            registrationNotice = "本人の発言を判定できませんでした。"
+            return
+        }
+        guard let partnerVector = analysis.partner(selfSpeakerID: selfSpeakerID)?.embedding?.values else {
+            registrationNotice = "相手の声を検出できなかったため登録できません。キャンセルして録音し直してください。"
+            return
+        }
+        registrationSource = RegistrationViewModel.Source(
+            recording: recording,
+            session: session,
+            transcript: analysis.transcript(selfSpeakerID: selfSpeakerID),
+            partnerVector: partnerVector
+        )
     }
 
     private func finish(_ stopped: Recording) {

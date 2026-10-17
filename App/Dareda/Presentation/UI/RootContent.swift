@@ -11,10 +11,11 @@ struct RootContent: View {
     let isVoiceEnrollmentPresented: Bool
     let isPreparedForRecording: Bool
     let preparationErrorMessage: LocalizedStringResource?
+    var registeredProfileID: Profile.ID?
     let send: (RootViewModel.Action) -> Void
 
     var body: some View {
-        ProfileListScreen {
+        ProfileListScreen(registeredProfileID: registeredProfileID) {
             notices
         } actions: {
             // 録音・解析は利用可否が `available` のときのみ有効にする。
@@ -40,9 +41,9 @@ struct RootContent: View {
         }
         .fullScreenCover(isPresented: Binding(
             get: { isRecordingPresented },
-            set: { if !$0 { send(.recordingFinished) } }
+            set: { if !$0 { send(.recordingFinished(nil)) } }
         )) {
-            RecordingScreen { send(.recordingFinished) }
+            RecordingScreen { send(.recordingFinished($0)) }
         }
         // 登録が済むまで閉じられないよう、完了時のみ閉じる
         .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {
