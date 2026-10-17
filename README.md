@@ -23,16 +23,24 @@
 
 ### 活用した技術
 #### API・データ
-* 
-* 
+* Foundation Models (Apple Intelligence のオンデバイス言語モデル / Private Cloud Compute) による会話の要約・分析
+* Speech (SpeechAnalyzer / SpeechTranscriber) によるオンデバイス文字起こし
+* MapKit (MKLocalSearch) による場所の検索
+* FluidAudio の話者分離 (OfflineDiarizer) と、Core ML の話者埋め込みモデルによる声の照合
 
 #### フレームワーク・ライブラリ・モジュール
-* 
-* 
+* SwiftUI / Observation (`@Observable`)
+* swift-dependencies (DI)
+* SQLiteData (ローカル DB)
+* FluidAudio (話者分離)
+* Core ML / AVFoundation / UserNotifications
+* XCUITest (UI テスト)
+* Terraform / GitHub Actions / fastlane / Firebase App Distribution (インフラ・CI/CD・配信)
 
 #### デバイス
-* 
-* 
+* iPhone (Apple Intelligence 対応機種)
+* マイク (AVAudioRecorder による録音)
+* ローカル通知 (人物検索結果の通知)
 
 ### 独自技術
 #### ハッカソンで開発した独自機能・技術
