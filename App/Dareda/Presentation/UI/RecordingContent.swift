@@ -86,7 +86,7 @@ struct RecordingContent: View {
                 if let recording, let selectedMode {
                     ProcessingScreen(
                         recording: recording, mode: selectedMode,
-                        onFinished: { send(.processingFinished) },
+                        onFinished: { send(.processingFinished($0)) },
                         onRerecord: { send(.rerecordRequested) }
                     )
                 }

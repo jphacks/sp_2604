@@ -46,6 +46,14 @@ nonisolated extension FluidAudioClient {
         })
     }
 
+    /// 話者を 1 人だけ分離するテストダブル。
+    static func oneSpeaker() -> FluidAudioClient {
+        let result = DiarizationResult(segments: [
+            TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 30, qualityScore: 1),
+        ])
+        return FluidAudioClient(diarize: { _ in result })
+    }
+
     /// 失敗するテストダブル。
     static func failing() -> FluidAudioClient {
         FluidAudioClient(diarize: { _ in throw CocoaError(.fileReadUnknown) })

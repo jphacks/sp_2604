@@ -11,6 +11,7 @@ final class ProcessingViewModel {
         case cancelConfirmationChanged(Bool)
         case cancelConfirmed
         case sceneBecameActive
+        case registrationSaved(Profile.ID)
         case selfSpeakerSelected(AnalyzedSpeaker.ID)
         case rerecordButtonTapped
     }
@@ -30,6 +31,10 @@ final class ProcessingViewModel {
     private(set) var isRerecordRequested = false
     private(set) var isCancelConfirmationPresented = false
     private(set) var isFinished = false
+    /// 新規登録の入力に進める解析結果。本人と相手の声がそろい、要約が済んだときだけ値を持つ。
+    private(set) var registrationSource: RegistrationViewModel.Source?
+    /// 新規登録で保存したプロフィール。閉じた後に詳細を表示するために使う。
+    private(set) var registeredProfileID: Profile.ID?
 
     @ObservationIgnored @Dependency(\.processingSessionService) private var processingSessionService
     @ObservationIgnored @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
@@ -69,6 +74,9 @@ final class ProcessingViewModel {
         case .sceneBecameActive:
             // OS に打ち切られた解析は、アプリに戻ったら未完了の処理だけを再試行する。
             if isSuspended { process() }
+        case let .registrationSaved(profileID):
+            registeredProfileID = profileID
+            isFinished = true
         case .cancelButtonTapped:
             isCancelConfirmationPresented = true
         case let .cancelConfirmationChanged(isPresented):
@@ -159,12 +167,24 @@ final class ProcessingViewModel {
             selfSelectionAnalysis = analysis
             return
         }
-        for try await event in conversationAnalysisService.summarize(
-            analysis.transcript(selfSpeakerID: selfSpeakerID), session
-        ) {
+        guard let partnerVector = analysis.partner(selfSpeakerID: selfSpeakerID)?.embedding?.values else {
+            // 再試行しても結果は変わらないため、録音し直してもらう
+            completeCurrentStage()
+            errorMessage = "相手の声を検出できなかったため登録できません。キャンセルして録音し直してください。"
+            return
+        }
+        let transcript = analysis.transcript(selfSpeakerID: selfSpeakerID)
+        for try await event in conversationAnalysisService.summarize(transcript, session) {
             switch event {
             case let .stageChanged(stage): stageChanged(stage)
-            case .completed: complete()
+            case let .completed(summary):
+                complete()
+                registrationSource = RegistrationViewModel.Source(
+                    recording: recording,
+                    session: session,
+                    summary: summary.text,
+                    partnerVector: partnerVector
+                )
             }
         }
     }

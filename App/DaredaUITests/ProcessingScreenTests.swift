@@ -26,12 +26,13 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test新規登録で文字起こしから要約まで完了する() {
+    func test新規登録で文字起こしから要約まで完了すると登録画面を表示する() {
         let app = start()
-        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
-        XCTAssertEqual(stageValue(app, "transcribing"), "完了")
-        XCTAssertEqual(stageValue(app, "identifyingSpeakers"), "完了")
-        XCTAssertEqual(stageValue(app, "summarizing"), "完了")
+        let summarizing = app.descendants(matching: .any)["processing.stage.summarizing"]
+        XCTAssertTrue(summarizing.waitForExistence(timeout: 30))
+        // 要約まで完了すると、処理状況に代わって新規登録の入力画面を表示する
+        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.descendants(matching: .any)["processing.stage.transcribing"].exists)
         attach(app, name: "processing-completed")
     }
 
@@ -55,7 +56,7 @@ final class ProcessingScreenTests: XCTestCase {
         XCTAssertEqual(stageValue(app, "summarizing"), "待機中")
         attach(app, name: "processing-failed")
         retry.tap()
-        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
         XCTAssertFalse(app.staticTexts["processing.errorNotice"].exists)
     }
 
@@ -83,7 +84,7 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test本人を判別できない場合は話者別の発言から自分を選ぶと要約まで進む() {
+    func test本人を判別できない場合は話者別の発言から自分を選ぶと要約を経て登録画面に進む() {
         let app = start(scenario: "processingSelfUnknown")
         XCTAssertTrue(app.descendants(matching: .any)["processing.selfSelectionNotice"].waitForExistence(timeout: 30))
         XCTAssertEqual(stageValue(app, "identifyingSpeakers"), "完了")
@@ -95,8 +96,8 @@ final class ProcessingScreenTests: XCTestCase {
         attach(app, name: "processing-self-selection")
 
         app.buttons["processing.selfCandidate.0"].tap()
-        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
-        XCTAssertEqual(stageValue(app, "summarizing"), "完了")
+        // 選んだ本人で要約まで済むと、新規登録の入力画面を表示する
+        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
         XCTAssertFalse(app.descendants(matching: .any)["processing.selfSelectionNotice"].exists)
     }
 

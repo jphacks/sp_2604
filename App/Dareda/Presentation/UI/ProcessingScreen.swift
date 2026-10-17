@@ -3,12 +3,13 @@ import SwiftUI
 struct ProcessingScreen: View {
     @State private var viewModel: ProcessingViewModel
     @Environment(\.scenePhase) private var scenePhase
-    let onFinished: () -> Void
+    /// 新規登録で保存した場合はそのプロフィールの ID を渡す。
+    let onFinished: (Profile.ID?) -> Void
     let onRerecord: () -> Void
 
     init(
         recording: Recording, mode: RecordingViewModel.Mode,
-        onFinished: @escaping () -> Void, onRerecord: @escaping () -> Void
+        onFinished: @escaping (Profile.ID?) -> Void, onRerecord: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: ProcessingViewModel(recording: recording, mode: mode))
         self.onFinished = onFinished
@@ -25,6 +26,7 @@ struct ProcessingScreen: View {
             isSuspended: viewModel.isSuspended,
             selfSelectionAnalysis: viewModel.selfSelectionAnalysis,
             isCancelConfirmationPresented: viewModel.isCancelConfirmationPresented,
+            registrationSource: viewModel.registrationSource,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }
@@ -32,7 +34,7 @@ struct ProcessingScreen: View {
             if phase == .active { viewModel.send(.sceneBecameActive) }
         }
         .onChange(of: viewModel.isFinished) { _, finished in
-            if finished { onFinished() }
+            if finished { onFinished(viewModel.registeredProfileID) }
         }
         .onChange(of: viewModel.isRerecordRequested) { _, requested in
             if requested { onRerecord() }

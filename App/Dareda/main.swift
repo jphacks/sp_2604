@@ -58,6 +58,16 @@ prepareDependencies {
         default:
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
         }
+        switch scenario {
+        case "registrationNoPartner":
+            // 本人の声だけの録音 (相手を分離できない)
+            $0.fluidAudioClient = .oneSpeaker()
+        case "registrationSaveFailure":
+            $0.sqliteDataClient = .failing(insertProfileFailures: 1)
+        default:
+            break
+        }
+        $0.mapKitClient = .inMemory()
         $0.appSettingsClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
         $0.userNotificationClient =
@@ -66,7 +76,8 @@ prepareDependencies {
             } else {
                 .inMemory()
             }
-        if scenario.hasPrefix("processing") || scenario == "analysisSuspended" {
+        if scenario.hasPrefix("processing") || scenario == "analysisSuspended"
+            || scenario == "registration" || scenario == "registrationSaveFailure" {
             $0.audioFileClient = .conversation()
         }
         if scenario == "recordingCleanupFailure" {

@@ -14,7 +14,8 @@ final class RecordingViewModel {
         case discardConfirmationChanged(Bool)
         case discardConfirmed
         case retryButtonTapped
-        case processingFinished
+        /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
+        case processingFinished(Profile.ID?)
         case rerecordRequested
     }
 
@@ -29,6 +30,8 @@ final class RecordingViewModel {
     private(set) var errorMessage: LocalizedStringResource?
     private(set) var isDiscardConfirmationPresented = false
     private(set) var isFinished = false
+    /// 新規登録で保存したプロフィール。閉じた後に詳細を表示するために使う。
+    private(set) var registeredProfileID: Profile.ID?
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
@@ -56,7 +59,8 @@ final class RecordingViewModel {
             selectedMode = .search
             // 検索結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で検索は続けられる
             Task { _ = try? await requestNotificationPermissionUseCase.execute() }
-        case .processingFinished:
+        case let .processingFinished(profileID):
+            registeredProfileID = profileID
             isFinished = true
         case .rerecordRequested:
             // 前の録音と処理データは処理状況画面で削除済み。操作選択前の状態に戻して新しく録音する

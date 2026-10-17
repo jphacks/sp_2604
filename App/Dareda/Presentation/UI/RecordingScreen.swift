@@ -2,7 +2,8 @@ import SwiftUI
 
 struct RecordingScreen: View {
     @State private var viewModel = RecordingViewModel()
-    let onFinished: () -> Void
+    /// 新規登録で保存した場合はそのプロフィールの ID を渡す。
+    let onFinished: (Profile.ID?) -> Void
 
     var body: some View {
         RecordingContent(
@@ -20,7 +21,7 @@ struct RecordingScreen: View {
         )
         .onAppear { viewModel.send(.onAppear) }
         .onChange(of: viewModel.isFinished) { _, finished in
-            if finished { onFinished() }
+            if finished { onFinished(viewModel.registeredProfileID) }
         }
     }
 }

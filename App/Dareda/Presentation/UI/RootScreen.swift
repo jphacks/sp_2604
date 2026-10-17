@@ -15,6 +15,7 @@ struct RootScreen: View {
             isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,
             isPreparedForRecording: viewModel.isPreparedForRecording,
             preparationErrorMessage: viewModel.preparationErrorMessage,
+            registeredProfileID: viewModel.registeredProfileID,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }

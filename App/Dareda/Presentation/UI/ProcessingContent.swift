@@ -9,44 +9,51 @@ struct ProcessingContent: View {
     var isSuspended = false
     var selfSelectionAnalysis: ConversationAnalysis?
     let isCancelConfirmationPresented: Bool
+    var registrationSource: RegistrationViewModel.Source?
     let send: (ProcessingViewModel.Action) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                // 残り時間・進捗率は表示しない
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(stages, id: \.stage) { item in
-                        ProcessingStageRow(stage: item.stage, status: item.status)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+        Group {
+            if let registrationSource {
+                RegistrationScreen(source: registrationSource) { send(.registrationSaved($0)) }
+            } else {
+                ScrollView {
+                    VStack(spacing: 28) {
+                        // 残り時間・進捗率は表示しない
+                        VStack(alignment: .leading, spacing: 16) {
+                            ForEach(stages, id: \.stage) { item in
+                                ProcessingStageRow(stage: item.stage, status: item.status)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                if let errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("processing.errorNotice")
-                    if canRetry {
-                        Button("再試行", systemImage: "arrow.clockwise") { send(.retryButtonTapped) }
-                            .buttonStyle(.borderedProminent)
-                            .accessibilityIdentifier("processing.retryButton")
+                        if let errorMessage {
+                            Text(errorMessage)
+                                .foregroundStyle(.red)
+                                .accessibilityIdentifier("processing.errorNotice")
+                            if canRetry {
+                                Button("再試行", systemImage: "arrow.clockwise") { send(.retryButtonTapped) }
+                                    .buttonStyle(.borderedProminent)
+                                    .accessibilityIdentifier("processing.retryButton")
+                            }
+                        }
+                        if isSuspended {
+                            Text("解析が中断されました。アプリに戻ると続きから再開します。")
+                                .accessibilityIdentifier("processing.suspendedNotice")
+                        }
+                        if let selfSelectionAnalysis {
+                            SelfSpeakerSelectionContent(analysis: selfSelectionAnalysis, send: send)
+                        }
+                        // 照合完了後の画面は #23 で置き換える
+                        if isCompleted {
+                            Text(mode == .registration ? "解析が完了しました" : "照合が完了しました")
+                                .font(.headline)
+                                .accessibilityIdentifier("processing.completedNotice")
+                        }
                     }
-                }
-                if isSuspended {
-                    Text("解析が中断されました。アプリに戻ると続きから再開します。")
-                        .accessibilityIdentifier("processing.suspendedNotice")
-                }
-                if let selfSelectionAnalysis {
-                    SelfSpeakerSelectionContent(analysis: selfSelectionAnalysis, send: send)
-                }
-                // 完了後の画面は #21 / #23 で置き換える
-                if isCompleted {
-                    Text(mode == .registration ? "解析が完了しました" : "照合が完了しました")
-                        .font(.headline)
-                        .accessibilityIdentifier("processing.completedNotice")
+                    .padding(24)
                 }
             }
-            .padding(24)
         }
         .navigationTitle(mode == .registration ? "新規登録" : "人物を探す")
         .navigationBarBackButtonHidden()
