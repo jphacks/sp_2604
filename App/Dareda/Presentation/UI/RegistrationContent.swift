@@ -38,22 +38,24 @@ struct RegistrationContent: View {
                 .lineLimit(3...10)
                 .accessibilityIdentifier("registration.summaryTextField")
             }
-            Section {
-                Button {
-                    send(.saveButtonTapped)
-                } label: {
-                    if isSaving {
-                        ProgressView()
-                    } else {
-                        Text(saveErrorMessage == nil ? "保存" : "もう一度保存")
-                    }
-                }
-                .disabled(!canSave)
-                .accessibilityIdentifier("registration.saveButton")
-                if let saveErrorMessage {
+            if let saveErrorMessage {
+                Section {
                     Text(saveErrorMessage)
                         .foregroundStyle(.red)
                         .accessibilityIdentifier("registration.saveError")
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if isSaving {
+                    ProgressView()
+                } else {
+                    Button(role: .confirm) {
+                        send(.saveButtonTapped)
+                    }
+                    .disabled(!canSave)
+                    .accessibilityIdentifier("registration.saveButton")
                 }
             }
         }
