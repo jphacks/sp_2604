@@ -56,6 +56,7 @@ final class RecordingViewModel {
         case let .discardConfirmationChanged(isPresented):
             isDiscardConfirmationPresented = isPresented
         case .discardConfirmed:
+            guard !isStarting else { return }
             isDiscardConfirmationPresented = false
             stop()
             do {
