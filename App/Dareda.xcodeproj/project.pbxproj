@@ -533,6 +533,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.12.1;
 			};
+			traits = (
+			);
 		};
 		A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
 			isa = XCRemoteSwiftPackageReference;
