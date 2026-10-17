@@ -34,8 +34,8 @@ nonisolated enum SelfVoiceRegistrationError: Error, Sendable, Equatable {
 }
 
 extension RegisterSelfVoiceUseCase {
-    /// 登録に必要な有効発話時間 (秒)。暫定値。
-    nonisolated static let requiredSpeechDuration: TimeInterval = 30
+    /// 登録に必要な有効発話時間 (秒)。
+    nonisolated static let requiredSpeechDuration = ProvisionalParameters.selfVoiceRequiredSpeechDuration
 }
 
 private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
@@ -44,6 +44,7 @@ private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
     @Dependency(\.speakerEmbeddingService) private var speakerEmbeddingService
     @Dependency(\.selfVoiceRepository) private var selfVoiceRepository
     @Dependency(\.date) private var date
+    @Dependency(\.metricsGateway) private var metricsGateway
 
     func execute(_ recording: Recording) async throws {
         do {
@@ -58,6 +59,9 @@ private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
     private func register(_ recording: Recording) async throws {
         let audio = try await audioFileGateway.samples(recording.fileURL)
         let quality = speechQualityService.analyze(audio, .default)
+        metricsGateway.recordValue("metrics.selfVoice.effectiveSpeechDuration", quality.effectiveSpeechDuration)
+        metricsGateway.recordValue("metrics.selfVoice.tooQuiet", quality.issues.contains(.tooQuiet) ? 1 : 0)
+        metricsGateway.recordValue("metrics.selfVoice.clipping", quality.issues.contains(.clipping) ? 1 : 0)
         guard quality.isAcceptable else {
             throw SelfVoiceRegistrationError.poorQuality(quality.issues)
         }

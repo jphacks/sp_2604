@@ -31,7 +31,10 @@ nonisolated func seedProfilesScenario(_ database: any DatabaseWriter) throws {
 nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter) throws {
     try database.write { db in
         try SelfVoiceRecord.insert {
-            SelfVoiceRecord(id: SelfVoiceRecord.singletonID, vector: Data(), createdAt: Date())
+            SelfVoiceRecord(
+                id: SelfVoiceRecord.singletonID, vector: Data(),
+                createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+            )
         }.execute(db)
     }
 }

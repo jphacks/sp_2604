@@ -7,6 +7,7 @@ final class VoiceEnrollmentViewModel {
     enum Action {
         case recordButtonTapped
         case stopButtonTapped
+        case cancelButtonTapped
     }
 
     enum Failure: Equatable {
@@ -20,6 +21,7 @@ final class VoiceEnrollmentViewModel {
     private(set) var isProcessing = false
     private(set) var failure: Failure?
     private(set) var isCompleted = false
+    private(set) var isCancelled = false
 
     @ObservationIgnored
     @Dependency(\.recordingService) private var recordingService
@@ -34,6 +36,8 @@ final class VoiceEnrollmentViewModel {
             Task { await start() }
         case .stopButtonTapped:
             Task { await stop() }
+        case .cancelButtonTapped:
+            cancel()
         }
     }
 
@@ -47,6 +51,17 @@ final class VoiceEnrollmentViewModel {
         } catch {
             failure = .unexpected
         }
+    }
+
+    /// 録音中なら停止して破棄する。登録済みの声には触れない。
+    private func cancel() {
+        if let recording {
+            self.recording = nil
+            isRecording = false
+            // 一時ファイルは次回起動時にも掃除されるため、破棄の失敗は無視する
+            try? recordingService.discard(recordingService.stop(recording))
+        }
+        isCancelled = true
     }
 
     private func stop() async {

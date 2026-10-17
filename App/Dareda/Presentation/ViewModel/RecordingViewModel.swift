@@ -38,6 +38,8 @@ final class RecordingViewModel {
     @ObservationIgnored @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
     @ObservationIgnored private var session: ProcessingSession?
     @ObservationIgnored private var isAnalyzing = false
+    @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
+    @ObservationIgnored @Dependency(\.cancelProcessingUseCase) private var cancelProcessingUseCase
     @ObservationIgnored private var elapsedTask: Task<Void, Never>?
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
@@ -61,6 +63,8 @@ final class RecordingViewModel {
             guard recording != nil, !isRecording else { return }
             selectedMode = .search
             analyze()
+            // 検索結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で検索は続けられる
+            Task { _ = try? await requestNotificationPermissionUseCase.execute() }
         case .sceneBecameActive:
             // OS に打ち切られた解析は、アプリに戻ったら未完了の処理だけを再試行する。
             if isAnalysisSuspended { analyze() }
@@ -73,12 +77,16 @@ final class RecordingViewModel {
             guard !isStarting else { return }
             isDiscardConfirmationPresented = false
             stop()
-            do {
-                if let recording { try recordingService.discard(recording) }
-                recording = nil
-                isFinished = true
-            } catch {
-                errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+            Task {
+                do {
+                    try await cancelProcessingUseCase.execute(recording, session)
+                    recording = nil
+                    isFinished = true
+                } catch {
+                    errorMessage = selectedMode == nil
+                        ? "録音を削除できませんでした。もう一度お試しください。"
+                        : "キャンセルできませんでした。もう一度お試しください。"
+                }
             }
         }
     }
