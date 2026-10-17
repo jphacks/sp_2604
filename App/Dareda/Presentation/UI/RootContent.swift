@@ -5,7 +5,6 @@ struct RootContent: View {
     let isRequestingPermission: Bool
     let settingsErrorMessage: String?
     let availability: DeviceAvailability?
-    let isPrivateCloudComputeSettingsPresented: Bool
     let isSettingsPresented: Bool
     let isRecordingPresented: Bool
     let isVoiceEnrollmentPresented: Bool
@@ -27,15 +26,9 @@ struct RootContent: View {
             )
             .accessibilityIdentifier("root.recordButton")
 
-            // 要約の設定は利用可否にかかわらず変更可能にする。
-            Button { send(.privateCloudComputeSettingsButtonTapped) } label: {
-                Label("要約の設定", systemImage: "gearshape")
-            }
-            .accessibilityIdentifier("root.privateCloudComputeSettingsButton")
-
-            // 本人の声の再登録は利用可否にかかわらず可能にする。
+            // 設定は利用可否にかかわらず変更可能にする。
             Button { send(.settingsMenuButtonTapped) } label: {
-                Label("設定", systemImage: "person.wave.2")
+                Label("設定", systemImage: "gearshape")
             }
             .accessibilityIdentifier("root.settingsButton")
         }
@@ -48,14 +41,6 @@ struct RootContent: View {
         // 登録が済むまで閉じられないよう、完了時のみ閉じる
         .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {
             VoiceEnrollmentScreen { send(.voiceEnrollmentCompleted) }
-        }
-        .sheet(
-            isPresented: Binding(
-                get: { isPrivateCloudComputeSettingsPresented },
-                set: { send(.privateCloudComputeSettingsPresentedChanged($0)) }
-            )
-        ) {
-            PrivateCloudComputeSettingsScreen()
         }
         .sheet(
             isPresented: Binding(
@@ -108,7 +93,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .available,
-        isPrivateCloudComputeSettingsPresented: false,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
@@ -124,7 +108,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .unsupported,
-        isPrivateCloudComputeSettingsPresented: false,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
@@ -140,7 +123,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .temporarilyUnavailable(.modelNotReady),
-        isPrivateCloudComputeSettingsPresented: false,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
@@ -156,7 +138,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .available,
-        isPrivateCloudComputeSettingsPresented: false,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
