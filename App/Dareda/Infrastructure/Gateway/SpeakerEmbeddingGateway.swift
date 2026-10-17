@@ -6,7 +6,7 @@ import Foundation
 nonisolated struct SpeakerEmbeddingGateway: Sendable {
     /// 音声区間 (複数可) から声の特徴ベクトルを生成する。
     /// 区間は連結して扱い、有効な音声が `minimumDuration` 秒に満たない場合は `SpeakerEmbeddingError.insufficientSpeech` を投げる。
-    var embedding: @Sendable (_ segments: [SpeechSegment]) async throws -> VoiceEmbedding
+    var embedding: @Sendable (_ segments: [VoiceSegment]) async throws -> VoiceEmbedding
 }
 
 nonisolated extension SpeakerEmbeddingGateway: DependencyKey {
@@ -41,9 +41,9 @@ private nonisolated struct SpeakerEmbeddingGatewayImpl: Sendable {
 
     @Dependency(\.speakerEmbeddingModelClient) private var speakerEmbeddingModelClient
 
-    func embedding(of segments: [SpeechSegment]) async throws -> VoiceEmbedding {
+    func embedding(of segments: [VoiceSegment]) async throws -> VoiceEmbedding {
         let samples = segments.flatMap(\.samples)
-        let sampleRate = SpeechSegment.sampleRate
+        let sampleRate = VoiceSegment.sampleRate
         let minimumCount = Int(SpeakerEmbeddingGateway.minimumDuration * Double(sampleRate))
         guard samples.count >= minimumCount else {
             throw SpeakerEmbeddingError.insufficientSpeech

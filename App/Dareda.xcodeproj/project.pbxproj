@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A00000000000000000000023 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000013 /* SQLiteData */; };
 		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
 		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
-		A00000000000000000000023 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000013 /* SQLiteData */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -162,11 +162,11 @@
 				Base,
 			);
 			mainGroup = 000000000000000000000001;
+			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */,
 			);
-			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -190,7 +190,6 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
-
 
 /* Begin PBXSourcesBuildPhase section */
 		000000000000000120000000 /* Sources */ = {
@@ -521,15 +520,8 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
 /* Begin XCRemoteSwiftPackageReference section */
-		A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.9.4;
-			};
-		};
 		A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
@@ -538,9 +530,22 @@
 				minimumVersion = 1.12.1;
 			};
 		};
+		A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A00000000000000000000013 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
 		A30000000000000000000021 /* Dependencies */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
@@ -550,11 +555,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
 			productName = DependenciesMacros;
-		};
-		A00000000000000000000013 /* SQLiteData */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */;
-			productName = SQLiteData;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -5,7 +5,7 @@ import Foundation
 @DependencyClient
 nonisolated struct SpeakerEmbeddingService: Sendable {
     /// 音声区間 (複数可) から声の特徴ベクトルを生成する。本人の登録・相手の識別・人物検索で共通して使う。
-    var embedding: @Sendable (_ segments: [SpeechSegment]) async throws -> VoiceEmbedding
+    var embedding: @Sendable (_ segments: [VoiceSegment]) async throws -> VoiceEmbedding
 }
 
 nonisolated extension SpeakerEmbeddingService: DependencyKey {
@@ -27,7 +27,7 @@ nonisolated extension DependencyValues {
 private nonisolated struct SpeakerEmbeddingServiceImpl: Sendable {
     @Dependency(\.speakerEmbeddingGateway) private var speakerEmbeddingGateway
 
-    func embedding(of segments: [SpeechSegment]) async throws -> VoiceEmbedding {
+    func embedding(of segments: [VoiceSegment]) async throws -> VoiceEmbedding {
         try await speakerEmbeddingGateway.embedding(segments)
     }
 }

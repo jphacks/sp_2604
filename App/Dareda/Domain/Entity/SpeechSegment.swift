@@ -1,12 +1,10 @@
 import Foundation
 
-/// 話者の声が含まれる音声区間。16kHz・モノラルの PCM サンプル (-1.0〜1.0) を保持する。
+/// 録音内の位置 (秒) を持つ文字起こしの 1 区間。話者分離結果との対応付けに使う。
 nonisolated struct SpeechSegment: Sendable, Equatable {
-    static let sampleRate = 16_000
-
-    var samples: [Float]
-
-    var duration: TimeInterval {
-        TimeInterval(samples.count) / TimeInterval(Self.sampleRate)
-    }
+    var text: String
+    /// 録音先頭からの開始位置 (秒)。
+    var startTime: TimeInterval
+    /// 録音先頭からの終了位置 (秒)。
+    var endTime: TimeInterval
 }
