@@ -159,6 +159,15 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
+    func test着信で結果を読み上げている間も候補を表示する() {
+        // 読み上げが 120 秒続く。通話の終了を待たずに候補を表示する
+        let app = start(scenario: "personSearchLongCall")
+        let candidate = app.descendants(matching: .any)["personSearch.candidate"]
+        XCTAssertTrue(candidate.waitForExistence(timeout: 30))
+        XCTAssertTrue(candidate.label.contains("山田 太郎"))
+    }
+
+    @MainActor
     func test該当なしを選ぶと要約済みの新規登録の入力画面に進む() {
         let app = start(scenario: "personSearch")
         let newRegistration = app.buttons["personSearch.newRegistrationButton"]
