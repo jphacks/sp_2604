@@ -22,6 +22,8 @@ final class RecordingViewModel {
 
     /// 人物検索で相手の発話が足りないときの追加録音か。追加録音では操作を選ばせず、録音を処理状況画面へ返す。
     let isAdditional: Bool
+    /// ファイルアプリで選んだ音声ファイル。指定されていれば録音せずにこのファイルを取り込む。
+    let importedFileURL: URL?
 
     private(set) var recording: Recording?
     private(set) var isRecording = false
@@ -47,18 +49,21 @@ final class RecordingViewModel {
     @ObservationIgnored private var hasAppeared = false
     @ObservationIgnored private var interruptedWhileStarting = false
 
-    init(isAdditional: Bool = false) {
+    init(isAdditional: Bool = false, importedFileURL: URL? = nil) {
         self.isAdditional = isAdditional
+        self.importedFileURL = importedFileURL
     }
+
+    var isImported: Bool { importedFileURL != nil }
 
     func send(_ action: Action) {
         switch action {
         case .onAppear:
             guard !hasAppeared else { return }
             hasAppeared = true
-            start()
+            startOrImport()
         case .retryButtonTapped:
-            start()
+            startOrImport()
         case .stopButtonTapped:
             stop()
         case .registrationButtonTapped:
@@ -106,6 +111,26 @@ final class RecordingViewModel {
                         : "キャンセルできませんでした。もう一度お試しください。"
                 }
             }
+        }
+    }
+
+    private func startOrImport() {
+        if let importedFileURL {
+            importFile(importedFileURL)
+        } else {
+            start()
+        }
+    }
+
+    private func importFile(_ url: URL) {
+        guard recording == nil else { return }
+        errorMessage = nil
+        do {
+            let imported = try recordingService.importFile(url)
+            recording = imported
+            elapsedTime = imported.duration
+        } catch {
+            errorMessage = "音声ファイルを読み込めませんでした。別のファイルを選んでください。"
         }
     }
 

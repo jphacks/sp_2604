@@ -11,7 +11,8 @@ nonisolated extension FileSystemClient {
             contentsOfDirectory: { storage.children(of: $0) },
             removeItem: { try storage.remove($0) },
             readData: { storage.data(at: $0) },
-            writeData: { storage.write($0, to: $1) }
+            writeData: { storage.write($0, to: $1) },
+            copyItem: { storage.write(storage.data(at: $0) ?? Data(), to: $1) }
         )
     }
 }

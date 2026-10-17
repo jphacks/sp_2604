@@ -13,6 +13,8 @@ nonisolated struct FileSystemClient: Sendable {
     var readData: @Sendable (_ url: URL) throws -> Data?
     /// ファイルに書き込む。既にある場合は置き換える。
     var writeData: @Sendable (_ data: Data, _ url: URL) throws -> Void
+    /// ファイルをコピーする。コピー元がセキュリティスコープ付き URL (ファイルアプリで選んだファイルなど) でも読み出せる。
+    var copyItem: @Sendable (_ source: URL, _ destination: URL) throws -> Void
 }
 
 nonisolated extension FileSystemClient: DependencyKey {
@@ -25,7 +27,8 @@ nonisolated extension FileSystemClient: DependencyKey {
             contentsOfDirectory: impl.contentsOfDirectory(_:),
             removeItem: impl.removeItem(_:),
             readData: impl.readData(_:),
-            writeData: impl.writeData(_:to:)
+            writeData: impl.writeData(_:to:),
+            copyItem: impl.copyItem(_:to:)
         )
     }()
 
@@ -68,5 +71,11 @@ private nonisolated struct FileSystemClientImpl: Sendable {
 
     func writeData(_ data: Data, to url: URL) throws {
         try data.write(to: url, options: .atomic)
+    }
+
+    func copyItem(_ source: URL, to destination: URL) throws {
+        let isAccessing = source.startAccessingSecurityScopedResource()
+        defer { if isAccessing { source.stopAccessingSecurityScopedResource() } }
+        try FileManager.default.copyItem(at: source, to: destination)
     }
 }

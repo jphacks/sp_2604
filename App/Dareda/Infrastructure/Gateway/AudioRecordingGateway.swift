@@ -10,6 +10,8 @@ nonisolated struct AudioRecordingGateway: Sendable {
     var start: @Sendable () async throws -> Recording
     /// 録音を停止し、録音済みの長さを反映した `Recording` を返す。
     var stop: @Sendable (_ recording: Recording) -> Recording = { $0 }
+    /// 音声ファイルを録音と同じ一時領域へコピーし、録音として扱える `Recording` を返す。
+    var importFile: @Sendable (_ url: URL) throws -> Recording
     var elapsedTime: @Sendable () -> TimeInterval = { 0 }
     var discard: @Sendable (_ recording: Recording) throws -> Void
     var discardAll: @Sendable () throws -> Void
@@ -24,6 +26,7 @@ nonisolated extension AudioRecordingGateway: DependencyKey {
             requestPermission: impl.requestPermission,
             start: impl.start,
             stop: impl.stop(_:),
+            importFile: impl.importFile(_:),
             elapsedTime: impl.elapsedTime,
             discard: impl.discard(_:),
             discardAll: impl.discardAll,
@@ -41,6 +44,7 @@ nonisolated extension DependencyValues {
 
 private nonisolated struct AudioRecordingGatewayImpl: Sendable {
     @Dependency(\.audioRecorderClient) private var audioRecorderClient
+    @Dependency(\.audioFileClient) private var audioFileClient
     @Dependency(\.fileSystemClient) private var fileSystemClient
     @Dependency(\.date) private var date
     @Dependency(\.uuid) private var uuid
@@ -62,6 +66,22 @@ private nonisolated struct AudioRecordingGatewayImpl: Sendable {
         var recording = recording
         recording.duration = audioRecorderClient.stop()
         return recording
+    }
+
+    func importFile(_ url: URL) throws -> Recording {
+        // 元のファイルは残し、処理後に削除される一時領域のコピーを録音として扱う
+        let directory = fileSystemClient.temporaryDirectory().appending(path: "Recordings")
+        try fileSystemClient.createDirectory(directory)
+        let id = uuid()
+        let destination = directory.appending(path: "\(id.uuidString).\(url.pathExtension)")
+        try fileSystemClient.copyItem(url, destination)
+        do {
+            let duration = try audioFileClient.duration(destination)
+            return Recording(id: id, fileURL: destination, startedAt: date.now, duration: duration)
+        } catch {
+            try? fileSystemClient.removeItem(destination)
+            throw error
+        }
     }
 
     func elapsedTime() -> TimeInterval {

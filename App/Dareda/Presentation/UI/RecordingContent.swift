@@ -12,6 +12,7 @@ struct RecordingContent: View {
     let errorMessage: LocalizedStringResource?
     let isDiscardConfirmationPresented: Bool
     var isAdditional = false
+    var isImported = false
     let send: (RecordingViewModel.Action) -> Void
 
     private var hasRecording: Bool { recording != nil }
@@ -22,6 +23,7 @@ struct RecordingContent: View {
                 VStack(spacing: 28) {
                     RecordingStatusContent(
                         isRecording: isRecording, isStarting: isStarting, hasRecording: hasRecording,
+                        isImported: isImported,
                         elapsedTime: elapsedTime, wasInterrupted: wasInterrupted,
                         reachedLimit: reachedLimit, isOneMinuteRemaining: isOneMinuteRemaining
                     )
@@ -41,7 +43,7 @@ struct RecordingContent: View {
                         Text(errorMessage)
                             .foregroundStyle(.red)
                             .accessibilityIdentifier("recording.errorNotice")
-                        if !hasRecording {
+                        if !hasRecording, !isImported {
                             Button("もう一度録音する") { send(.retryButtonTapped) }
                                 .accessibilityIdentifier("recording.retryButton")
                         }
@@ -107,6 +109,7 @@ private struct RecordingStatusContent: View {
     let isRecording: Bool
     let isStarting: Bool
     let hasRecording: Bool
+    var isImported = false
     let elapsedTime: TimeInterval
     let wasInterrupted: Bool
     let reachedLimit: Bool
@@ -114,7 +117,7 @@ private struct RecordingStatusContent: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: isRecording ? "waveform" : "mic.fill")
+            Image(systemName: isRecording ? "waveform" : isImported ? "doc.fill" : "mic.fill")
                 .font(.largeTitle)
                 .foregroundStyle(isRecording ? .red : .primary)
                 .accessibilityHidden(true)
@@ -125,7 +128,10 @@ private struct RecordingStatusContent: View {
                     .font(.title2.bold())
                     .accessibilityIdentifier("recording.recordingNotice")
             } else if hasRecording {
-                Text("録音終了")
+                Text(isImported ? "音声ファイル" : "録音終了")
+                    .font(.title2.bold())
+            } else if isImported {
+                Text("音声ファイルを読み込めませんでした")
                     .font(.title2.bold())
             } else {
                 Text("録音を開始できませんでした")

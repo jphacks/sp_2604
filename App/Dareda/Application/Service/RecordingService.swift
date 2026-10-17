@@ -8,6 +8,8 @@ nonisolated struct RecordingService: Sendable {
     /// マイク権限を確認 (未決定なら要求) して録音を開始する。拒否済みなら `RecordingError.permissionDenied`。
     var start: @Sendable () async throws -> Recording
     var stop: @Sendable (_ recording: Recording) -> Recording = { $0 }
+    /// ファイルアプリで選んだ音声ファイルを録音として取り込む。
+    var importFile: @Sendable (_ url: URL) throws -> Recording
     /// 録音中のイベント (残り 1 分・上限到達による自動停止・中断) を流す。
     /// 上限到達・中断のイベントを流した時点で録音は停止済みで、ストリームは終了する。
     /// 呼び出し側が `Task` をキャンセルする (手動停止など) と監視も終了する。
@@ -24,6 +26,7 @@ nonisolated extension RecordingService: DependencyKey {
         return RecordingService(
             start: impl.start,
             stop: impl.stop(_:),
+            importFile: impl.importFile(_:),
             events: impl.events(for:),
             interruptions: impl.interruptions,
             discard: impl.discard(_:)
@@ -80,6 +83,16 @@ private nonisolated struct RecordingServiceImpl: Sendable {
         let stopped = audioRecordingGateway.stop(recording)
         Self.logger.info("Recording stopped")
         return stopped
+    }
+    func importFile(_ url: URL) throws -> Recording {
+        do {
+            let recording = try audioRecordingGateway.importFile(url)
+            Self.logger.info("Audio file imported")
+            return recording
+        } catch {
+            Self.logger.error("Audio file import failed", metadata: ["error_type": "\(type(of: error))"])
+            throw error
+        }
     }
     func discard(_ recording: Recording) throws { try audioRecordingGateway.discard(recording) }
     func interruptions() -> AsyncStream<Void> { audioRecordingGateway.interruptions() }

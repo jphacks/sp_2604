@@ -6,13 +6,16 @@ import DependenciesMacros
 nonisolated struct AudioFileClient: Sendable {
     /// 音声ファイルの先頭チャンネルを PCM サンプル (-1.0 ... 1.0) として読み出す
     var readSamples: @Sendable (_ url: URL) throws -> (sampleRate: Double, samples: [Float])
+    /// 音声ファイルの長さ (秒) を返す
+    var duration: @Sendable (_ url: URL) throws -> TimeInterval
 }
 
 nonisolated extension AudioFileClient: DependencyKey {
     static let liveValue: AudioFileClient = {
         let impl = AudioFileClientImpl()
         return AudioFileClient(
-            readSamples: impl.readSamples(url:)
+            readSamples: impl.readSamples(url:),
+            duration: impl.duration(url:)
         )
     }()
 
@@ -45,5 +48,10 @@ private nonisolated struct AudioFileClientImpl: Sendable {
         }
         let samples = Array(UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength)))
         return (format.sampleRate, samples)
+    }
+
+    func duration(url: URL) throws -> TimeInterval {
+        let file = try AVAudioFile(forReading: url)
+        return Double(file.length) / file.processingFormat.sampleRate
     }
 }
