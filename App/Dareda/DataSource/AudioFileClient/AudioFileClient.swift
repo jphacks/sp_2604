@@ -33,6 +33,9 @@ nonisolated extension DependencyValues {
 
 private nonisolated struct AudioFileClientImpl: Sendable {
     func readSamples(url: URL) throws -> (sampleRate: Double, samples: [Float]) {
+        // ファイルアプリから選んだ URL はセキュリティスコープ外のため、読み出しの間だけアクセス権を得る
+        let isAccessing = url.startAccessingSecurityScopedResource()
+        defer { if isAccessing { url.stopAccessingSecurityScopedResource() } }
         let file = try AVAudioFile(forReading: url)
         let format = file.processingFormat
         let frameCount = AVAudioFrameCount(file.length)
