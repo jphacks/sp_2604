@@ -4,9 +4,9 @@ import Foundation
 
 @DependencyClient
 nonisolated struct SpeechQualityService: Sendable {
-    /// 無音を除いた有効発話時間を算出し、音量不足・音割れを判定する
+    /// 無音を除いた有効発話時間を算出する
     var analyze: @Sendable (_ audio: AudioSamples, _ thresholds: SpeechQualityThresholds) -> SpeechQuality = { _, _ in
-        SpeechQuality(effectiveSpeechDuration: 0, issues: [])
+        SpeechQuality(effectiveSpeechDuration: 0)
     }
 }
 
@@ -31,8 +31,6 @@ private nonisolated struct SpeechQualityServiceImpl: Sendable {
         let frameLength = max(1, Int(audio.sampleRate * thresholds.frameDuration))
 
         var speechFrameCount = 0
-        var speechLevelSum: Float = 0
-        var clippedSampleCount = 0
 
         var start = 0
         while start < audio.samples.count {
@@ -40,32 +38,17 @@ private nonisolated struct SpeechQualityServiceImpl: Sendable {
             var squareSum: Float = 0
             for sample in audio.samples[start..<end] {
                 squareSum += sample * sample
-                if abs(sample) >= thresholds.clippingSampleLevel {
-                    clippedSampleCount += 1
-                }
             }
             let rms = (squareSum / Float(end - start)).squareRoot()
             let levelDB = 20 * log10(max(rms, 1e-9))
             if levelDB >= thresholds.speechThresholdDB {
                 speechFrameCount += 1
-                speechLevelSum += levelDB
             }
             start = end
         }
 
-        var issues: Set<SpeechQualityIssue> = []
-        if speechFrameCount == 0 || speechLevelSum / Float(speechFrameCount) < thresholds.minimumSpeechLevelDB {
-            issues.insert(.tooQuiet)
-        }
-        if !audio.samples.isEmpty,
-            Float(clippedSampleCount) / Float(audio.samples.count) >= thresholds.clippingRatio
-        {
-            issues.insert(.clipping)
-        }
-
         return SpeechQuality(
-            effectiveSpeechDuration: Double(speechFrameCount) * thresholds.frameDuration,
-            issues: issues
+            effectiveSpeechDuration: Double(speechFrameCount) * thresholds.frameDuration
         )
     }
 }

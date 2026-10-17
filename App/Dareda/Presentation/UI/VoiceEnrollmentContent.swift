@@ -106,10 +106,6 @@ struct VoiceEnrollmentContent: View {
             "マイクの使用が許可されていません。設定アプリでマイクへのアクセスを許可してください。"
         case let .insufficientSpeech(duration):
             "声が十分に録音できませんでした (\(Int(duration))秒)。文章を最後まで読んで、\(Int(ProvisionalParameters.selfVoiceRequiredSpeechDuration))秒以上話してください。"
-        case let .poorQuality(issues):
-            issues.contains(.clipping)
-                ? "音が割れています。マイクから少し離れて、もう一度録音してください。"
-                : "声が小さすぎます。静かな場所で、もう少し大きな声で録音してください。"
         case .unexpected:
             "登録に失敗しました。もう一度お試しください。"
         }

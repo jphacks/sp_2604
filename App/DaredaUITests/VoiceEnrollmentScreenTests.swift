@@ -55,15 +55,6 @@ final class VoiceEnrollmentScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test音量不足なら再録音を促す() {
-        let app = launch(scenario: "voiceEnrollmentQuiet")
-        recordAndStop(app)
-
-        XCTAssertTrue(app.staticTexts["voiceEnrollment.failure"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["voiceEnrollment.recordButton"].exists)
-    }
-
-    @MainActor
     func test有効発話が30秒をわずかに下回ると再録音を促す() {
         let app = launch(scenario: "voiceEnrollmentJustBelowRequired")
         recordAndStop(app)

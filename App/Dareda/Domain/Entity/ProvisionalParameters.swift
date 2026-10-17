@@ -16,12 +16,9 @@ nonisolated enum ProvisionalParameters {
     static let personSearchCandidateLimit = 5
     /// 話者ベクトルを生成できる音声の最短長 (秒)。
     static let speakerEmbeddingMinimumDuration: TimeInterval = 0.5
-    /// 有効発話検出と音声品質判定 (#7) の基準。
+    /// 有効発話検出 (#7) の基準。
     static let speechQuality = SpeechQualityThresholds(
         frameDuration: 0.02,
-        speechThresholdDB: -40,
-        minimumSpeechLevelDB: -30,
-        clippingSampleLevel: 0.99,
-        clippingRatio: 0.001
+        speechThresholdDB: -40
     )
 }

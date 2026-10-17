@@ -16,7 +16,6 @@ final class VoiceEnrollmentViewModel {
     enum Failure: Equatable {
         case permissionDenied
         case insufficientSpeech(TimeInterval)
-        case poorQuality(Set<SpeechQualityIssue>)
         case unexpected
     }
 
@@ -96,8 +95,6 @@ final class VoiceEnrollmentViewModel {
             isCompleted = true
         } catch let SelfVoiceRegistrationError.insufficientSpeech(duration) {
             failure = .insufficientSpeech(duration)
-        } catch let SelfVoiceRegistrationError.poorQuality(issues) {
-            failure = .poorQuality(issues)
         } catch {
             failure = .unexpected
         }
