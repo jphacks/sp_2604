@@ -6,6 +6,8 @@
 
 import XCTest
 import SwiftUI
+import Dependencies
+import SQLiteData
 import Prefire
 {% if argument.mainTarget %}
 @testable import {{ argument.mainTarget }}
@@ -24,6 +26,16 @@ import SnapshotTesting
             UITraitCollection(verticalSizeClass: .regular),
         ])
     )
+
+    // Content が Screen を内包する場合に備え、Xcode の Preview と同じく DataSource の previewValue で依存を解決する。
+    override func invokeTest() {
+        withDependencies {
+            $0.context = .preview
+            $0.defaultDatabase = try! appDatabase(inMemory: true)
+        } operation: {
+            super.invokeTest()
+        }
+    }
 
     override func setUp() async throws {
         try await super.setUp()
