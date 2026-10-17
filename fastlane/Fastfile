@@ -79,7 +79,7 @@ platform :ios do
     )
 
     notify_slack(
-      release: lane_context[SharedValues::FIREBASE_APP_DISTRIBUTION_RELEASE],
+      release: lane_context[SharedValues::FIREBASE_APP_DISTRO_RELEASE],
       build_number: build_number,
     )
   end
