@@ -1,7 +1,18 @@
 import Dependencies
 import FoundationModels
+import Logging
 import SQLiteData
 import SwiftUI
+
+LoggingSystem.bootstrap { label in
+    var handler = StreamLogHandler.standardError(label: label)
+    #if DEBUG
+        handler.logLevel = .debug
+    #else
+        handler.logLevel = .info
+    #endif
+    return handler
+}
 
 let scenario = ProcessInfo.processInfo.environment["UI_TEST_SCENARIO"]
 
