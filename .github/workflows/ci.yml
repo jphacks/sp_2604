@@ -58,6 +58,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # reg-keygen-git-hash-plugin はブランチ名を必要とするため、PR では merge commit (detached HEAD) ではなく head ブランチをチェックアウトする
+          ref: ${{ github.head_ref || github.ref_name }}
           # reg-keygen-git-hash-plugin が比較対象のコミットを探すため、履歴を全て取得する
           fetch-depth: 0
 
