@@ -20,7 +20,7 @@ prepareDependencies {
         $0.fileSystemClient = .inMemory()
         $0.speakerEmbeddingModelClient = .stub()
         switch scenario {
-        case "voiceEnrollmentShort":
+        case "voiceEnrollmentShort", "voiceReregistrationShort":
             $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
         case "voiceEnrollmentQuiet":
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.005)

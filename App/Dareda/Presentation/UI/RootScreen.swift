@@ -11,6 +11,7 @@ struct RootScreen: View {
             availability: viewModel.availability,
             isProfileListPresented: viewModel.isProfileListPresented,
             isPrivateCloudComputeSettingsPresented: viewModel.isPrivateCloudComputeSettingsPresented,
+            isSettingsPresented: viewModel.isSettingsPresented,
             isRecordingPresented: viewModel.isRecordingPresented,
             isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,
             isPreparedForRecording: viewModel.isPreparedForRecording,
