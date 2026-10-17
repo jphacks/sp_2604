@@ -58,22 +58,23 @@ struct RecordingContent: View {
                     Button(role: .cancel) { send(.discardButtonTapped) }
                         .disabled(isStarting)
                         .accessibilityIdentifier("recording.discardButton")
+                        // iPad ではポップオーバーの起点になるため、トリガーのボタンに付ける
+                        .confirmationDialog(
+                            "録音を破棄しますか？",
+                            isPresented: Binding(
+                                get: { isDiscardConfirmationPresented && selectedMode == nil },
+                                set: { send(.discardConfirmationChanged($0)) }
+                            ),
+                            titleVisibility: .visible
+                        ) {
+                            Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
+                                .accessibilityIdentifier("recording.confirmDiscardButton")
+                            Button("破棄しない", role: .cancel) { send(.discardConfirmationChanged(false)) }
+                                .accessibilityIdentifier("recording.cancelDiscardButton")
+                        } message: {
+                            Text("この録音は削除されます。")
+                        }
                 }
-            }
-            .confirmationDialog(
-                "録音を破棄しますか？",
-                isPresented: Binding(
-                    get: { isDiscardConfirmationPresented && selectedMode == nil },
-                    set: { send(.discardConfirmationChanged($0)) }
-                ),
-                titleVisibility: .visible
-            ) {
-                Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
-                    .accessibilityIdentifier("recording.confirmDiscardButton")
-                Button("破棄しない", role: .cancel) { send(.discardConfirmationChanged(false)) }
-                    .accessibilityIdentifier("recording.cancelDiscardButton")
-            } message: {
-                Text("この録音は削除されます。")
             }
             .sheet(isPresented: Binding(
                 get: { isDiscardConfirmationPresented && selectedMode != nil },
