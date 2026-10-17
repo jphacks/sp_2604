@@ -28,6 +28,7 @@ prepareDependencies {
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
         }
         $0.appSettingsClient = .inMemory()
+        $0.userDefaultsClient = .inMemory()
         if scenario == "recordingCleanupFailure" {
             let client = FileSystemClient.inMemory(removeFailures: 1)
             try! client.createDirectory(client.temporaryDirectory().appending(path: "Recordings"))
