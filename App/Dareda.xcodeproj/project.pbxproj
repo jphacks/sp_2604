@@ -13,6 +13,7 @@
 		A90000000000000000000003 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000002 /* FluidAudio */; };
 		B1000000000000000000000B /* Prefire in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000021 /* Prefire */; };
 		B1000000000000000000000C /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000022 /* SnapshotTesting */; };
+		AB0000000000000000000003 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = AB0000000000000000000002 /* Logging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +74,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				AB0000000000000000000003 /* Logging in Frameworks */,
 				A30000000000000000000011 /* Dependencies in Frameworks */,
 				A30000000000000000000012 /* DependenciesMacros in Frameworks */,
 				A00000000000000000000023 /* SQLiteData in Frameworks */,
@@ -132,6 +134,7 @@
 			);
 			name = Dareda;
 			packageProductDependencies = (
+				AB0000000000000000000002 /* Logging */,
 				A30000000000000000000021 /* Dependencies */,
 				A30000000000000000000022 /* DependenciesMacros */,
 				A00000000000000000000013 /* SQLiteData */,
@@ -221,6 +224,7 @@
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */,
 				A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */,
 				A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */,
@@ -703,6 +707,14 @@
 				minimumVersion = 1.19.5;
 			};
 		};
+		AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -740,6 +752,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */;
 			productName = "plugin:PrefireTestsPlugin";
+		};
+		AB0000000000000000000002 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = Logging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

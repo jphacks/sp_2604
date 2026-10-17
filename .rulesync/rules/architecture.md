@@ -235,6 +235,14 @@ struct ProfileContent: View {
 - ServiceModel は Domain Entity と同じく `nonisolated struct` + `Sendable` + `Equatable` にする。
 - DataSource を直接呼ばない。必ず Repository / Gateway を経由する。
 
+### ログ
+
+- Application の UseCase / Service の実装で `import Logging` し、swift-log の `Logger` を直接使う。ログ用途の Logger は DI の例外とし、ラッパの Service / Gateway / Client は作らない。
+- Logger の label は `Dareda.<型名>` とする。出力先と最低レベルは `main.swift` で設定する (標準エラー出力、Debug は debug 以上、Release は info 以上)。
+- 主要処理の開始・完了は `info`、想定内の拒否や追加入力が必要な結果は `notice`、回復可能な後処理の失敗は `warning`、処理失敗は `error`、キャッシュ利用やキャンセルは `debug` にする。
+- エラーはログ後も呼び出し元へ返す。ログには処理名・件数・エラー型などの診断情報だけを含め、氏名・会話本文・音声・ベクトル・ファイルパス・エラーの説明文を含めない。
+- 実機検証用の MetricsGateway / MetricsLogClient による計測と signpost は引き続き利用する。
+
 ---
 
 ## Domain
