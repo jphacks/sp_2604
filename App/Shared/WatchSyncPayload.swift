@@ -12,8 +12,18 @@ nonisolated enum WatchSyncKey {
     static let command = "command"
     /// 録音ファイルのメタデータに入れる、録音を開始した時刻 (`timeIntervalSince1970`)。
     static let startedAt = "startedAt"
-    /// 録音ファイルのメタデータに入れる、人物検索の追加録音かどうか (`Bool`)。
-    static let isAdditional = "isAdditional"
+    /// 録音ファイルのメタデータに入れる、録音の用途 (`WatchRecordingKind` の rawValue)。
+    static let kind = "kind"
+}
+
+/// Apple Watch で録音した音声の用途。
+nonisolated enum WatchRecordingKind: String, Codable, Sendable {
+    /// 会話の録音。人物検索から始める。
+    case conversation
+    /// 人物検索で相手の発話が足りないときの追加録音。
+    case additional
+    /// 本人の声の登録・再登録。
+    case selfVoice
 }
 
 /// iPhone の状態を Apple Watch に表示するためのスナップショット。
@@ -23,8 +33,46 @@ nonisolated struct WatchSnapshot: Codable, Sendable, Equatable {
     var isRecordingAvailable: Bool
     /// iPhone で処理中の録音の状況。処理していなければ `nil`。
     var processing: WatchProcessingState?
+    var settings: WatchSettings = WatchSettings()
 
     static let empty = WatchSnapshot(profiles: [], isRecordingAvailable: false, processing: nil)
+}
+
+/// 設定画面と本人の声の登録に使う状態。
+nonisolated struct WatchSettings: Codable, Sendable, Equatable {
+    /// 本人の声を登録した日時。未登録なら `nil`。
+    var selfVoiceRegisteredAt: Date?
+    var selfVoiceEnrollment: WatchSelfVoiceEnrollmentState?
+    var isPrivateCloudComputeEnabled = false
+    var appVersion: String?
+}
+
+nonisolated enum WatchSelfVoiceEnrollmentState: Codable, Sendable, Equatable {
+    case processing
+    case completed
+    case failed(message: String)
+}
+
+nonisolated struct WatchSpeaker: Codable, Sendable, Equatable, Identifiable {
+    var id: String
+    /// この話者の発言 (発話順)。本人かどうかを見分けるために表示する。
+    var speeches: [String]
+}
+
+nonisolated struct WatchPlace: Codable, Sendable, Hashable {
+    var name: String
+    var latitude: Double
+    var longitude: Double
+}
+
+/// 新規登録の入力の初期値。
+nonisolated struct WatchRegistrationDraft: Codable, Sendable, Equatable {
+    var summary: String
+    var metAt: Date
+    /// Apple Watch で入力した場所の検索結果。
+    var placeCandidates: [WatchPlace]
+    /// 保存に失敗したときのメッセージ。
+    var errorMessage: String?
 }
 
 nonisolated struct WatchProfile: Codable, Sendable, Equatable, Identifiable {
@@ -43,7 +91,11 @@ nonisolated enum WatchProcessingState: Codable, Sendable, Equatable {
     case candidates([WatchProfile])
     /// 相手の発話が足りないため、追加録音が必要。
     case needsAdditionalRecording
-    /// 本人の選択や新規登録の入力など、iPhone での操作が必要。
+    /// 本人を自動判定できなかった。話者ごとの発言から本人を選ぶ。
+    case selectSelf([WatchSpeaker])
+    /// 新規登録の入力待ち。
+    case registration(WatchRegistrationDraft)
+    /// バックグラウンドで打ち切られた処理の再開など、iPhone での操作が必要。
     case needsInputOnPhone
     case failed(message: String)
     /// 人物を確定した、または新規登録した。
@@ -62,6 +114,17 @@ nonisolated enum WatchCommand: Codable, Sendable, Equatable {
     case selectCandidate(UUID)
     /// 処理中の録音をキャンセルする。
     case cancelProcessing
+    /// 失敗した処理を再試行する。
+    case retryProcessing
+    /// 本人の話者を選ぶ。
+    case selectSelf(String)
+    /// 人物検索で「該当なし」を選び、新規登録に進む。
+    case startNewRegistration
+    /// 新規登録の場所を検索する。
+    case searchPlaces(String)
+    /// 新規登録を保存する。
+    case register(name: String, affiliation: String, summary: String, place: WatchPlace?)
+    case setPrivateCloudComputeEnabled(Bool)
     /// 最新のスナップショットを求める。
     case requestSnapshot
 }

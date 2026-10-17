@@ -1,11 +1,10 @@
 import SwiftUI
 
-/// iPhone で処理中の録音の状況。人物検索の候補はここから確定できる。
+/// iPhone で処理中の録音の状況。候補の確定・本人の選択・新規登録もここから行える。
 struct ProcessingSection: View {
     let state: WatchProcessingState
     let additionalRecordTapped: () -> Void
-    let candidateSelected: (UUID) -> Void
-    let cancelTapped: () -> Void
+    let send: (WatchCommand) -> Void
 
     var body: some View {
         switch state {
@@ -21,19 +20,21 @@ struct ProcessingSection: View {
         case let .candidates(candidates):
             Section {
                 if candidates.isEmpty {
-                    Text("該当する人が見つかりませんでした。新規登録は iPhone で行えます。")
+                    Text("該当する人が見つかりませんでした")
                 }
                 ForEach(candidates) { candidate in
-                    Button { candidateSelected(candidate.id) } label: {
+                    Button { send(.selectCandidate(candidate.id)) } label: {
                         ProfileRow(profile: candidate)
                     }
                     .accessibilityIdentifier("watch.candidate")
                 }
+                Button { send(.startNewRegistration) } label: {
+                    Label("該当なし・新規登録", systemImage: "person.badge.plus")
+                }
+                .accessibilityIdentifier("watch.newRegistrationButton")
                 cancelButton
             } header: {
                 Text("この人ですか?")
-            } footer: {
-                Text("該当しない場合は iPhone で新規登録できます")
             }
         case .needsAdditionalRecording:
             Section {
@@ -43,6 +44,31 @@ struct ProcessingSection: View {
                 }
                 cancelButton
             }
+        case let .selectSelf(speakers):
+            Section {
+                ForEach(speakers) { speaker in
+                    Button { send(.selectSelf(speaker.id)) } label: {
+                        Text(speaker.speeches.prefix(2).joined(separator: "\n"))
+                            .lineLimit(4)
+                    }
+                    .accessibilityIdentifier("watch.speaker")
+                }
+                cancelButton
+            } header: {
+                Text("あなたの発言はどれですか?")
+            }
+        case let .registration(draft):
+            Section {
+                NavigationLink {
+                    RegistrationScreen(draft: draft, send: send)
+                } label: {
+                    Label("新規登録", systemImage: "person.badge.plus")
+                }
+                .accessibilityIdentifier("watch.registrationLink")
+                cancelButton
+            } header: {
+                Text("新しい人を登録")
+            }
         case .needsInputOnPhone:
             Section {
                 Label("iPhone で続きの操作をしてください", systemImage: "iphone")
@@ -50,6 +76,11 @@ struct ProcessingSection: View {
         case let .failed(message):
             Section {
                 Label(message, systemImage: "exclamationmark.triangle")
+                Button { send(.retryProcessing) } label: {
+                    Label("再試行", systemImage: "arrow.clockwise")
+                }
+                .accessibilityIdentifier("watch.retryButton")
+                cancelButton
             }
         case let .completed(profile):
             Section {
@@ -65,7 +96,7 @@ struct ProcessingSection: View {
     }
 
     private var cancelButton: some View {
-        Button("キャンセル", role: .destructive, action: cancelTapped)
+        Button("キャンセル", role: .destructive) { send(.cancelProcessing) }
     }
 }
 

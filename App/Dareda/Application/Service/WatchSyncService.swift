@@ -14,6 +14,7 @@ nonisolated struct WatchSyncService: Sendable {
     var updateRecordingAvailability: @Sendable (_ isAvailable: Bool) -> Void
     /// 処理状況を送る。処理を終えたら `nil` を渡す。
     var updateProcessing: @Sendable (_ state: WatchProcessingState?) -> Void
+    var updateSettings: @Sendable (_ change: @escaping @Sendable (inout WatchSettings) -> Void) -> Void
     var recordings: @Sendable () -> AsyncStream<WatchRecording> = { AsyncStream { $0.finish() } }
     var commands: @Sendable () -> AsyncStream<WatchCommand> = { AsyncStream { $0.finish() } }
 }
@@ -26,6 +27,7 @@ nonisolated extension WatchSyncService: DependencyKey {
             syncProfiles: impl.syncProfiles,
             updateRecordingAvailability: impl.updateRecordingAvailability(_:),
             updateProcessing: impl.updateProcessing(_:),
+            updateSettings: impl.updateSettings(_:),
             recordings: impl.recordings,
             commands: impl.commands
         )
@@ -36,6 +38,7 @@ nonisolated extension WatchSyncService: DependencyKey {
         syncProfiles: {},
         updateRecordingAvailability: { _ in },
         updateProcessing: { _ in },
+        updateSettings: { _ in },
         recordings: { AsyncStream { $0.finish() } },
         commands: { AsyncStream { $0.finish() } }
     )
@@ -96,6 +99,10 @@ private nonisolated struct WatchSyncServiceImpl: Sendable {
 
     func updateProcessing(_ state: WatchProcessingState?) {
         update { $0.processing = state }
+    }
+
+    func updateSettings(_ change: @escaping @Sendable (inout WatchSettings) -> Void) {
+        update { change(&$0.settings) }
     }
 
     func recordings() -> AsyncStream<WatchRecording> { watchSyncGateway.recordings() }

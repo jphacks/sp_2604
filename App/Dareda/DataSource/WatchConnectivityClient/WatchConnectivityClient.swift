@@ -20,7 +20,7 @@ nonisolated extension WatchConnectivityClient {
     struct ReceivedFile: Sendable, Equatable {
         var url: URL
         var startedAt: Date?
-        var isAdditional: Bool
+        var kind: WatchRecordingKind
     }
 }
 
@@ -106,8 +106,8 @@ private nonisolated final class WatchSessionDelegate: NSObject, WCSessionDelegat
             return
         }
         let startedAt = (file.metadata?[WatchSyncKey.startedAt] as? TimeInterval).map(Date.init(timeIntervalSince1970:))
-        let isAdditional = file.metadata?[WatchSyncKey.isAdditional] as? Bool ?? false
-        files.yield(WatchConnectivityClient.ReceivedFile(url: destination, startedAt: startedAt, isAdditional: isAdditional))
+        let kind = (file.metadata?[WatchSyncKey.kind] as? String).flatMap(WatchRecordingKind.init(rawValue:)) ?? .conversation
+        files.yield(WatchConnectivityClient.ReceivedFile(url: destination, startedAt: startedAt, kind: kind))
     }
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {

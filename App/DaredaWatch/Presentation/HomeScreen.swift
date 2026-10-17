@@ -5,19 +5,33 @@ struct HomeScreen: View {
     @Environment(PhoneSession.self) private var phoneSession
     @Environment(WatchRecorder.self) private var recorder
     @State private var isRecordingPresented = false
-    @State private var isAdditionalRecording = false
 
     var body: some View {
         NavigationStack {
             HomeContent(
                 snapshot: phoneSession.snapshot,
                 pendingTransferCount: phoneSession.pendingTransferCount,
-                recordTapped: { startRecording(isAdditional: false) },
-                additionalRecordTapped: { startRecording(isAdditional: true) },
-                candidateSelected: { phoneSession.send(.selectCandidate($0)) },
-                cancelTapped: { phoneSession.send(.cancelProcessing) }
+                recordTapped: { startRecording(.conversation) },
+                selfVoiceRecordTapped: { startRecording(.selfVoice) },
+                processingSection: { state in
+                    ProcessingSection(
+                        state: state,
+                        additionalRecordTapped: { startRecording(.additional) },
+                        send: phoneSession.send
+                    )
+                }
             )
             .navigationDestination(for: WatchProfile.self) { ProfileDetailContent(profile: $0) }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SettingsScreen(selfVoiceRecordTapped: { startRecording(.selfVoice) })
+                    } label: {
+                        Label("設定", systemImage: "gearshape")
+                    }
+                    .accessibilityIdentifier("watch.settingsButton")
+                }
+            }
         }
         .fullScreenCover(isPresented: $isRecordingPresented) {
             RecordingScreen()
@@ -35,27 +49,32 @@ struct HomeScreen: View {
         }
     }
 
-    private func startRecording(isAdditional: Bool) {
+    private func startRecording(_ kind: WatchRecordingKind) {
         Task {
             await recorder.start { url, startedAt in
                 // 録音は iPhone に送り、文字起こし以降の処理は iPhone で行う
-                phoneSession.transferRecording(url, startedAt: startedAt, isAdditional: isAdditional)
+                phoneSession.transferRecording(url, startedAt: startedAt, kind: kind)
             }
             isRecordingPresented = recorder.isRecording
         }
     }
 }
 
-struct HomeContent: View {
+struct HomeContent<Processing: View>: View {
     let snapshot: WatchSnapshot
     let pendingTransferCount: Int
     let recordTapped: () -> Void
-    let additionalRecordTapped: () -> Void
-    let candidateSelected: (UUID) -> Void
-    let cancelTapped: () -> Void
+    let selfVoiceRecordTapped: () -> Void
+    @ViewBuilder let processingSection: (WatchProcessingState) -> Processing
 
     var body: some View {
         List {
+            if snapshot.settings.selfVoiceRegisteredAt == nil {
+                SelfVoiceEnrollmentSection(
+                    enrollment: snapshot.settings.selfVoiceEnrollment,
+                    recordTapped: selfVoiceRecordTapped
+                )
+            }
             Section {
                 Button(action: recordTapped) {
                     Label("録音", systemImage: "mic.fill")
@@ -71,12 +90,7 @@ struct HomeContent: View {
             }
 
             if let processing = snapshot.processing {
-                ProcessingSection(
-                    state: processing,
-                    additionalRecordTapped: additionalRecordTapped,
-                    candidateSelected: candidateSelected,
-                    cancelTapped: cancelTapped
-                )
+                processingSection(processing)
             }
 
             Section("会った人") {
@@ -132,9 +146,8 @@ extension WatchProfile: Hashable {
             ),
             pendingTransferCount: 0,
             recordTapped: {},
-            additionalRecordTapped: {},
-            candidateSelected: { _ in },
-            cancelTapped: {}
+            selfVoiceRecordTapped: {},
+            processingSection: { ProcessingSection(state: $0, additionalRecordTapped: {}, send: { _ in }) }
         )
     }
 }
@@ -149,9 +162,8 @@ extension WatchProfile: Hashable {
             ),
             pendingTransferCount: 0,
             recordTapped: {},
-            additionalRecordTapped: {},
-            candidateSelected: { _ in },
-            cancelTapped: {}
+            selfVoiceRecordTapped: {},
+            processingSection: { ProcessingSection(state: $0, additionalRecordTapped: {}, send: { _ in }) }
         )
     }
 }

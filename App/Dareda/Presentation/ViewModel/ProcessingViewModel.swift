@@ -62,6 +62,13 @@ final class ProcessingViewModel {
     @ObservationIgnored @Dependency(\.fetchProfilesUseCase) private var fetchProfilesUseCase
     @ObservationIgnored @Dependency(\.watchSyncService) private var watchSyncService
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
+    @ObservationIgnored @Dependency(\.registerProfileUseCase) private var registerProfileUseCase
+    @ObservationIgnored @Dependency(\.searchPlacesUseCase) private var searchPlacesUseCase
+    /// Apple Watch で入力した場所の検索結果。
+    private var watchPlaceCandidates: [Place] = []
+    /// Apple Watch からの新規登録の保存に失敗したときのメッセージ。
+    private var watchRegistrationErrorMessage: String?
+    @ObservationIgnored private var isRegisteringFromWatch = false
     @ObservationIgnored private let recording: Recording
     @ObservationIgnored private var session: ProcessingSession?
     /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
@@ -187,12 +194,24 @@ final class ProcessingViewModel {
     private var watchState: WatchProcessingState? {
         if isFinished {
             guard let registeredProfileID else { return nil }
-            return .completed(searchCandidates?.first { $0.profile.id == registeredProfileID }.map(WatchProfile.init))
+            let profile = searchCandidates?.first { $0.profile.id == registeredProfileID }.map(WatchProfile.init)
+            return .completed(profile)
         }
         if let errorMessage { return .failed(message: String(localized: errorMessage)) }
-        if selfSelectionAnalysis != nil || registrationSource != nil || isSuspended || isManualSelectionPresented {
-            return .needsInputOnPhone
+        if let selfSelectionAnalysis {
+            return .selectSelf(selfSelectionAnalysis.speakers.map { speaker in
+                WatchSpeaker(id: speaker.id, speeches: selfSelectionAnalysis.speeches(of: speaker.id).map(\.text))
+            })
         }
+        if let registrationSource {
+            return .registration(WatchRegistrationDraft(
+                summary: registrationSource.summary,
+                metAt: registrationSource.recording.startedAt,
+                placeCandidates: watchPlaceCandidates.map(WatchPlace.init),
+                errorMessage: watchRegistrationErrorMessage
+            ))
+        }
+        if isSuspended || isManualSelectionPresented { return .needsInputOnPhone }
         if insufficientPartnerSpeechDuration != nil { return .needsAdditionalRecording }
         if isCompleted, let searchCandidates { return .candidates(searchCandidates.map(WatchProfile.init)) }
         return .processing(WatchProcessingStage(currentStage ?? .transcribing))
@@ -218,6 +237,20 @@ final class ProcessingViewModel {
                     self.confirm(profileID)
                 case .cancelProcessing:
                     self.send(.cancelConfirmed)
+                case .retryProcessing:
+                    self.send(.retryButtonTapped)
+                case let .selectSelf(speakerID):
+                    self.send(.selfSpeakerSelected(speakerID))
+                case .startNewRegistration:
+                    guard self.searchCandidates != nil || self.insufficientPartnerSpeechDuration != nil else { continue }
+                    self.send(.newRegistrationButtonTapped)
+                case let .searchPlaces(query):
+                    // 失敗しても入力し直す以外にできることがないため、候補を空にする
+                    self.watchPlaceCandidates = (try? await self.searchPlacesUseCase.execute(query)) ?? []
+                case let .register(name, affiliation, summary, place):
+                    await self.registerFromWatch(name: name, affiliation: affiliation, summary: summary, place: place)
+                case .setPrivateCloudComputeEnabled:
+                    break
                 case .requestSnapshot:
                     self.watchSyncService.updateProcessing(self.watchState)
                 }
@@ -225,7 +258,7 @@ final class ProcessingViewModel {
         }
         let recordings = watchSyncService.recordings()
         Task { [weak self] in
-            for await recording in recordings where recording.isAdditional {
+            for await recording in recordings where recording.kind == .additional {
                 guard let self, !self.isFinished, self.insufficientPartnerSpeechDuration != nil else { continue }
                 // ファイルアプリの音声ファイルと同じように取り込み、iPhone で追加録音したときと同様に処理する
                 guard let added = try? self.recordingService.importFile(recording.fileURL) else {
@@ -234,6 +267,26 @@ final class ProcessingViewModel {
                 }
                 self.send(.additionalRecordingAdded(added))
             }
+        }
+    }
+
+    /// Apple Watch で入力した内容で新規登録を保存する。iPhone の入力画面と同じ処理で保存する。
+    private func registerFromWatch(name: String, affiliation: String, summary: String, place: WatchPlace?) async {
+        guard let registrationSource, !isRegisteringFromWatch,
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return }
+        isRegisteringFromWatch = true
+        defer { isRegisteringFromWatch = false }
+        watchRegistrationErrorMessage = nil
+        do {
+            let profileID = try await registerProfileUseCase.execute(
+                name, affiliation, registrationSource.recording.startedAt,
+                place.map { Place(name: $0.name, latitude: $0.latitude, longitude: $0.longitude) },
+                summary, registrationSource.partnerVector, registrationSource.recording, registrationSource.session
+            )
+            send(.registrationSaved(profileID))
+        } catch {
+            watchRegistrationErrorMessage = String(localized: "保存できませんでした。もう一度お試しください。")
         }
     }
 
@@ -448,5 +501,11 @@ private extension WatchProcessingStage {
         case .identifyingSpeakers: self = .identifyingSpeakers
         case .summarizing: self = .summarizing
         }
+    }
+}
+
+private extension WatchPlace {
+    init(_ place: Place) {
+        self.init(name: place.name, latitude: place.latitude, longitude: place.longitude)
     }
 }

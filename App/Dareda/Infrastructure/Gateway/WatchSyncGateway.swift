@@ -16,8 +16,7 @@ nonisolated struct WatchSyncGateway: Sendable {
 nonisolated struct WatchRecording: Sendable, Equatable {
     var fileURL: URL
     var startedAt: Date?
-    /// 人物検索で相手の発話が足りないときの追加録音か。
-    var isAdditional: Bool
+    var kind: WatchRecordingKind
 }
 
 nonisolated extension WatchSyncGateway: DependencyKey {
@@ -31,7 +30,7 @@ nonisolated extension WatchSyncGateway: DependencyKey {
                 return AsyncStream { continuation in
                     let task = Task {
                         for await file in files {
-                            continuation.yield(WatchRecording(fileURL: file.url, startedAt: file.startedAt, isAdditional: file.isAdditional))
+                            continuation.yield(WatchRecording(fileURL: file.url, startedAt: file.startedAt, kind: file.kind))
                         }
                         continuation.finish()
                     }

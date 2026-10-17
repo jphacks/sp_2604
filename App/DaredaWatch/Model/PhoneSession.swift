@@ -26,10 +26,10 @@ final class PhoneSession: NSObject {
     }
 
     /// 録音したファイルを iPhone に送る。iPhone が近くになくても、つながったときに届く。
-    func transferRecording(_ url: URL, startedAt: Date, isAdditional: Bool) {
+    func transferRecording(_ url: URL, startedAt: Date, kind: WatchRecordingKind) {
         session.transferFile(url, metadata: [
             WatchSyncKey.startedAt: startedAt.timeIntervalSince1970,
-            WatchSyncKey.isAdditional: isAdditional,
+            WatchSyncKey.kind: kind.rawValue,
         ])
         pendingTransferCount = session.outstandingFileTransfers.count
     }
