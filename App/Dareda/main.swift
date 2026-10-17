@@ -12,6 +12,25 @@ prepareDependencies {
             try! seedProfilesScenario(database)
         }
         $0.defaultDatabase = database
+        $0.audioRecorderClient = .inMemory()
+        $0.appSettingsClient = .inMemory()
+        switch scenario {
+        case "microphoneGranted":
+            $0.audioRecorderClient = .inMemory(permissions: [.granted], permissionAfterRequest: false)
+        case "microphoneUndeterminedGranted":
+            $0.audioRecorderClient = .inMemory(permissions: [.undetermined])
+        case "microphoneUndeterminedDenied":
+            $0.audioRecorderClient = .inMemory(permissions: [.undetermined], permissionAfterRequest: false)
+        case "microphoneDenied", "settingsFailure":
+            $0.audioRecorderClient = .inMemory(permissions: [.denied])
+        case "microphoneSettingsGranted":
+            $0.audioRecorderClient = .inMemory(permissions: [.denied, .granted], permissionAfterRequest: false)
+        default:
+            break
+        }
+        if scenario == "settingsFailure" {
+            $0.appSettingsClient = .inMemory { throw CocoaError(.featureUnsupported) }
+        }
         switch scenario {
         case "unsupported":
             $0.foundationModelsClient = .inMemory(availability: [.unavailable(.deviceNotEligible)])

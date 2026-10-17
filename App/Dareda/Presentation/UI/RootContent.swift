@@ -61,17 +61,45 @@ struct RootContent: View {
 }
 
 #Preview("利用可") {
-    RootContent(recordingPermission: nil, isRequestingPermission: false, settingsErrorMessage: nil, availability: .available, isProfileListPresented: false, send: { _ in })
+    RootContent(
+        recordingPermission: nil,
+        isRequestingPermission: false,
+        settingsErrorMessage: nil,
+        availability: .available,
+        isProfileListPresented: false,
+        send: { _ in }
+    )
 }
 
 #Preview("非対応") {
-    RootContent(recordingPermission: nil, isRequestingPermission: false, settingsErrorMessage: nil, availability: .unsupported, isProfileListPresented: false, send: { _ in })
+    RootContent(
+        recordingPermission: nil,
+        isRequestingPermission: false,
+        settingsErrorMessage: nil,
+        availability: .unsupported,
+        isProfileListPresented: false,
+        send: { _ in }
+    )
 }
 
 #Preview("一時的に利用不可") {
-    RootContent(recordingPermission: nil, isRequestingPermission: false, settingsErrorMessage: nil, availability: .temporarilyUnavailable(.modelNotReady), isProfileListPresented: false, send: { _ in })
+    RootContent(
+        recordingPermission: nil,
+        isRequestingPermission: false,
+        settingsErrorMessage: nil,
+        availability: .temporarilyUnavailable(.modelNotReady),
+        isProfileListPresented: false,
+        send: { _ in }
+    )
 }
 
 #Preview("マイク拒否") {
-    RootContent(recordingPermission: .denied, isRequestingPermission: false, settingsErrorMessage: nil, availability: .available, isProfileListPresented: false, send: { _ in })
+    RootContent(
+        recordingPermission: .denied,
+        isRequestingPermission: false,
+        settingsErrorMessage: nil,
+        availability: .available,
+        isProfileListPresented: false,
+        send: { _ in }
+    )
 }
