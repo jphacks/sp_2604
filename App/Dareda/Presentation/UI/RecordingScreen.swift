@@ -8,7 +8,7 @@ struct RecordingScreen: View {
         RecordingContent(
             isRecording: viewModel.isRecording,
             isStarting: viewModel.isStarting,
-            hasRecording: viewModel.recording != nil,
+            recording: viewModel.recording,
             elapsedTime: viewModel.elapsedTime,
             wasInterrupted: viewModel.wasInterrupted,
             reachedLimit: viewModel.reachedLimit,

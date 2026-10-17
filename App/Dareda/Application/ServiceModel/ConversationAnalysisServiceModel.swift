@@ -1,7 +1,7 @@
 import Foundation
 
 /// 共通音声処理の処理状況。残り時間や進捗率は持たない。
-nonisolated enum ConversationAnalysisStage: Sendable, Equatable {
+nonisolated enum ConversationAnalysisStage: Sendable, Hashable {
     /// 文字起こし中
     case transcribing
     /// 話者識別中 (話者分離・話者ベクトル生成・本人照合)

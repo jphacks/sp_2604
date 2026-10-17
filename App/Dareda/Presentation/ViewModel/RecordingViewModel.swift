@@ -14,6 +14,7 @@ final class RecordingViewModel {
         case discardConfirmationChanged(Bool)
         case discardConfirmed
         case retryButtonTapped
+        case processingFinished
     }
 
     private(set) var recording: Recording?
@@ -43,6 +44,8 @@ final class RecordingViewModel {
             start()
         case .retryButtonTapped:
             start()
+        case .processingFinished:
+            isFinished = true
         case .stopButtonTapped:
             stop()
         case .registrationButtonTapped:
