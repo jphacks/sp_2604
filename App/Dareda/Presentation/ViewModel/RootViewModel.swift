@@ -9,8 +9,6 @@ final class RootViewModel {
         case recheckButtonTapped
         case recordButtonTapped
         case settingsButtonTapped
-        case profilesButtonTapped
-        case profileListPresentedChanged(Bool)
         case privateCloudComputeSettingsButtonTapped
         case privateCloudComputeSettingsPresentedChanged(Bool)
         case settingsMenuButtonTapped
@@ -26,7 +24,6 @@ final class RootViewModel {
     private(set) var settingsErrorMessage: String?
 
     private(set) var availability: DeviceAvailability?
-    private(set) var isProfileListPresented = false
     private(set) var isPrivateCloudComputeSettingsPresented = false
     private(set) var isSettingsPresented = false
     private(set) var isRecordingPresented = false
@@ -101,10 +98,6 @@ final class RootViewModel {
             }
         case .recordingFinished:
             isRecordingPresented = false
-        case .profilesButtonTapped:
-            isProfileListPresented = true
-        case let .profileListPresentedChanged(isPresented):
-            isProfileListPresented = isPresented
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
         case .privateCloudComputeSettingsButtonTapped:
@@ -116,10 +109,9 @@ final class RootViewModel {
         case let .settingsPresentedChanged(isPresented):
             isSettingsPresented = isPresented
         case .personSearchNotificationTapped:
-            // TODO: #23 で人物検索の候補一覧画面に差し替える。それまではプロフィール一覧を開く
+            // TODO: #23 で人物検索の候補一覧画面に差し替える。それまではルートのプロフィール一覧に戻す
             isPrivateCloudComputeSettingsPresented = false
             isSettingsPresented = false
-            isProfileListPresented = true
         }
     }
 

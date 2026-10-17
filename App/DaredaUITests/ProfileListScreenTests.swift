@@ -11,9 +11,6 @@ final class ProfileListScreenTests: XCTestCase {
         app.launchEnvironment["UI_TEST_SCENARIO"] = scenario
         app.launch()
 
-        let profilesButton = app.buttons["root.profilesButton"]
-        XCTAssertTrue(profilesButton.waitForExistence(timeout: 5))
-        profilesButton.tap()
         return app
     }
 
