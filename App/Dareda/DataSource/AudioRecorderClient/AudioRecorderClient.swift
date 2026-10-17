@@ -1,6 +1,7 @@
 import AVFoundation
 import Dependencies
 import DependenciesMacros
+import Logging
 
 @DependencyClient
 nonisolated struct AudioRecorderClient: Sendable {
@@ -46,6 +47,8 @@ nonisolated extension DependencyValues {
 }
 
 private nonisolated struct AudioRecorderClientImpl: Sendable {
+    private static let logger = Logger(label: "Dareda.AudioRecorderClient")
+
     /// 録音中の `AVAudioRecorder` のハンドルだけを保持する。
     private let handle = RecorderHandle()
 
@@ -88,13 +91,25 @@ private nonisolated struct AudioRecorderClientImpl: Sendable {
             throw CocoaError(.fileWriteUnknown)
         }
         handle.set(recorder)
+        Self.logger.debug("Recorder started", metadata: [
+            "session_sample_rate": "\(audioSession.sampleRate)",
+            "input_available": "\(audioSession.isInputAvailable)",
+            "inputs": "\(audioSession.currentRoute.inputs.map(\.portType.rawValue))",
+        ])
         return url
     }
 
     func stop() -> TimeInterval {
         guard let recorder = handle.take() else { return 0 }
         let duration = recorder.currentTime
+        let isRecording = recorder.isRecording
         recorder.stop()
+        let size = (try? FileManager.default.attributesOfItem(atPath: recorder.url.path)[.size] as? Int) ?? -1
+        Self.logger.debug("Recorder stopped", metadata: [
+            "was_recording": "\(isRecording)",
+            "current_time": "\(duration)",
+            "file_size": "\(size)",
+        ])
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         return duration
     }
