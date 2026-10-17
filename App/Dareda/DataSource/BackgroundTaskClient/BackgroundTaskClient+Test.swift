@@ -24,6 +24,7 @@ nonisolated extension BackgroundTaskClient {
                 tasks.setWatcher(watcher, for: identifier)
                 return identifier
             },
+            update: { _, _, _, _ in },
             end: { identifier in tasks.remove(identifier) }
         )
     }

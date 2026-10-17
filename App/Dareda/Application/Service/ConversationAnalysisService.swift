@@ -7,7 +7,7 @@ import Logging
 ///
 /// 成功した処理の結果はセッションに保存し、同じセッションで再度呼ばれたときは再実行しない。
 /// 失敗・中断後に同じセッションで呼び直すと、未完了の処理だけを実行する。時間を理由に打ち切らない。
-/// バックグラウンドに移行しても処理を続け、OS に打ち切られたら `ConversationAnalysisError.suspended` で終了する。
+/// バックグラウンドに移行しても処理を続け、OS やユーザーに打ち切られたら `ConversationAnalysisError.suspended` で終了する。
 @DependencyClient
 nonisolated struct ConversationAnalysisService: Sendable {
     /// 第 1 段階の話者識別までを行う。処理状況を流し、最後に `.completed` で結果を流して終了する。
@@ -59,13 +59,13 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     func analyze(
         _ recording: Recording, session: ProcessingSession
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<ConversationAnalysis>, any Error> {
-        stream(operation: "analysis") { continuation in
+        stream(operation: "analysis") { report in
             Self.logger.debug("Transcription stage started")
-            continuation.yield(.stageChanged(.transcribing))
+            await report(.transcribing)
             let speechSegments = try await speechSegments(recording, session)
 
             Self.logger.debug("Speaker identification stage started")
-            continuation.yield(.stageChanged(.identifyingSpeakers))
+            await report(.identifyingSpeakers)
             guard let selfVoice = try await selfVoiceRepository.get() else {
                 throw ConversationAnalysisError.selfVoiceNotRegistered
             }
@@ -103,13 +103,13 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     func summarize(
         _ transcript: Transcript, session: ProcessingSession
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<ConversationSummary>, any Error> {
-        stream(operation: "summary") { continuation in
+        stream(operation: "summary") { report in
             if let cached = try await analysisCacheRepository.getSummary(session) {
                 Self.logger.debug("Reusing cached summary")
                 return cached
             }
             Self.logger.debug("Summary generation started")
-            continuation.yield(.stageChanged(.summarizing))
+            await report(.summarizing)
             let start = date.now
             let summary = try await conversationSummaryService.summarize(transcript)
             metricsGateway.recordDuration("metrics.summary.duration", date.now.timeIntervalSince(start))
@@ -190,7 +190,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     private func stream<Value: Sendable & Equatable>(
         operation: String,
         _ body: @escaping @Sendable (
-            AsyncThrowingStream<ConversationAnalysisEvent<Value>, any Error>.Continuation
+            _ report: @escaping @Sendable (ConversationAnalysisStage) async -> Void
         ) async throws -> Value
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<Value>, any Error> {
         AsyncThrowingStream { continuation in
@@ -198,14 +198,17 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
                 var logger = Self.logger
                 logger[metadataKey: "operation"] = .string(operation)
                 logger.info("Processing started")
-                // バックグラウンドに移行しても続ける。OS に打ち切られたら中断として終了し、
+                // BGContinuedProcessingTask でバックグラウンドに移行しても続ける。OS やユーザーに打ち切られたら中断として終了し、
                 // ストリームの終了で処理もキャンセルする。完了済みの処理の結果はセッションに残る。
                 let execution = await backgroundExecutionGateway.begin {
                     Self.logger.notice("Processing suspended by OS", metadata: ["operation": .string(operation)])
                     continuation.finish(throwing: ConversationAnalysisError.suspended)
                 }
                 do {
-                    let value = try await body(continuation)
+                    let value = try await body { stage in
+                        continuation.yield(.stageChanged(stage))
+                        await backgroundExecutionGateway.update(execution, stage)
+                    }
                     logger.info("Processing completed")
                     continuation.yield(.completed(value))
                     continuation.finish()

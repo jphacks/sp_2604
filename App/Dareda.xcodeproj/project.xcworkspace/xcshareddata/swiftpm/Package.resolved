@@ -1,5 +1,5 @@
 {
-  "originHash" : "ea4b4385b12e5d1214c91706b50e77f0154cffb4d61a5f91d1f2f8e510bbb95b",
+  "originHash" : "2dd89c094b22af2677958292f72a71121f8192f3583853dd8c7b1cd402559b96",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
         "version" : "7.11.1"
+      }
+    },
+    {
+      "identity" : "prefire",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/BarredEwe/Prefire",
+      "state" : {
+        "revision" : "b4dd93fb351c33749006329dfb416c29cb3243d9",
+        "version" : "6.0.0"
       }
     },
     {
