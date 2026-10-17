@@ -4,12 +4,9 @@ import Observation
 
 @Observable
 final class RecordingViewModel {
-    enum Mode { case registration, search }
     enum Action {
         case onAppear
         case stopButtonTapped
-        case registrationButtonTapped
-        case searchButtonTapped
         case discardButtonTapped
         case discardConfirmationChanged(Bool)
         case discardConfirmed
@@ -32,7 +29,8 @@ final class RecordingViewModel {
     private(set) var wasInterrupted = false
     private(set) var reachedLimit = false
     private(set) var isOneMinuteRemaining = false
-    private(set) var selectedMode: Mode?
+    /// 録音の終了・ファイルの取り込みの直後に始まる音声処理を表示しているか。
+    private(set) var isProcessing = false
     private(set) var errorMessage: LocalizedStringResource?
     private(set) var isDiscardConfirmationPresented = false
     private(set) var isFinished = false
@@ -66,14 +64,6 @@ final class RecordingViewModel {
             startOrImport()
         case .stopButtonTapped:
             stop()
-        case .registrationButtonTapped:
-            guard recording != nil, !isRecording else { return }
-            selectedMode = .registration
-        case .searchButtonTapped:
-            guard recording != nil, !isRecording else { return }
-            selectedMode = .search
-            // 検索結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で検索は続けられる
-            Task { _ = try? await requestNotificationPermissionUseCase.execute() }
         case .addButtonTapped:
             guard isAdditional, let recording, !isRecording else { return }
             addedRecording = recording
@@ -82,9 +72,9 @@ final class RecordingViewModel {
             registeredProfileID = profileID
             isFinished = true
         case .rerecordRequested:
-            // 前の録音と処理データは処理状況画面で削除済み。操作選択前の状態に戻して新しく録音する
+            // 前の録音と処理データは処理状況画面で削除済み。処理前の状態に戻して新しく録音する
             recording = nil
-            selectedMode = nil
+            isProcessing = false
             elapsedTime = 0
             wasInterrupted = false
             reachedLimit = false
@@ -106,7 +96,7 @@ final class RecordingViewModel {
                     recording = nil
                     isFinished = true
                 } catch {
-                    errorMessage = selectedMode == nil
+                    errorMessage = !isProcessing
                         ? "録音を削除できませんでした。もう一度お試しください。"
                         : "キャンセルできませんでした。もう一度お試しください。"
                 }
@@ -129,6 +119,7 @@ final class RecordingViewModel {
             let imported = try recordingService.importFile(url)
             recording = imported
             elapsedTime = imported.duration
+            startProcessing()
         } catch {
             errorMessage = "音声ファイルを読み込めませんでした。別のファイルを選んでください。"
         }
@@ -194,6 +185,15 @@ final class RecordingViewModel {
         isRecording = false
         elapsedTask?.cancel()
         interruptionTask?.cancel()
+        startProcessing()
+    }
+
+    /// 録音の終了・ファイルの取り込み後すぐに音声処理を始める。追加録音は処理状況画面へ返すため始めない。
+    private func startProcessing() {
+        guard !isAdditional, !isProcessing else { return }
+        isProcessing = true
+        // 結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で処理は続けられる
+        Task { _ = try? await requestNotificationPermissionUseCase.execute() }
     }
 
     private func stop() {

@@ -8,7 +8,7 @@ struct RecordingContent: View {
     let wasInterrupted: Bool
     let reachedLimit: Bool
     var isOneMinuteRemaining = false
-    let selectedMode: RecordingViewModel.Mode?
+    let isProcessing: Bool
     let errorMessage: LocalizedStringResource?
     let isDiscardConfirmationPresented: Bool
     var isAdditional = false
@@ -36,8 +36,6 @@ struct RecordingContent: View {
                         Button("この録音を追加", systemImage: "plus") { send(.addButtonTapped) }
                             .buttonStyle(.borderedProminent)
                             .accessibilityIdentifier("recording.addButton")
-                    } else if hasRecording {
-                        RecordingChoiceContent(send: send)
                     }
                     if let errorMessage {
                         Text(errorMessage)
@@ -60,34 +58,34 @@ struct RecordingContent: View {
                         .accessibilityIdentifier("recording.discardButton")
                         // iPad ではポップオーバーの起点になるため、トリガーのボタンに付ける
                         .confirmationDialog(
-                            selectedMode == nil ? "録音を破棄しますか？" : "処理をキャンセルしますか？",
+                            isProcessing ? "処理をキャンセルしますか？" : "録音を破棄しますか？",
                             isPresented: Binding(
                                 get: { isDiscardConfirmationPresented },
                                 set: { send(.discardConfirmationChanged($0)) }
                             ),
                             titleVisibility: .visible
                         ) {
-                            Button(selectedMode == nil ? "録音を破棄" : "キャンセルする", role: .destructive) {
+                            Button(isProcessing ? "キャンセルする" : "録音を破棄", role: .destructive) {
                                 send(.discardConfirmed)
                             }
                             .accessibilityIdentifier("recording.confirmDiscardButton")
-                            Button(selectedMode == nil ? "破棄しない" : "続ける", role: .cancel) {
+                            Button(isProcessing ? "続ける" : "破棄しない", role: .cancel) {
                                 send(.discardConfirmationChanged(false))
                             }
                             .accessibilityIdentifier("recording.cancelDiscardButton")
                         } message: {
                             Text(
-                                selectedMode == nil
-                                    ? "この録音は削除されます。"
-                                    : "録音と処理中のデータは削除され、元に戻せません。"
+                                isProcessing
+                                    ? "録音と処理中のデータは削除され、元に戻せません。"
+                                    : "この録音は削除されます。"
                             )
                         }
                 }
             }
-            .navigationDestination(isPresented: .constant(selectedMode != nil)) {
-                if let recording, let selectedMode {
+            .navigationDestination(isPresented: .constant(isProcessing)) {
+                if let recording, isProcessing {
                     ProcessingScreen(
-                        recording: recording, mode: selectedMode,
+                        recording: recording,
                         onFinished: { send(.processingFinished($0)) },
                         onRerecord: { send(.rerecordRequested) }
                     )
@@ -152,31 +150,15 @@ private struct RecordingStatusContent: View {
     }
 }
 
-private struct RecordingChoiceContent: View {
-    let send: (RecordingViewModel.Action) -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("この録音で何をしますか？").font(.headline)
-            Button("新規登録", systemImage: "person.badge.plus") { send(.registrationButtonTapped) }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("recording.registrationButton")
-            Button("人物を探す", systemImage: "person.crop.circle.badge.magnifyingglass") { send(.searchButtonTapped) }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("recording.searchButton")
-        }
-    }
-}
-
 /// 解析の処理状況。詳細な表示と再試行 UI は #29 で作る。
 #Preview("録音中") {
     RecordingContent(isRecording: true, isStarting: false, recording: Recording(id: UUID(), fileURL: URL(filePath: "/tmp/a.m4a"), startedAt: .now, duration: 120),
         elapsedTime: 540, wasInterrupted: false, reachedLimit: false,
-        selectedMode: nil, errorMessage: nil, isDiscardConfirmationPresented: false, send: { _ in })
+        isProcessing: false, errorMessage: nil, isDiscardConfirmationPresented: false, send: { _ in })
 }
 
 #Preview("録音後") {
     RecordingContent(isRecording: false, isStarting: false, recording: Recording(id: UUID(), fileURL: URL(filePath: "/tmp/a.m4a"), startedAt: .now, duration: 120),
         elapsedTime: 120, wasInterrupted: true, reachedLimit: false,
-        selectedMode: nil, errorMessage: nil, isDiscardConfirmationPresented: false, send: { _ in })
+        isProcessing: false, errorMessage: nil, isDiscardConfirmationPresented: false, send: { _ in })
 }

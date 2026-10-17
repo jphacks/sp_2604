@@ -27,7 +27,7 @@ struct RecordingScreen: View {
             wasInterrupted: viewModel.wasInterrupted,
             reachedLimit: viewModel.reachedLimit,
             isOneMinuteRemaining: viewModel.isOneMinuteRemaining,
-            selectedMode: viewModel.selectedMode,
+            isProcessing: viewModel.isProcessing,
             errorMessage: viewModel.errorMessage,
             isDiscardConfirmationPresented: viewModel.isDiscardConfirmationPresented,
             isAdditional: viewModel.isAdditional,

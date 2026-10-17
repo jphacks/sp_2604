@@ -25,8 +25,7 @@ final class ProcessingViewModel {
 
     enum StageStatus { case waiting, processing, completed, failed }
 
-    let mode: RecordingViewModel.Mode
-    private(set) var stages: [ConversationAnalysisStage]
+    let stages: [ConversationAnalysisStage] = [.transcribing, .identifyingSpeakers, .summarizing]
     private(set) var currentStage: ConversationAnalysisStage?
     private(set) var completedStages: [ConversationAnalysisStage] = []
     private(set) var failedStage: ConversationAnalysisStage?
@@ -38,7 +37,7 @@ final class ProcessingViewModel {
     private(set) var isRerecordRequested = false
     private(set) var isCancelConfirmationPresented = false
     private(set) var isFinished = false
-    /// 新規登録の入力に進める解析結果。本人と相手の声がそろい、要約が済んだときだけ値を持つ。
+    /// 新規登録の入力に進める解析結果。「該当なし・新規登録」を選んだときに値を持つ。
     private(set) var registrationSource: RegistrationViewModel.Source?
     /// 新規登録で保存した、または人物検索で確定したプロフィール。閉じた後に詳細を表示するために使う。
     private(set) var registeredProfileID: Profile.ID?
@@ -69,18 +68,15 @@ final class ProcessingViewModel {
     @ObservationIgnored private var additionalRecordings: [PersonSearchRecording] = []
     /// 人物検索から新規登録へ進んだか。
     @ObservationIgnored private var isRegisteringFromSearch = false
+    /// 人物検索と同時に済ませた要約。新規登録に進むときに入力の初期値として渡す。
+    @ObservationIgnored private var pendingRegistration: RegistrationViewModel.Source?
     /// 本人を手動選択している録音。
     @ObservationIgnored private var selfSelectionRecordingID: Recording.ID?
     @ObservationIgnored private var processingTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
 
-    init(recording: Recording, mode: RecordingViewModel.Mode) {
+    init(recording: Recording) {
         self.recording = recording
-        self.mode = mode
-        stages = switch mode {
-        case .registration: [.transcribing, .identifyingSpeakers, .summarizing]
-        case .search: [.transcribing, .identifyingSpeakers]
-        }
     }
 
     func status(of stage: ConversationAnalysisStage) -> StageStatus {
@@ -136,19 +132,23 @@ final class ProcessingViewModel {
         case let .manualSelectionPresentedChanged(isPresented):
             isManualSelectionPresented = isPresented
         case .newRegistrationButtonTapped:
-            guard mode == .search, !isRegisteringFromSearch else { return }
+            guard !isRegisteringFromSearch else { return }
             isRegisteringFromSearch = true
-            searchCandidates = nil
-            insufficientPartnerSpeechDuration = nil
-            isCompleted = false
-            stages = [.transcribing, .identifyingSpeakers, .summarizing]
-            completedStages = [.transcribing, .identifyingSpeakers]
             // 新規登録には最初の録音だけを使うため、追加録音の一時データは先に削除する
             let additional = additionalRecordings
             additionalRecordings = []
             Task {
                 try? await completePersonSearchUseCase.execute(additional)
-                process()
+                if let pendingRegistration {
+                    registrationSource = pendingRegistration
+                } else {
+                    // 発話不足などで要約が済んでいないため、ここで要約まで行う
+                    searchCandidates = nil
+                    insufficientPartnerSpeechDuration = nil
+                    isCompleted = false
+                    completedStages = [.transcribing, .identifyingSpeakers]
+                    process()
+                }
             }
         case .additionalRecordingButtonTapped:
             isAdditionalRecordingPresented = true
@@ -222,10 +222,10 @@ final class ProcessingViewModel {
             defer { processingTask = nil }
             do {
                 let session = try await currentSession()
-                if mode == .registration || isRegisteringFromSearch {
+                if isRegisteringFromSearch {
                     try await register(session)
                 } else {
-                    try await search()
+                    try await search(session)
                 }
             } catch is CancellationError {
                 return
@@ -291,15 +291,14 @@ final class ProcessingViewModel {
         return [first] + additionalRecordings
     }
 
-    private func search() async throws {
+    private func search(_ session: ProcessingSession) async throws {
         for try await event in searchPersonUseCase.search(try await searchRecordings()) {
             switch event {
             case let .stageChanged(stage): stageChanged(stage)
             case let .completed(result):
-                // アプリ表示中は通知されない。通知できなくても結果はアプリ内で確認できる
-                try? await notifyPersonSearchResultUseCase.execute(result)
                 switch result {
                 case let .needsAdditionalRecording(duration):
+                    notifyResult(result)
                     completeCurrentStage()
                     completedStages = stages
                     insufficientPartnerSpeechDuration = duration
@@ -310,9 +309,43 @@ final class ProcessingViewModel {
                             details.append(detail)
                         }
                     }
+                    // 候補を提示する前に、新規登録の初期値にする要約まで済ませる
+                    try await prepareRegistration(session)
+                    notifyResult(result)
                     searchCandidates = details
                     complete()
                 }
+            }
+        }
+    }
+
+    /// アプリ表示中は通知されない。通知できなくても結果はアプリ内で確認できる。
+    private func notifyResult(_ result: PersonSearchResult) {
+        Task { try? await notifyPersonSearchResultUseCase.execute(result) }
+    }
+
+    /// 最初の録音の相手の声と要約を、新規登録に進めるよう保持する。解析結果は保存済みのため再実行されない。
+    /// 最初の録音から相手を検出できなかった場合 (追加録音でのみ検出) は何も保持しない。
+    private func prepareRegistration(_ session: ProcessingSession) async throws {
+        pendingRegistration = nil
+        var analysis: ConversationAnalysis?
+        for try await event in conversationAnalysisService.analyze(recording, session) {
+            if case let .completed(value) = event { analysis = value }
+        }
+        guard let analysis,
+              let selfSpeakerID = selfSpeakerID ?? analysis.selfSpeakerID,
+              let partnerVector = analysis.partner(selfSpeakerID: selfSpeakerID)?.embedding?.values
+        else { return }
+        for try await event in conversationAnalysisService.summarize(analysis.transcript(selfSpeakerID: selfSpeakerID), session) {
+            switch event {
+            case let .stageChanged(stage): stageChanged(stage)
+            case let .completed(summary):
+                pendingRegistration = RegistrationViewModel.Source(
+                    recording: recording,
+                    session: session,
+                    summary: summary.text,
+                    partnerVector: partnerVector
+                )
             }
         }
     }
