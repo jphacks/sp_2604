@@ -8,6 +8,9 @@ final class VoiceEnrollmentViewModel {
         case recordButtonTapped
         case stopButtonTapped
         case cancelButtonTapped
+        case fileButtonTapped
+        case fileImporterDismissed
+        case fileSelected(Result<URL, any Error>)
     }
 
     enum Failure: Equatable {
@@ -22,6 +25,7 @@ final class VoiceEnrollmentViewModel {
     private(set) var failure: Failure?
     private(set) var isCompleted = false
     private(set) var isCancelled = false
+    private(set) var isFileImporterPresented = false
 
     @ObservationIgnored
     @Dependency(\.recordingService) private var recordingService
@@ -38,6 +42,19 @@ final class VoiceEnrollmentViewModel {
             Task { await stop() }
         case .cancelButtonTapped:
             cancel()
+        case .fileButtonTapped:
+            failure = nil
+            isFileImporterPresented = true
+        case .fileImporterDismissed:
+            isFileImporterPresented = false
+        case let .fileSelected(result):
+            isFileImporterPresented = false
+            switch result {
+            case let .success(url):
+                Task { await register(.file(url)) }
+            case .failure:
+                failure = .unexpected
+            }
         }
     }
 
@@ -68,10 +85,14 @@ final class VoiceEnrollmentViewModel {
         guard let recording else { return }
         self.recording = nil
         isRecording = false
+        await register(.recording(recordingService.stop(recording)))
+    }
+
+    private func register(_ source: SelfVoiceSource) async {
         isProcessing = true
         defer { isProcessing = false }
         do {
-            try await registerSelfVoiceUseCase.execute(recordingService.stop(recording))
+            try await registerSelfVoiceUseCase.execute(source)
             isCompleted = true
         } catch let SelfVoiceRegistrationError.insufficientSpeech(duration) {
             failure = .insufficientSpeech(duration)

@@ -1,10 +1,12 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct VoiceEnrollmentContent: View {
     let isRecording: Bool
     let isProcessing: Bool
     let failure: VoiceEnrollmentViewModel.Failure?
     var isCancellable = false
+    var isFileImporterPresented = false
     let send: (VoiceEnrollmentViewModel.Action) -> Void
 
     private static let sampleText = """
@@ -30,6 +32,13 @@ struct VoiceEnrollmentContent: View {
                     }
                 }
         }
+        .fileImporter(
+            isPresented: Binding(
+                get: { isFileImporterPresented },
+                set: { if !$0 { send(.fileImporterDismissed) } }
+            ),
+            allowedContentTypes: [.audio]
+        ) { send(.fileSelected($0)) }
     }
 
     private var content: some View {
@@ -39,7 +48,7 @@ struct VoiceEnrollmentContent: View {
                     Text("あなたの声を登録")
                         .font(.largeTitle.bold())
                         .accessibilityIdentifier("voiceEnrollment.title")
-                    Text("会話の中であなたの声を見分けるために使います。静かな場所で、録音を開始してから下の文章を声に出して読んでください。")
+                    Text("会話の中であなたの声を見分けるために使います。静かな場所で、録音を開始してから下の文章を声に出して読んでください。あなただけが話している音声ファイルを選んで登録することもできます。")
                         .foregroundStyle(.secondary)
                 }
 
@@ -76,12 +85,18 @@ struct VoiceEnrollmentContent: View {
                 .controlSize(.large)
                 .accessibilityIdentifier("voiceEnrollment.stopButton")
         } else {
-            Button(failure == nil ? "録音を開始" : "もう一度録音", systemImage: "mic.fill") {
-                send(.recordButtonTapped)
+            VStack(spacing: 12) {
+                Button(failure == nil ? "録音を開始" : "もう一度録音", systemImage: "mic.fill") {
+                    send(.recordButtonTapped)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .accessibilityIdentifier("voiceEnrollment.recordButton")
+                Button("ファイルから選択", systemImage: "folder") { send(.fileButtonTapped) }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .accessibilityIdentifier("voiceEnrollment.fileButton")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .accessibilityIdentifier("voiceEnrollment.recordButton")
         }
     }
 
@@ -96,7 +111,7 @@ struct VoiceEnrollmentContent: View {
                 ? "音が割れています。マイクから少し離れて、もう一度録音してください。"
                 : "声が小さすぎます。静かな場所で、もう少し大きな声で録音してください。"
         case .unexpected:
-            "登録に失敗しました。もう一度録音してください。"
+            "登録に失敗しました。もう一度お試しください。"
         }
     }
 }

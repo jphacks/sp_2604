@@ -13,6 +13,7 @@ struct VoiceEnrollmentScreen: View {
             isProcessing: viewModel.isProcessing,
             failure: viewModel.failure,
             isCancellable: onCancelled != nil,
+            isFileImporterPresented: viewModel.isFileImporterPresented,
             send: viewModel.send
         )
         .onChange(of: viewModel.isCompleted) { _, isCompleted in
