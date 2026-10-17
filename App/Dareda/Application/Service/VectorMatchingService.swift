@@ -17,10 +17,10 @@ nonisolated struct VectorMatchingService: Sendable {
 }
 
 nonisolated extension VectorMatchingService {
-    /// 本人識別のしきい値。#27 の実機検証で確定する暫定値。
-    static let defaultSelfIdentificationThreshold: Float = 0.5
+    /// 本人識別のしきい値。
+    static let defaultSelfIdentificationThreshold = ProvisionalParameters.selfIdentificationThreshold
     /// 人物検索で提示する候補の上限。
-    static let defaultMatchLimit = 5
+    static let defaultMatchLimit = ProvisionalParameters.personSearchCandidateLimit
 }
 
 nonisolated extension VectorMatchingService: DependencyKey {

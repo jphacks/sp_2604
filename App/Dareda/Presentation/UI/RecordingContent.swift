@@ -86,6 +86,8 @@ struct RecordingContent: View {
 }
 
 private struct RecordingStatusContent: View {
+    private static let maxMinutes = Int(ProvisionalParameters.recordingMaxDuration / 60)
+
     let isRecording: Bool
     let isStarting: Bool
     let hasRecording: Bool
@@ -117,7 +119,7 @@ private struct RecordingStatusContent: View {
                 .font(.largeTitle.monospacedDigit())
                 .accessibilityIdentifier("recording.elapsedTime")
             if isRecording, isOneMinuteRemaining {
-                Text("残り1分です。10分で自動的に録音を停止します。")
+                Text("残り1分です。\(Self.maxMinutes)分で自動的に録音を停止します。")
                     .foregroundStyle(.orange)
                     .accessibilityIdentifier("recording.remainingMinuteNotice")
             }
@@ -126,7 +128,7 @@ private struct RecordingStatusContent: View {
                     .accessibilityIdentifier("recording.interruptionNotice")
             }
             if reachedLimit {
-                Text("上限の10分に達したため、録音を停止しました。")
+                Text("上限の\(Self.maxMinutes)分に達したため、録音を停止しました。")
                     .accessibilityIdentifier("recording.limitNotice")
             }
         }
