@@ -156,3 +156,6 @@ SnapshotResults.xcresult/
 *.tfstate.*
 terraform.tfvars
 *.auto.tfvars
+
+# 話者分離の評価用の録音 (個人の音声のためコミットしない)
+Tools/diarization-eval/data/
