@@ -32,7 +32,7 @@ nonisolated enum SpeakerEmbeddingError: Error, Equatable {
 
 extension SpeakerEmbeddingGateway {
     /// ベクトルを生成できる音声の最短長 (秒)。
-    nonisolated static let minimumDuration: TimeInterval = 0.5
+    nonisolated static let minimumDuration = ProvisionalParameters.speakerEmbeddingMinimumDuration
 }
 
 private nonisolated struct SpeakerEmbeddingGatewayImpl: Sendable {

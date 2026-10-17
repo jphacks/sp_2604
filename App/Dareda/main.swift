@@ -22,6 +22,11 @@ prepareDependencies {
         switch scenario {
         case "voiceEnrollmentShort":
             $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
+        // 登録に必要な有効発話時間 (ProvisionalParameters) の境界を検証する
+        case "voiceEnrollmentJustBelowRequired":
+            $0.audioFileClient = .speech(seconds: 29, amplitude: 0.3)
+        case "voiceEnrollmentJustAboveRequired":
+            $0.audioFileClient = .speech(seconds: 31, amplitude: 0.3)
         case "voiceEnrollmentQuiet":
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.005)
         default:

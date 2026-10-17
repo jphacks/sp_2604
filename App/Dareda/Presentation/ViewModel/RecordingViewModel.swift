@@ -30,6 +30,7 @@ final class RecordingViewModel {
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
+    @ObservationIgnored @Dependency(\.cancelProcessingUseCase) private var cancelProcessingUseCase
     @ObservationIgnored private var elapsedTask: Task<Void, Never>?
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
@@ -62,12 +63,16 @@ final class RecordingViewModel {
             guard !isStarting else { return }
             isDiscardConfirmationPresented = false
             stop()
-            do {
-                if let recording { try recordingService.discard(recording) }
-                recording = nil
-                isFinished = true
-            } catch {
-                errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+            Task {
+                do {
+                    try await cancelProcessingUseCase.execute(recording, nil)
+                    recording = nil
+                    isFinished = true
+                } catch {
+                    errorMessage = selectedMode == nil
+                        ? "録音を削除できませんでした。もう一度お試しください。"
+                        : "キャンセルできませんでした。もう一度お試しください。"
+                }
             }
         }
     }
