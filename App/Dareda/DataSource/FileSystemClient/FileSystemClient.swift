@@ -9,6 +9,10 @@ nonisolated struct FileSystemClient: Sendable {
     var createDirectory: @Sendable (_ url: URL) throws -> Void
     var contentsOfDirectory: @Sendable (_ url: URL) throws -> [URL]
     var removeItem: @Sendable (_ url: URL) throws -> Void
+    /// ファイルの内容を読み出す。存在しない場合は `nil`。
+    var readData: @Sendable (_ url: URL) throws -> Data?
+    /// ファイルに書き込む。既にある場合は置き換える。
+    var writeData: @Sendable (_ data: Data, _ url: URL) throws -> Void
 }
 
 nonisolated extension FileSystemClient: DependencyKey {
@@ -19,7 +23,9 @@ nonisolated extension FileSystemClient: DependencyKey {
             fileExists: impl.fileExists(_:),
             createDirectory: impl.createDirectory(_:),
             contentsOfDirectory: impl.contentsOfDirectory(_:),
-            removeItem: impl.removeItem(_:)
+            removeItem: impl.removeItem(_:),
+            readData: impl.readData(_:),
+            writeData: impl.writeData(_:to:)
         )
     }()
 
@@ -53,5 +59,14 @@ private nonisolated struct FileSystemClientImpl: Sendable {
 
     func removeItem(_ url: URL) throws {
         try FileManager.default.removeItem(at: url)
+    }
+
+    func readData(_ url: URL) throws -> Data? {
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return try Data(contentsOf: url)
+    }
+
+    func writeData(_ data: Data, to url: URL) throws {
+        try data.write(to: url, options: .atomic)
     }
 }
