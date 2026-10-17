@@ -10,6 +10,12 @@ struct ProcessingContent: View {
     var selfSelectionAnalysis: ConversationAnalysis?
     let isCancelConfirmationPresented: Bool
     var registrationSource: RegistrationViewModel.Source?
+    var searchCandidates: [ProfileDetailServiceModel]?
+    var insufficientPartnerSpeechDuration: TimeInterval?
+    var isConfirming = false
+    var isManualSelectionPresented = false
+    var manualSelectionProfiles: [Profile] = []
+    var isAdditionalRecordingPresented = false
     let send: (ProcessingViewModel.Action) -> Void
 
     var body: some View {
@@ -44,11 +50,13 @@ struct ProcessingContent: View {
                         if let selfSelectionAnalysis {
                             SelfSpeakerSelectionContent(analysis: selfSelectionAnalysis, send: send)
                         }
-                        // 照合完了後の画面は #23 で置き換える
-                        if isCompleted {
-                            Text(mode == .registration ? "解析が完了しました" : "照合が完了しました")
-                                .font(.headline)
-                                .accessibilityIdentifier("processing.completedNotice")
+                        if searchCandidates != nil || insufficientPartnerSpeechDuration != nil {
+                            PersonSearchResultContent(
+                                candidates: searchCandidates,
+                                insufficientPartnerSpeechDuration: insufficientPartnerSpeechDuration,
+                                isConfirming: isConfirming,
+                                send: send
+                            )
                         }
                     }
                     .padding(24)
@@ -62,6 +70,23 @@ struct ProcessingContent: View {
                 Button("キャンセル") { send(.cancelButtonTapped) }
                     .accessibilityIdentifier("processing.cancelButton")
             }
+        }
+        .sheet(isPresented: Binding(
+            get: { isManualSelectionPresented },
+            set: { send(.manualSelectionPresentedChanged($0)) }
+        )) {
+            PersonSearchManualSelectionContent(profiles: manualSelectionProfiles, send: send)
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { isAdditionalRecordingPresented },
+            set: { send(.additionalRecordingPresentedChanged($0)) }
+        )) {
+            // 追加録音は録音画面を再利用する。破棄して閉じた場合は発話不足の案内に戻る
+            RecordingScreen(
+                isAdditional: true,
+                onFinished: { _ in send(.additionalRecordingPresentedChanged(false)) },
+                onAdded: { send(.additionalRecordingAdded($0)) }
+            )
         }
         .sheet(isPresented: Binding(
             get: { isCancelConfirmationPresented },
