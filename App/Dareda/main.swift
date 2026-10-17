@@ -82,6 +82,7 @@ prepareDependencies {
         default:
             break
         }
+        $0.watchConnectivityClient = .inMemory()
         $0.mapKitClient = .inMemory()
         $0.appSettingsClient = .inMemory()
         $0.bundleClient = .inMemory()
