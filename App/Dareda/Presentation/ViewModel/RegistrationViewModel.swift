@@ -23,6 +23,7 @@ final class RegistrationViewModel {
         case placeClearButtonTapped
         case summaryChanged(String)
         case saveButtonTapped
+        case saveErrorAlertDismissed
     }
 
     let source: Source
@@ -69,6 +70,8 @@ final class RegistrationViewModel {
             self.summary = summary
         case .saveButtonTapped:
             save()
+        case .saveErrorAlertDismissed:
+            saveErrorMessage = nil
         }
     }
 

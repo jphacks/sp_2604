@@ -38,13 +38,6 @@ struct RegistrationContent: View {
                 .lineLimit(3...10)
                 .accessibilityIdentifier("registration.summaryTextField")
             }
-            if let saveErrorMessage {
-                Section {
-                    Text(saveErrorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("registration.saveError")
-                }
-            }
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -58,6 +51,19 @@ struct RegistrationContent: View {
                     .accessibilityIdentifier("registration.saveButton")
                 }
             }
+        }
+        .alert(
+            "保存できませんでした",
+            isPresented: Binding(
+                get: { saveErrorMessage != nil },
+                set: { if !$0 { send(.saveErrorAlertDismissed) } }
+            ),
+            presenting: saveErrorMessage
+        ) { _ in
+            Button("OK") {}
+                .accessibilityIdentifier("registration.saveErrorAlertOKButton")
+        } message: { message in
+            Text(message)
         }
         .sheet(isPresented: Binding(
             get: { isPlaceSearchPresented },

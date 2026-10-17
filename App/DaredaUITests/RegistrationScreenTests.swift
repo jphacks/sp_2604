@@ -95,7 +95,10 @@ final class RegistrationScreenTests: XCTestCase {
         type("高橋 次郎", into: "registration.nameTextField", in: app)
         app.buttons["registration.saveButton"].tap()
 
-        XCTAssertTrue(app.staticTexts["registration.saveError"].waitForExistence(timeout: 5))
+        let alertOKButton = app.buttons["registration.saveErrorAlertOKButton"]
+        XCTAssertTrue(alertOKButton.waitForExistence(timeout: 5))
+        attach(app, name: "registration-save-failure-alert")
+        alertOKButton.tap()
         XCTAssertEqual(app.textFields["registration.nameTextField"].value as? String, "高橋 次郎")
         attach(app, name: "registration-save-failure-after")
 
