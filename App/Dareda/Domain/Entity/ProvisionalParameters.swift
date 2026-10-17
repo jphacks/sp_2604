@@ -16,6 +16,12 @@ nonisolated enum ProvisionalParameters {
     static let personSearchCandidateLimit = 5
     /// 話者ベクトルを生成できる音声の最短長 (秒)。
     static let speakerEmbeddingMinimumDuration: TimeInterval = 0.5
+    /// 話者分離で推定する話者数の下限。`nil` なら自動推定に任せる。
+    /// 1 対 1 の会話が 1 人にまとめられると相手を識別できないため、2 人以上に分ける。
+    static let diarizationMinimumSpeakers: Int? = 2
+    /// 話者分離で推定する話者数の上限。`nil` なら自動推定に任せる。
+    /// 2 人で話す想定のため、同じ人が複数の話者に分かれないよう 2 人までにする。
+    static let diarizationMaximumSpeakers: Int? = 2
     /// 有効発話検出 (#7) の基準。
     static let speechQuality = SpeechQualityThresholds(
         frameDuration: 0.02,

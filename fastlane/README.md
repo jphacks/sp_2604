@@ -39,6 +39,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 デバイスを登録して Development・Ad Hoc プロファイルを更新する (name: 名前, udid: UDID)
 
+### ios distribute
+
+```sh
+[bundle exec] fastlane ios distribute
+```
+
+Ad Hoc ビルドを Firebase App Distribution にアップロードし、developers グループに配信する
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
