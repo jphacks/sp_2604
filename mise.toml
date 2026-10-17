@@ -1,0 +1,45 @@
+[settings]
+minimum_release_age = "7d"
+
+[tools]
+"npm:rulesync" = "29.0.0"
+ruby = "3.4.11"
+xcodes = "2.1.0"
+
+[tasks.bootstrap]
+description = ""
+run = [
+  { task = "xcode:select" },
+  { task = "rulesync" },
+  { task = "bundle:install" },
+  { task = "certs:install" },
+]
+
+[tasks."xcode:select"]
+description = "指定されたXcodeのバージョンを選択する"
+run = "xcodes select"
+
+[tasks.rulesync]
+description = "rulesync で各 AI ツール向けの設定ファイルを生成する"
+run = [
+  "rulesync generate",
+  { task = "xcode:select" },
+  "xcrun agent skills export --output-dir {{config_root}}/.claude/skills/",
+  "xcrun agent skills export --output-dir {{config_root}}/.agents/skills/",
+]
+
+[tasks."bundle:install"]
+description = "Bundler で fastlane などの gem をインストールする"
+run = "bundle install"
+
+[tasks."certs:install"]
+description = "fastlane match で証明書とプロファイルを取得する (読み取り専用)"
+run = "bundle exec fastlane ios certificates"
+
+[tasks."certs:update"]
+description = "fastlane match で証明書とプロファイルを作成・更新する"
+run = "bundle exec fastlane ios renew_certificates"
+
+[tasks."certs:register-device"]
+description = "デバイスを登録して Development プロファイルを更新する (例: mise run register-device -- name:iPhone udid:XXXX)"
+run = "bundle exec fastlane ios add_device"
