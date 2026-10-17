@@ -6,11 +6,11 @@ final class RootScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test起動するとルート画面が表示される() {
+    func test起動するとプロフィール一覧が表示される() {
         let app = XCUIApplication()
         app.launchEnvironment["UI_TEST_SCENARIO"] = "default"
         app.launch()
 
-        XCTAssertTrue(app.staticTexts["root.title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].waitForExistence(timeout: 5))
     }
 }

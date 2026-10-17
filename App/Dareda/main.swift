@@ -5,8 +5,12 @@ import SwiftUI
 let scenario = ProcessInfo.processInfo.environment["UI_TEST_SCENARIO"]
 
 prepareDependencies {
-    if scenario != nil {
-        $0.defaultDatabase = try! appDatabase(inMemory: true)
+    if let scenario {
+        let database = try! appDatabase(inMemory: true)
+        if scenario == "profiles" {
+            try! seedProfilesScenario(database)
+        }
+        $0.defaultDatabase = database
     } else {
         $0.defaultDatabase = try! appDatabase()
     }
