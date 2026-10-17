@@ -1,0 +1,91 @@
+# diarization-eval
+
+手元の録音に対して、話者分離 (FluidAudio の Offline パイプライン) と本人識別をアプリと同じ処理で実行し、設定ごとの結果を比較する macOS 用の CLI。
+アプリをビルドして実機で録音し直さなくても、同じ録音で設定だけを変えて何度でも試せる。
+
+- 話者分離: アプリと同じ FluidAudio 0.17.7 の `OfflineDiarizerManager`。しきい値や話者数のヒントを変えて実行する
+- 本人識別: アプリの ECAPA-TDNN (`App/Dareda/Resources/ECAPATDNN.mlpackage`) で話者ごとのベクトルを作り、本人の声との類似度から本人と相手を決める。規則はアプリの `ConversationAnalysisService` / `VectorMatchingService` / `ConversationAnalysis.partner(selfSpeakerID:)` と同じ
+
+アプリのロジックを変えたら、`Sources/DiarizationEval/SelfIdentification.swift` も合わせて直すこと。
+
+## 使い方
+
+リポジトリのルートで実行する。初回はビルドと話者分離モデルのダウンロードに数分かかる。
+
+```bash
+mise run eval:diarization -- Tools/diarization-eval/data --self Tools/diarization-eval/data/self/self.m4a
+```
+
+`mise` を使わない場合:
+
+```bash
+swift run -c release --package-path Tools/diarization-eval diarization-eval Tools/diarization-eval/data
+```
+
+### 設定を比べる
+
+カンマ区切りで複数の値を渡すと、全組み合わせを評価して最後に集計を出す。`none` は未指定 (FluidAudio の既定)。
+
+```bash
+mise run eval:diarization -- Tools/diarization-eval/data \
+  --self Tools/diarization-eval/data/self/self.m4a \
+  --threshold 0.5,0.6,0.7,0.8 \
+  --min-speakers none,2
+```
+
+| オプション | 内容 |
+| --- | --- |
+| `--threshold` | クラスタリングのしきい値 (既定 0.6)。大きいほど話者がまとまり、小さいほど分かれる |
+| `--min-speakers` / `--max-speakers` / `--num-speakers` | 話者数のヒント |
+| `--min-segment-duration` | 埋め込みに使う区間の最短長 (秒、既定 1.0) |
+| `--self` | 本人の声の登録用録音。指定すると本人・相手の判定も行う |
+| `--self-threshold` | 本人識別のしきい値 (既定 0.5) |
+| `--ecapa` | ECAPA-TDNN モデルのパス |
+| `--out` | 設定ごとの分離結果を `<out>/<設定>/<録音名>.rttm` に書き出す |
+| `--collar` | DER の算出で無視する境界の幅 (秒、既定 0.25) |
+
+## 録音の置き方
+
+```
+Tools/diarization-eval/data/      // .gitignore 済み。録音はコミットしない
+├── self/
+│   └── self.m4a                  // 本人の声の登録用録音 (例文を 30 秒以上読む)
+├── cafe-1.m4a                    // 評価する会話の録音
+├── cafe-1.txt                    // 正解ラベル (任意)
+└── ...
+```
+
+- 会話の録音は、アプリを使う状況 (手に持つ、机に置く、周りの雑音など) に近い条件で録る。アプリと同じ 16kHz・モノラルの AAC が望ましい
+- 登録用録音を評価対象と同じディレクトリに置く場合は、`--self` に渡したファイルは評価対象から除かれる
+
+### 正解ラベル (任意)
+
+録音と同じ名前の `.txt` (Audacity のラベル書き出し形式) か `.rttm` を置くと、DER と話者数の正否を出す。
+本人の発話に `self` というラベルを付けると、本人・相手の判定が正しいかも確認する (相手のラベルは何でもよい)。
+
+Audacity で付ける場合: 録音を開き、発話ごとに範囲を選んで Cmd+B でラベルを付け、「ファイル > 書き出し > ラベルを書き出し」で保存する。
+
+```
+0.000	3.210	self
+3.710	6.050	partner
+```
+
+区間を細かく付ける必要はない。発話の切れ目がおおよそ合っていれば、設定同士の比較には十分。
+
+## 出力の見方
+
+```
+== th=0.60 min=- max=- num=- seg=1.0 ==
+cafe-1.m4a  話者 3 (正解 2)  DER 18.2% (混同 10.1% / 誤検出 3.0% / 未検出 5.1%)
+  S1     62.3s  本人類似度  0.71  → self  [本人]
+  S2     30.1s  本人類似度  0.12  → partner
+  S3     40.0s  本人類似度  0.45  → self  [相手]
+  判定: 本人 ✓ / 相手 ✗ (本人の声を相手に選んでいる)
+```
+
+- `話者 3 (正解 2)`: 分離された話者数。正解より多ければ分かれすぎ、少なければまとまりすぎ
+- `→ self`: その話者が正解ラベルのどの話者と最も長く重なるか
+- `[本人]` `[相手]`: アプリの規則で本人・相手と判定された話者
+- `本人を自動判定できない`: しきい値を超えた話者が 0 人か複数人で、アプリでは手動選択になる
+
+DER の内訳は、混同 (話者の取り違え)、誤検出 (発話でない区間を発話と判定)、未検出 (発話を検出できなかった) の、正解の発話時間に対する割合。

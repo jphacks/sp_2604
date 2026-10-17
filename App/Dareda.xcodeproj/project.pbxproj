@@ -11,9 +11,9 @@
 		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
 		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
 		A90000000000000000000003 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000002 /* FluidAudio */; };
+		AB0000000000000000000003 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = AB0000000000000000000002 /* Logging */; };
 		B1000000000000000000000B /* Prefire in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000021 /* Prefire */; };
 		B1000000000000000000000C /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000022 /* SnapshotTesting */; };
-		AB0000000000000000000003 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = AB0000000000000000000002 /* Logging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -691,6 +691,14 @@
 				minimumVersion = 0.17.7;
 			};
 		};
+		AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.0;
+			};
+		};
 		B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/BarredEwe/Prefire";
@@ -705,14 +713,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.19.5;
-			};
-		};
-		AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-log";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.6.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -738,6 +738,11 @@
 			package = A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
 		};
+		AB0000000000000000000002 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = Logging;
+		};
 		B10000000000000000000021 /* Prefire */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */;
@@ -752,11 +757,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */;
 			productName = "plugin:PrefireTestsPlugin";
-		};
-		AB0000000000000000000002 /* Logging */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AB0000000000000000000001 /* XCRemoteSwiftPackageReference "swift-log" */;
-			productName = Logging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
