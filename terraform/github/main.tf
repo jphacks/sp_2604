@@ -25,6 +25,7 @@ locals {
     "MATCH_PASSWORD",
     "CERTIFICATES_APP_PRIVATE_KEY",
     "FIREBASE_APP_ID",
+    "SLACK_WEBHOOK_URL",
   ])
 
   actions_variables = toset([

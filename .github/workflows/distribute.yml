@@ -61,5 +61,6 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ steps.app-token.outputs.token }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           RELEASE_NOTES: ${{ github.event.head_commit.message }}
         run: bundle exec fastlane ios distribute
