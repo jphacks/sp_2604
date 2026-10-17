@@ -9,10 +9,11 @@ struct RecordingScreen: View {
 
     init(
         isAdditional: Bool = false,
+        importedFileURL: URL? = nil,
         onFinished: @escaping (Profile.ID?) -> Void,
         onAdded: @escaping (Recording) -> Void = { _ in }
     ) {
-        _viewModel = State(initialValue: RecordingViewModel(isAdditional: isAdditional))
+        _viewModel = State(initialValue: RecordingViewModel(isAdditional: isAdditional, importedFileURL: importedFileURL))
         self.onFinished = onFinished
         self.onAdded = onAdded
     }
@@ -30,6 +31,7 @@ struct RecordingScreen: View {
             errorMessage: viewModel.errorMessage,
             isDiscardConfirmationPresented: viewModel.isDiscardConfirmationPresented,
             isAdditional: viewModel.isAdditional,
+            isImported: viewModel.isImported,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }
