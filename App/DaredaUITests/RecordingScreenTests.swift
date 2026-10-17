@@ -89,6 +89,42 @@ final class RecordingScreenTests: XCTestCase {
     }
 
     @MainActor
+    private func selectRegistration(_ app: XCUIApplication) {
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+        app.buttons["recording.stopButton"].tap()
+        XCTAssertTrue(app.buttons["recording.registrationButton"].waitForExistence(timeout: 5))
+        app.buttons["recording.registrationButton"].tap()
+        XCTAssertTrue(app.staticTexts["recording.selectedMode.registration"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func test操作選択後のキャンセルを取り消すと選択を保持する() {
+        let app = start()
+        selectRegistration(app)
+        app.buttons["recording.discardButton"].tap()
+        let keep = app.buttons["recording.cancelDiscardButton"].firstMatch
+        XCTAssertTrue(keep.waitForExistence(timeout: 5))
+        keep.tap()
+        XCTAssertTrue(app.staticTexts["recording.selectedMode.registration"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["root.recordButton"].isHittable)
+    }
+
+    @MainActor
+    func test操作選択後にキャンセルを確定するとホームに戻り新しく録音できる() {
+        let app = start()
+        selectRegistration(app)
+        app.buttons["recording.discardButton"].tap()
+        let confirm = app.buttons["recording.confirmDiscardButton"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 5))
+        app.buttons["root.recordButton"].tap()
+        // 前回の録音は残らず、操作選択前の新しい録音から始まる
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["recording.selectedMode.registration"].exists)
+    }
+
+    @MainActor
     func test起動時の録音整理に失敗したら再試行後に録音できる() {
         let app = XCUIApplication()
         app.launchEnvironment["UI_TEST_SCENARIO"] = "recordingCleanupFailure"
@@ -100,6 +136,38 @@ final class RecordingScreenTests: XCTestCase {
         XCTAssertTrue(app.buttons["root.recordButton"].isEnabled)
         app.buttons["root.recordButton"].tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    private func startAnalysis(scenario: String) -> XCUIApplication {
+        let app = start(scenario: scenario)
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+        app.buttons["recording.stopButton"].tap()
+        XCTAssertTrue(app.buttons["recording.searchButton"].waitForExistence(timeout: 5))
+        app.buttons["recording.searchButton"].tap()
+        return app
+    }
+
+    @MainActor
+    func test操作を選ぶと解析が完了する() {
+        let app = startAnalysis(scenario: "default")
+        XCTAssertTrue(app.staticTexts["recording.analysisCompleted"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["recording.analysisError"].exists)
+    }
+
+    @MainActor
+    func test解析がOSに中断されても復帰後に未完了の処理だけを再試行して完了する() {
+        let app = startAnalysis(scenario: "analysisSuspended")
+        // 文字起こしを終えて話者分離中にバックグラウンドへ移行し、OS に打ち切られる
+        XCTAssertTrue(app.descendants(matching: .any)["recording.analysisStage"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+
+        app.activate()
+        // 文字起こしは 2 回目が失敗するテストダブルなので、完了すれば文字起こしは再実行されていない
+        XCTAssertTrue(app.staticTexts["recording.analysisCompleted"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["recording.analysisError"].exists)
+        attach(app, name: "recording-analysis-resumed-after")
     }
 
     @MainActor

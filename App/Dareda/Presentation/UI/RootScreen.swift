@@ -10,6 +10,7 @@ struct RootScreen: View {
             settingsErrorMessage: viewModel.settingsErrorMessage,
             availability: viewModel.availability,
             isPrivateCloudComputeSettingsPresented: viewModel.isPrivateCloudComputeSettingsPresented,
+            isSettingsPresented: viewModel.isSettingsPresented,
             isRecordingPresented: viewModel.isRecordingPresented,
             isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,
             isPreparedForRecording: viewModel.isPreparedForRecording,

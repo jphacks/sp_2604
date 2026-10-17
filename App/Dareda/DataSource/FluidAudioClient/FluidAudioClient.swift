@@ -26,6 +26,18 @@ nonisolated extension FluidAudioClient {
         FluidAudioClient(diarize: { _ in result })
     }
 
+    /// 2 人の話者 (0〜15 秒と 15〜30 秒) に分けるテストダブル。`delay` だけ待ってから返す。
+    static func twoSpeakers(delay: Duration = .zero) -> FluidAudioClient {
+        let result = DiarizationResult(segments: [
+            TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 15, qualityScore: 1),
+            TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: 30, qualityScore: 1),
+        ])
+        return FluidAudioClient(diarize: { _ in
+            try await Task.sleep(for: delay)
+            return result
+        })
+    }
+
     /// 失敗するテストダブル。
     static func failing() -> FluidAudioClient {
         FluidAudioClient(diarize: { _ in throw CocoaError(.fileReadUnknown) })

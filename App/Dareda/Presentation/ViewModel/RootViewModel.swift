@@ -11,9 +11,12 @@ final class RootViewModel {
         case settingsButtonTapped
         case privateCloudComputeSettingsButtonTapped
         case privateCloudComputeSettingsPresentedChanged(Bool)
+        case settingsMenuButtonTapped
+        case settingsPresentedChanged(Bool)
         case recordingFinished
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
+        case personSearchNotificationTapped
     }
 
     private(set) var recordingPermission: RecordingPermission?
@@ -22,6 +25,7 @@ final class RootViewModel {
 
     private(set) var availability: DeviceAvailability?
     private(set) var isPrivateCloudComputeSettingsPresented = false
+    private(set) var isSettingsPresented = false
     private(set) var isRecordingPresented = false
     private(set) var isPreparedForRecording = false
     private(set) var preparationErrorMessage: LocalizedStringResource?
@@ -37,6 +41,8 @@ final class RootViewModel {
     @Dependency(\.requestRecordingPermissionUseCase) private var requestRecordingPermissionUseCase
     @ObservationIgnored
     @Dependency(\.openAppSettingsUseCase) private var openAppSettingsUseCase
+    @ObservationIgnored
+    @Dependency(\.observePersonSearchNotificationTapUseCase) private var observePersonSearchNotificationTapUseCase
     @ObservationIgnored
     private var hasAttemptedPreparation = false
     @ObservationIgnored
@@ -67,6 +73,7 @@ final class RootViewModel {
             hasAttemptedPreparation = true
             prepareForRecording()
             Task { await presentVoiceEnrollmentIfNeeded() }
+            observePersonSearchNotificationTaps()
         case .preparationRetryButtonTapped:
             prepareForRecording()
         case .recheckButtonTapped:
@@ -97,6 +104,23 @@ final class RootViewModel {
             isPrivateCloudComputeSettingsPresented = true
         case let .privateCloudComputeSettingsPresentedChanged(isPresented):
             isPrivateCloudComputeSettingsPresented = isPresented
+        case .settingsMenuButtonTapped:
+            isSettingsPresented = true
+        case let .settingsPresentedChanged(isPresented):
+            isSettingsPresented = isPresented
+        case .personSearchNotificationTapped:
+            // TODO: #23 で人物検索の候補一覧画面に差し替える。それまではルートのプロフィール一覧に戻す
+            isPrivateCloudComputeSettingsPresented = false
+            isSettingsPresented = false
+        }
+    }
+
+    private func observePersonSearchNotificationTaps() {
+        let taps = observePersonSearchNotificationTapUseCase.execute()
+        Task { [weak self] in
+            for await _ in taps {
+                self?.send(.personSearchNotificationTapped)
+            }
         }
     }
 

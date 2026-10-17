@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RecordingScreen: View {
     @State private var viewModel = RecordingViewModel()
+    @Environment(\.scenePhase) private var scenePhase
     let onFinished: () -> Void
 
     var body: some View {
@@ -16,9 +17,16 @@ struct RecordingScreen: View {
             selectedMode: viewModel.selectedMode,
             errorMessage: viewModel.errorMessage,
             isDiscardConfirmationPresented: viewModel.isDiscardConfirmationPresented,
+            analysisStage: viewModel.analysisStage,
+            isAnalysisCompleted: viewModel.isAnalysisCompleted,
+            isAnalysisSuspended: viewModel.isAnalysisSuspended,
+            analysisErrorMessage: viewModel.analysisErrorMessage,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { viewModel.send(.sceneBecameActive) }
+        }
         .onChange(of: viewModel.isFinished) { _, finished in
             if finished { onFinished() }
         }
