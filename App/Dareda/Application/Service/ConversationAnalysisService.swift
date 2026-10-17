@@ -46,7 +46,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     @Dependency(\.speakerDiarizationGateway) private var speakerDiarizationGateway
     @Dependency(\.speakerEmbeddingGateway) private var speakerEmbeddingGateway
     @Dependency(\.audioFileGateway) private var audioFileGateway
-    @Dependency(\.conversationSummaryGateway) private var conversationSummaryGateway
+    @Dependency(\.conversationSummaryService) private var conversationSummaryService
     @Dependency(\.vectorMatchingService) private var vectorMatchingService
 
     func analyze(
@@ -93,7 +93,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
         stream { continuation in
             if let cached = try await analysisCacheRepository.getSummary(session) { return cached }
             continuation.yield(.stageChanged(.summarizing))
-            let summary = try await conversationSummaryGateway.summarize(transcript)
+            let summary = try await conversationSummaryService.summarize(transcript)
             try await analysisCacheRepository.setSummary(summary, session)
             return summary
         }

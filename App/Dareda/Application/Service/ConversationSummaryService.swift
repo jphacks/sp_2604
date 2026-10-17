@@ -3,29 +3,29 @@ import DependenciesMacros
 import Foundation
 
 @DependencyClient
-nonisolated struct SummarizeConversationUseCase: Sendable {
+nonisolated struct ConversationSummaryService: Sendable {
     /// 会話を要約する。端末内のコンテキスト量を超えた場合、同意があれば PCC、なければ端末内で分割して要約する。
     /// PCC を使うかがまだ選ばれていなければ `ConversationSummaryError.privateCloudConsentRequired` を投げる。
     var summarize: @Sendable (_ transcript: Transcript) async throws -> ConversationSummary
 }
 
-nonisolated extension SummarizeConversationUseCase: DependencyKey {
-    static let liveValue: SummarizeConversationUseCase = {
-        let impl = SummarizeConversationUseCaseImpl()
-        return SummarizeConversationUseCase(
+nonisolated extension ConversationSummaryService: DependencyKey {
+    static let liveValue: ConversationSummaryService = {
+        let impl = ConversationSummaryServiceImpl()
+        return ConversationSummaryService(
             summarize: impl.summarize(_:)
         )
     }()
 }
 
 nonisolated extension DependencyValues {
-    var summarizeConversationUseCase: SummarizeConversationUseCase {
-        get { self[SummarizeConversationUseCase.self] }
-        set { self[SummarizeConversationUseCase.self] = newValue }
+    var conversationSummaryService: ConversationSummaryService {
+        get { self[ConversationSummaryService.self] }
+        set { self[ConversationSummaryService.self] = newValue }
     }
 }
 
-private nonisolated struct SummarizeConversationUseCaseImpl: Sendable {
+private nonisolated struct ConversationSummaryServiceImpl: Sendable {
     @Dependency(\.conversationSummaryGateway) private var conversationSummaryGateway
     @Dependency(\.privateCloudComputeConsentRepository) private var privateCloudComputeConsentRepository
 
