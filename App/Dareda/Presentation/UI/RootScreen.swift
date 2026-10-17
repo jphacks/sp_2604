@@ -11,6 +11,7 @@ struct RootScreen: View {
             availability: viewModel.availability,
             isProfileListPresented: viewModel.isProfileListPresented,
             isRecordingPresented: viewModel.isRecordingPresented,
+            isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,
             isPreparedForRecording: viewModel.isPreparedForRecording,
             preparationErrorMessage: viewModel.preparationErrorMessage,
             send: viewModel.send

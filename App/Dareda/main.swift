@@ -11,8 +11,22 @@ prepareDependencies {
         if scenario == "profiles" {
             try! seedProfilesScenario(database)
         }
+        // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
+        if !scenario.hasPrefix("voiceEnrollment") {
+            try! seedSelfVoiceScenario(database)
+        }
         $0.defaultDatabase = database
         $0.audioRecorderClient = .inMemory()
+        $0.fileSystemClient = .inMemory()
+        $0.speakerEmbeddingModelClient = .stub()
+        switch scenario {
+        case "voiceEnrollmentShort":
+            $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
+        case "voiceEnrollmentQuiet":
+            $0.audioFileClient = .speech(seconds: 35, amplitude: 0.005)
+        default:
+            $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
+        }
         $0.appSettingsClient = .inMemory()
         if scenario == "recordingCleanupFailure" {
             let client = FileSystemClient.inMemory(removeFailures: 1)

@@ -7,6 +7,7 @@ struct RootContent: View {
     let availability: DeviceAvailability?
     let isProfileListPresented: Bool
     let isRecordingPresented: Bool
+    let isVoiceEnrollmentPresented: Bool
     let isPreparedForRecording: Bool
     let preparationErrorMessage: LocalizedStringResource?
     let send: (RootViewModel.Action) -> Void
@@ -73,6 +74,10 @@ struct RootContent: View {
         ) {
             ProfileListScreen()
         }
+        // 登録が済むまで閉じられないよう、完了時のみ閉じる
+        .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {
+            VoiceEnrollmentScreen { send(.voiceEnrollmentCompleted) }
+        }
     }
 }
 
@@ -84,6 +89,7 @@ struct RootContent: View {
         availability: .available,
         isProfileListPresented: false,
         isRecordingPresented: false,
+        isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
         preparationErrorMessage: nil,
         send: { _ in }
@@ -98,6 +104,7 @@ struct RootContent: View {
         availability: .unsupported,
         isProfileListPresented: false,
         isRecordingPresented: false,
+        isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
         preparationErrorMessage: nil,
         send: { _ in }
@@ -112,6 +119,7 @@ struct RootContent: View {
         availability: .temporarilyUnavailable(.modelNotReady),
         isProfileListPresented: false,
         isRecordingPresented: false,
+        isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
         preparationErrorMessage: nil,
         send: { _ in }
@@ -126,6 +134,7 @@ struct RootContent: View {
         availability: .available,
         isProfileListPresented: false,
         isRecordingPresented: false,
+        isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
         preparationErrorMessage: nil,
         send: { _ in }

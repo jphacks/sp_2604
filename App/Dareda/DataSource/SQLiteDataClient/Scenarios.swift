@@ -26,3 +26,12 @@ nonisolated func seedProfilesScenario(_ database: any DatabaseWriter) throws {
         }.execute(db)
     }
 }
+
+/// UI テスト用に本人の声を登録済みにする。
+nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter) throws {
+    try database.write { db in
+        try SelfVoiceRecord.insert {
+            SelfVoiceRecord(id: SelfVoiceRecord.singletonID, vector: Data(), createdAt: Date())
+        }.execute(db)
+    }
+}

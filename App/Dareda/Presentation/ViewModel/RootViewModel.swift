@@ -13,6 +13,7 @@ final class RootViewModel {
         case profileListPresentedChanged(Bool)
         case recordingFinished
         case preparationRetryButtonTapped
+        case voiceEnrollmentCompleted
     }
 
     private(set) var recordingPermission: RecordingPermission?
@@ -24,11 +25,14 @@ final class RootViewModel {
     private(set) var isRecordingPresented = false
     private(set) var isPreparedForRecording = false
     private(set) var preparationErrorMessage: LocalizedStringResource?
+    private(set) var isVoiceEnrollmentPresented = false
 
     @ObservationIgnored
     @Dependency(\.cleanUpTemporaryDataUseCase) private var cleanUpTemporaryDataUseCase
     @ObservationIgnored
     @Dependency(\.checkDeviceAvailabilityUseCase) private var checkDeviceAvailabilityUseCase
+    @ObservationIgnored
+    @Dependency(\.fetchSelfVoiceRegisteredUseCase) private var fetchSelfVoiceRegisteredUseCase
     @ObservationIgnored
     @Dependency(\.requestRecordingPermissionUseCase) private var requestRecordingPermissionUseCase
     @ObservationIgnored
@@ -62,6 +66,7 @@ final class RootViewModel {
             guard !hasAttemptedPreparation else { return }
             hasAttemptedPreparation = true
             prepareForRecording()
+            Task { await presentVoiceEnrollmentIfNeeded() }
         case .preparationRetryButtonTapped:
             prepareForRecording()
         case .recheckButtonTapped:
@@ -90,6 +95,15 @@ final class RootViewModel {
             isProfileListPresented = true
         case let .profileListPresentedChanged(isPresented):
             isProfileListPresented = isPresented
+        case .voiceEnrollmentCompleted:
+            isVoiceEnrollmentPresented = false
         }
+    }
+
+    /// 本人の声が未登録なら、利用開始前に登録画面を表示する。
+    private func presentVoiceEnrollmentIfNeeded() async {
+        // 読み込みに失敗してもユーザーにできることがないため、登録画面は出さずに続行する。
+        guard let isRegistered = try? await fetchSelfVoiceRegisteredUseCase.execute() else { return }
+        isVoiceEnrollmentPresented = !isRegistered
     }
 }
