@@ -24,7 +24,10 @@ nonisolated extension DependencyValues {
 private nonisolated struct CleanUpTemporaryDataUseCaseImpl: Sendable {
     @Dependency(\.processingSessionService) private var processingSessionService
 
+    @Dependency(\.audioRecordingGateway) private var audioRecordingGateway
+
     func execute() async throws {
         try await processingSessionService.discardAll()
+        try audioRecordingGateway.discardAll()
     }
 }
