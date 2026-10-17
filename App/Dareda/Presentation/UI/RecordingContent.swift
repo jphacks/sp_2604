@@ -46,7 +46,8 @@ struct RecordingContent: View {
             .navigationTitle("会話の録音")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("破棄して閉じる") { send(.discardButtonTapped) }
+                    // 録音後の操作を選んだ後は、処理のキャンセルになる
+                    Button(selectedMode == nil ? "破棄して閉じる" : "キャンセル") { send(.discardButtonTapped) }
                         .disabled(isStarting)
                         .accessibilityIdentifier("recording.discardButton")
                 }
@@ -55,28 +56,32 @@ struct RecordingContent: View {
                 get: { isDiscardConfirmationPresented },
                 set: { send(.discardConfirmationChanged($0)) }
             )) {
-                RecordingDiscardConfirmationContent(send: send)
+                if selectedMode == nil {
+                    CancelConfirmation(
+                        title: "録音を破棄しますか？",
+                        message: "この録音は削除されます。",
+                        confirmTitle: "録音を破棄",
+                        keepTitle: "破棄しない",
+                        identifierPrefix: "recording",
+                        onConfirm: { send(.discardConfirmed) },
+                        onKeep: { send(.discardConfirmationChanged(false)) }
+                    )
                     .presentationDetents([.medium])
+                } else {
+                    CancelConfirmation(
+                        title: "処理をキャンセルしますか？",
+                        message: "録音と処理中のデータは削除され、元に戻せません。",
+                        confirmTitle: "キャンセルする",
+                        keepTitle: "続ける",
+                        identifierPrefix: "recording",
+                        onConfirm: { send(.discardConfirmed) },
+                        onKeep: { send(.discardConfirmationChanged(false)) }
+                    )
+                    .presentationDetents([.medium])
+                }
             }
         }
         .interactiveDismissDisabled()
-    }
-}
-
-private struct RecordingDiscardConfirmationContent: View {
-    let send: (RecordingViewModel.Action) -> Void
-
-    var body: some View {
-        VStack(spacing: 24) {
-            Text("録音を破棄しますか？").font(.title2.bold())
-            Text("この録音は削除されます。")
-            Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("recording.confirmDiscardButton")
-            Button("破棄しない", role: .cancel) { send(.discardConfirmationChanged(false)) }
-                .accessibilityIdentifier("recording.cancelDiscardButton")
-        }
-        .padding()
     }
 }
 
