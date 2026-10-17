@@ -61,6 +61,7 @@ prepareDependencies {
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
         }
         $0.appSettingsClient = .inMemory()
+        $0.mapKitClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
         $0.userNotificationClient =
             if scenario == "personSearchNotificationTapped" {
