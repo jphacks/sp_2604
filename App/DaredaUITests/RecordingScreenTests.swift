@@ -93,10 +93,10 @@ final class RecordingScreenTests: XCTestCase {
         let app = XCUIApplication()
         app.launchEnvironment["UI_TEST_SCENARIO"] = "recordingCleanupFailure"
         app.launch()
-        XCTAssertTrue(app.staticTexts["root.preparationErrorNotice"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.alerts["前回の録音を整理できませんでした"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
         app.buttons["root.preparationRetryButton"].tap()
-        XCTAssertFalse(app.staticTexts["root.preparationErrorNotice"].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists)
         XCTAssertTrue(app.buttons["root.recordButton"].isEnabled)
         app.buttons["root.recordButton"].tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))

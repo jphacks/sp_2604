@@ -1,21 +1,19 @@
 import SwiftUI
 
 struct RootContent: View {
-    let recordingPermission: RecordingPermission?
     let isRequestingPermission: Bool
-    let settingsErrorMessage: String?
+    let alert: RootViewModel.Alert?
     let availability: DeviceAvailability?
     let isSettingsPresented: Bool
     let isRecordingPresented: Bool
     let isVoiceEnrollmentPresented: Bool
     let isPreparedForRecording: Bool
-    let preparationErrorMessage: LocalizedStringResource?
     var registeredProfileID: Profile.ID?
     let send: (RootViewModel.Action) -> Void
 
     var body: some View {
         ProfileListScreen(registeredProfileID: registeredProfileID) {
-            notices
+            EmptyView()
         } actions: {
             // 録音・解析は利用可否が `available` のときのみ有効にする。
             Button { send(.recordButtonTapped) } label: {
@@ -50,99 +48,82 @@ struct RootContent: View {
         ) {
             SettingsScreen()
         }
-    }
-
-    @ViewBuilder
-    private var notices: some View {
-        VStack(spacing: 12) {
-            if let availability, !availability.isAvailable {
-                AvailabilityNotice(availability: availability) {
-                    send(.recheckButtonTapped)
-                }
-            }
-
-            if let preparationErrorMessage {
-                Text(preparationErrorMessage)
-                    .accessibilityIdentifier("root.preparationErrorNotice")
-                Button("再試行") { send(.preparationRetryButtonTapped) }
-                    .accessibilityIdentifier("root.preparationRetryButton")
-            }
-
-            if recordingPermission == .denied {
-                Text("マイクの使用が許可されていません。設定アプリでDaredaのマイクを許可し、戻ってからもう一度録音ボタンを押してください。")
-                    .accessibilityIdentifier("root.microphoneDeniedNotice")
-                Button("設定アプリを開く") { send(.settingsButtonTapped) }
-                    .accessibilityIdentifier("root.openSettingsButton")
-            } else if recordingPermission == .granted {
-                Text("マイクの使用が許可されました")
-                    .accessibilityIdentifier("root.microphoneGrantedNotice")
-            }
-
-            if let settingsErrorMessage {
-                Text(settingsErrorMessage)
-                    .accessibilityIdentifier("root.settingsErrorNotice")
-            }
+        .alert(
+            "マイクの使用が許可されていません",
+            isPresented: Binding(
+                get: { alert == .microphoneDenied },
+                set: { if !$0 { send(.alertDismissed) } }
+            )
+        ) {
+            Button("設定を開く") { send(.settingsButtonTapped) }
+                .accessibilityIdentifier("root.openSettingsButton")
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("録音するには、設定アプリでDaredaのマイクを許可してください。")
         }
-        .padding(.horizontal)
+        .alert(
+            "前回の録音を整理できませんでした",
+            isPresented: Binding(
+                get: { alert == .preparationFailed },
+                set: { if !$0 { send(.alertDismissed) } }
+            )
+        ) {
+            Button("再試行") { send(.preparationRetryButtonTapped) }
+                .accessibilityIdentifier("root.preparationRetryButton")
+        } message: {
+            Text("再試行してください。")
+        }
     }
 }
 
 #Preview("利用可") {
     RootContent(
-        recordingPermission: nil,
         isRequestingPermission: false,
-        settingsErrorMessage: nil,
+        alert: nil,
         availability: .available,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
-        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
 
 #Preview("非対応") {
     RootContent(
-        recordingPermission: nil,
         isRequestingPermission: false,
-        settingsErrorMessage: nil,
+        alert: nil,
         availability: .unsupported,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
-        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
 
 #Preview("一時的に利用不可") {
     RootContent(
-        recordingPermission: nil,
         isRequestingPermission: false,
-        settingsErrorMessage: nil,
+        alert: nil,
         availability: .temporarilyUnavailable(.modelNotReady),
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
-        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
 
 #Preview("マイク拒否") {
     RootContent(
-        recordingPermission: .denied,
         isRequestingPermission: false,
-        settingsErrorMessage: nil,
+        alert: .microphoneDenied,
         availability: .available,
         isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
-        preparationErrorMessage: nil,
         send: { _ in }
     )
 }
