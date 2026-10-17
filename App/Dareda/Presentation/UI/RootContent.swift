@@ -17,8 +17,6 @@ struct RootContent: View {
 
     var body: some View {
         ProfileListScreen(registeredProfileID: registeredProfileID) {
-            EmptyView()
-        } actions: {
             // 録音・解析は利用可否が `available` のときのみ有効にする。
             Button { send(.recordButtonTapped) } label: {
                 Label("録音", systemImage: "mic")
