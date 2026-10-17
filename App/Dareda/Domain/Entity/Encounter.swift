@@ -10,7 +10,7 @@ nonisolated struct Encounter: Sendable, Equatable, Identifiable {
 }
 
 /// 会った場所 (任意)。MapKit の検索結果から選択する。
-nonisolated struct Place: Sendable, Equatable {
+nonisolated struct Place: Sendable, Hashable {
     var name: String
     var latitude: Double
     var longitude: Double
