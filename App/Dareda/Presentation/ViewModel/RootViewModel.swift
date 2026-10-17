@@ -21,6 +21,8 @@ final class RootViewModel {
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
         case personSearchNotificationTapped
+        /// コントロール・ショートカットから録音の開始を依頼された。
+        case startRecordingRequested
     }
 
     enum Alert: Equatable {
@@ -57,7 +59,12 @@ final class RootViewModel {
     @ObservationIgnored
     @Dependency(\.observePersonSearchNotificationTapUseCase) private var observePersonSearchNotificationTapUseCase
     @ObservationIgnored
+    @Dependency(\.appIntentRequestService) private var appIntentRequestService
+    @ObservationIgnored
     private var hasAttemptedPreparation = false
+    /// 録音の準備が済む前に届いた録音開始の依頼。準備が済んだら録音を始める。
+    @ObservationIgnored
+    private var isStartRecordingPending = false
     @ObservationIgnored
     private var isPreparing = false
 
@@ -68,6 +75,10 @@ final class RootViewModel {
             do {
                 try await cleanUpTemporaryDataUseCase.execute()
                 isPreparedForRecording = true
+                if isStartRecordingPending {
+                    isStartRecordingPending = false
+                    send(.recordFromMicrophoneTapped)
+                }
             } catch {
                 alert = .preparationFailed
             }
@@ -86,6 +97,7 @@ final class RootViewModel {
             prepareForRecording()
             Task { await presentVoiceEnrollmentIfNeeded() }
             observePersonSearchNotificationTaps()
+            observeAppIntentRequests()
         case .preparationRetryButtonTapped:
             alert = nil
             prepareForRecording()
@@ -137,6 +149,24 @@ final class RootViewModel {
             // 候補一覧は録音画面の上の処理状況画面に表示されている。上に重なったシートを閉じてそれを見せる。
             // 録音画面を閉じた後のタップでは、ルートのプロフィール一覧に戻る
             isSettingsPresented = false
+        case .startRecordingRequested:
+            // 録音・解析中や本人の声の登録中は、今の操作を優先する
+            guard !isRecordingPresented, !isVoiceEnrollmentPresented else { return }
+            isSettingsPresented = false
+            if isPreparedForRecording {
+                send(.recordFromMicrophoneTapped)
+            } else {
+                isStartRecordingPending = true
+            }
+        }
+    }
+
+    private func observeAppIntentRequests() {
+        let requests = appIntentRequestService.requests()
+        Task { [weak self] in
+            for await request in requests where request == .startRecording {
+                self?.send(.startRecordingRequested)
+            }
         }
     }
 
