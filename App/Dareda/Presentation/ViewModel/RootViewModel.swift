@@ -1,3 +1,4 @@
+import Foundation
 import Dependencies
 import Observation
 
@@ -11,6 +12,7 @@ final class RootViewModel {
         case profilesButtonTapped
         case profileListPresentedChanged(Bool)
         case recordingFinished
+        case preparationRetryButtonTapped
     }
 
     private(set) var recordingPermission: RecordingPermission?
@@ -20,6 +22,8 @@ final class RootViewModel {
     private(set) var availability: DeviceAvailability?
     private(set) var isProfileListPresented = false
     private(set) var isRecordingPresented = false
+    private(set) var isPreparedForRecording = false
+    private(set) var preparationErrorMessage: LocalizedStringResource?
 
     @ObservationIgnored
     @Dependency(\.cleanUpTemporaryDataUseCase) private var cleanUpTemporaryDataUseCase
@@ -30,7 +34,24 @@ final class RootViewModel {
     @ObservationIgnored
     @Dependency(\.openAppSettingsUseCase) private var openAppSettingsUseCase
     @ObservationIgnored
-    private var hasCleanedUp = false
+    private var hasAttemptedPreparation = false
+    @ObservationIgnored
+    private var isPreparing = false
+
+    private func prepareForRecording() {
+        guard !isPreparing, !isPreparedForRecording else { return }
+        isPreparing = true
+        preparationErrorMessage = nil
+        Task {
+            do {
+                try await cleanUpTemporaryDataUseCase.execute()
+                isPreparedForRecording = true
+            } catch {
+                preparationErrorMessage = "前回の録音を整理できませんでした。再試行してください。"
+            }
+            isPreparing = false
+        }
+    }
 
     func send(_ action: Action) {
         switch action {
@@ -38,14 +59,15 @@ final class RootViewModel {
             if availability == nil {
                 availability = checkDeviceAvailabilityUseCase.execute()
             }
-            // 起動ごとに 1 回だけ実行する。失敗してもユーザーにできることはないため状態は持たない。
-            guard !hasCleanedUp else { return }
-            hasCleanedUp = true
-            Task { try? await cleanUpTemporaryDataUseCase.execute() }
+            guard !hasAttemptedPreparation else { return }
+            hasAttemptedPreparation = true
+            prepareForRecording()
+        case .preparationRetryButtonTapped:
+            prepareForRecording()
         case .recheckButtonTapped:
             availability = checkDeviceAvailabilityUseCase.execute()
         case .recordButtonTapped:
-            guard availability?.isAvailable == true, !isRequestingPermission else { return }
+            guard availability?.isAvailable == true, isPreparedForRecording, !isRequestingPermission else { return }
             isRequestingPermission = true
             settingsErrorMessage = nil
             Task {

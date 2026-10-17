@@ -57,6 +57,8 @@ struct RecordingContent: View {
             ), titleVisibility: .visible) {
                 Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
                     .accessibilityIdentifier("recording.confirmDiscardButton")
+                Button("録音を続ける", role: .cancel) { send(.discardConfirmationChanged(false)) }
+                    .accessibilityIdentifier("recording.cancelDiscardButton")
             } message: {
                 Text("この録音は削除されます。")
             }
@@ -128,7 +130,8 @@ private struct RecordingChoiceContent: View {
                 .accessibilityIdentifier("recording.searchButton")
             if let selectedMode {
                 Text(selectedMode == .registration ? "新規登録を選択しました" : "人物を探すを選択しました")
-                    .accessibilityIdentifier("recording.selectedModeNotice")
+                    .accessibilityIdentifier(selectedMode == .registration
+                        ? "recording.selectedMode.registration" : "recording.selectedMode.search")
             }
         }
     }
