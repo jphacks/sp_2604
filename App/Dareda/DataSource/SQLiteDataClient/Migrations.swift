@@ -18,7 +18,7 @@ nonisolated func appDatabase(inMemory: Bool = false) throws -> any DatabaseWrite
             create: true
         )
         database = try DatabaseQueue(
-            path: directory.appending(path: "db.sqlite").path(),
+            path: directory.appending(path: "db.sqlite").path(percentEncoded: false),
             configuration: configuration
         )
     }

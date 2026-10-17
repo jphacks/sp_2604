@@ -2,14 +2,14 @@ import Foundation
 
 nonisolated extension FileSystemClient {
     /// ディレクトリの存在だけを覚えるメモリ上のテストダブル。
-    static func inMemory() -> FileSystemClient {
-        let storage = InMemoryDirectories()
+    static func inMemory(removeFailures: Int = 0) -> FileSystemClient {
+        let storage = InMemoryDirectories(removeFailures: removeFailures)
         return FileSystemClient(
             temporaryDirectory: { URL(fileURLWithPath: "/in-memory/tmp", isDirectory: true) },
             fileExists: { storage.contains($0) },
             createDirectory: { storage.insert($0) },
             contentsOfDirectory: { storage.children(of: $0) },
-            removeItem: { storage.remove($0) }
+            removeItem: { try storage.remove($0) }
         )
     }
 }
@@ -17,6 +17,9 @@ nonisolated extension FileSystemClient {
 private nonisolated final class InMemoryDirectories: @unchecked Sendable {
     private let lock = NSLock()
     private var paths: Set<String> = []
+    private var remainingRemoveFailures: Int
+
+    init(removeFailures: Int) { remainingRemoveFailures = removeFailures }
 
     func contains(_ url: URL) -> Bool {
         lock.withLock { paths.contains(url.standardizedFileURL.path) }
@@ -40,8 +43,12 @@ private nonisolated final class InMemoryDirectories: @unchecked Sendable {
         }
     }
 
-    func remove(_ url: URL) {
-        lock.withLock {
+    func remove(_ url: URL) throws {
+        try lock.withLock {
+            if remainingRemoveFailures > 0 {
+                remainingRemoveFailures -= 1
+                throw CocoaError(.fileWriteNoPermission)
+            }
             let prefix = url.standardizedFileURL.path
             paths = paths.filter { $0 != prefix && !$0.hasPrefix(prefix + "/") }
         }
