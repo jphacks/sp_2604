@@ -14,6 +14,7 @@ final class RecordingViewModel {
         case discardConfirmationChanged(Bool)
         case discardConfirmed
         case retryButtonTapped
+        case sceneBecameActive
     }
 
     private(set) var recording: Recording?
@@ -27,8 +28,16 @@ final class RecordingViewModel {
     private(set) var errorMessage: LocalizedStringResource?
     private(set) var isDiscardConfirmationPresented = false
     private(set) var isFinished = false
+    private(set) var analysisStage: ConversationAnalysisStage?
+    private(set) var isAnalysisCompleted = false
+    private(set) var isAnalysisSuspended = false
+    private(set) var analysisErrorMessage: LocalizedStringResource?
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
+    @ObservationIgnored @Dependency(\.processingSessionService) private var processingSessionService
+    @ObservationIgnored @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
+    @ObservationIgnored private var session: ProcessingSession?
+    @ObservationIgnored private var isAnalyzing = false
     @ObservationIgnored private var elapsedTask: Task<Void, Never>?
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
@@ -47,9 +56,14 @@ final class RecordingViewModel {
         case .registrationButtonTapped:
             guard recording != nil, !isRecording else { return }
             selectedMode = .registration
+            analyze()
         case .searchButtonTapped:
             guard recording != nil, !isRecording else { return }
             selectedMode = .search
+            analyze()
+        case .sceneBecameActive:
+            // OS に打ち切られた解析は、アプリに戻ったら未完了の処理だけを再試行する。
+            if isAnalysisSuspended { analyze() }
         case .discardButtonTapped:
             guard !isStarting else { return }
             isDiscardConfirmationPresented = true
@@ -119,6 +133,42 @@ final class RecordingViewModel {
                 isStarting = false
                 interruptionTask?.cancel()
                 errorMessage = "録音を開始できませんでした。マイクを確認して、もう一度お試しください。"
+            }
+        }
+    }
+
+    /// 第 1 段階の話者識別までを行う。同じセッションで呼び直すため、完了済みの処理は再実行されない。
+    /// 処理状況の画面 (#29) と新規登録・人物検索のフロー (#21 / #23) ができるまでの暫定の呼び出し口。
+    private func analyze() {
+        guard let recording, !isAnalyzing, !isAnalysisCompleted else { return }
+        isAnalyzing = true
+        isAnalysisSuspended = false
+        analysisErrorMessage = nil
+        Task {
+            defer {
+                isAnalyzing = false
+                analysisStage = nil
+            }
+            do {
+                let session: ProcessingSession
+                if let existing = self.session {
+                    session = existing
+                } else {
+                    session = try await processingSessionService.start()
+                    self.session = session
+                }
+                for try await event in conversationAnalysisService.analyze(recording, session) {
+                    switch event {
+                    case let .stageChanged(stage):
+                        analysisStage = stage
+                    case .completed:
+                        isAnalysisCompleted = true
+                    }
+                }
+            } catch ConversationAnalysisError.suspended {
+                isAnalysisSuspended = true
+            } catch {
+                analysisErrorMessage = "解析に失敗しました。"
             }
         }
     }
