@@ -33,7 +33,7 @@ struct PlaceSearchContent: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル", role: .cancel) { dismiss() }
+                    Button(role: .cancel) { dismiss() }
                         .accessibilityIdentifier("placeSearch.cancelButton")
                 }
             }

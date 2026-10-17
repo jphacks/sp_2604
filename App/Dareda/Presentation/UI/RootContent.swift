@@ -81,7 +81,7 @@ struct RootContent: View {
         ) {
             Button("設定を開く") { send(.settingsButtonTapped) }
                 .accessibilityIdentifier("root.openSettingsButton")
-            Button("キャンセル", role: .cancel) {}
+            Button(role: .cancel) {}
         } message: {
             Text("録音するには、設定アプリでDaredaのマイクを許可してください。")
         }

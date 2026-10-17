@@ -67,7 +67,7 @@ struct ProcessingContent: View {
         .navigationBarBackButtonHidden()
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("キャンセル") { send(.cancelButtonTapped) }
+                Button(role: .cancel) { send(.cancelButtonTapped) }
                     .accessibilityIdentifier("processing.cancelButton")
             }
         }
