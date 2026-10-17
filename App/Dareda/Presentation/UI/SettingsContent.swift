@@ -6,6 +6,7 @@ struct SettingsContent: View {
     let privateCloudComputeConsent: PrivateCloudComputeConsent
     var recordingPermission: RecordingPermission?
     var notificationPermission: NotificationPermission?
+    var appVersion: AppVersion?
     let send: (SettingsViewModel.Action) -> Void
 
     var body: some View {
@@ -55,6 +56,13 @@ struct SettingsContent: View {
                 } footer: {
                     Text("タップすると設定アプリが開き、許可を変更できます。")
                 }
+
+                Section("アプリ情報") {
+                    LabeledContent("バージョン") {
+                        Text(appVersion.map { "\($0.version) (\($0.build))" } ?? "-")
+                            .accessibilityIdentifier("settings.appVersion")
+                    }
+                }
             }
             .navigationTitle("設定")
         }
@@ -102,6 +110,7 @@ struct SettingsContent: View {
         privateCloudComputeConsent: .granted,
         recordingPermission: .granted,
         notificationPermission: .denied,
+        appVersion: AppVersion(version: "1.0.0", build: "42"),
         send: { _ in }
     )
 }

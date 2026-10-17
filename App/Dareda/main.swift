@@ -84,6 +84,7 @@ prepareDependencies {
         }
         $0.mapKitClient = .inMemory()
         $0.appSettingsClient = .inMemory()
+        $0.bundleClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
         $0.userNotificationClient =
             if scenario == "personSearchNotificationTapped" {

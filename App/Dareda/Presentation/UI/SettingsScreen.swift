@@ -11,6 +11,7 @@ struct SettingsScreen: View {
             privateCloudComputeConsent: viewModel.privateCloudComputeConsent,
             recordingPermission: viewModel.recordingPermission,
             notificationPermission: viewModel.notificationPermission,
+            appVersion: viewModel.appVersion,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }

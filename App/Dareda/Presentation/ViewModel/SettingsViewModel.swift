@@ -19,6 +19,7 @@ final class SettingsViewModel {
     private(set) var privateCloudComputeConsent: PrivateCloudComputeConsent = .undetermined
     private(set) var recordingPermission: RecordingPermission?
     private(set) var notificationPermission: NotificationPermission?
+    private(set) var appVersion: AppVersion?
 
     @ObservationIgnored
     @Dependency(\.fetchSelfVoiceUseCase) private var fetchSelfVoiceUseCase
@@ -32,11 +33,14 @@ final class SettingsViewModel {
     @Dependency(\.fetchNotificationPermissionUseCase) private var fetchNotificationPermissionUseCase
     @ObservationIgnored
     @Dependency(\.openAppSettingsUseCase) private var openAppSettingsUseCase
+    @ObservationIgnored
+    @Dependency(\.fetchAppVersionUseCase) private var fetchAppVersionUseCase
 
     func send(_ action: Action) {
         switch action {
         case .onAppear:
             privateCloudComputeConsent = fetchPrivateCloudComputeConsentUseCase.execute()
+            appVersion = fetchAppVersionUseCase.execute()
             Task { await fetch() }
             Task { await fetchPermissions() }
         case .reregisterVoiceButtonTapped:
