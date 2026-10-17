@@ -1,6 +1,15 @@
 {
   "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/permissions-schema.json",
   "permission": {},
-  "claudecode": {},
-  "codexcli": {},
+  "claudecode": {
+    // auto はユーザー設定でのみ有効。反映には rulesync generate --global --targets claudecode --features permissions が必要。
+    "permissions": {
+      "defaultMode": "auto",
+    },
+  },
+  "codexcli": {
+    "approval_policy": "on-request",
+    "approvals_reviewer": "auto_review",
+    "base_permission_profile": ":workspace",
+  },
 }
