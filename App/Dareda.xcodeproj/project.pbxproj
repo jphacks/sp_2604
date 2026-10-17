@@ -10,6 +10,7 @@
 		A00000000000000000000023 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000013 /* SQLiteData */; };
 		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
 		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
+		A90000000000000000000003 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000002 /* FluidAudio */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 				A30000000000000000000011 /* Dependencies in Frameworks */,
 				A30000000000000000000012 /* DependenciesMacros in Frameworks */,
 				A00000000000000000000023 /* SQLiteData in Frameworks */,
+				A90000000000000000000003 /* FluidAudio in Frameworks */,
 			);
 		};
 		F157C67D3082907700C4613A /* Frameworks */ = {
@@ -109,6 +111,7 @@
 				A30000000000000000000021 /* Dependencies */,
 				A30000000000000000000022 /* DependenciesMacros */,
 				A00000000000000000000013 /* SQLiteData */,
+				A90000000000000000000002 /* FluidAudio */,
 			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Dareda.app */;
@@ -166,6 +169,7 @@
 			packageReferences = (
 				A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */,
+				A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -538,6 +542,14 @@
 				minimumVersion = 1.9.4;
 			};
 		};
+		A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/FluidInference/FluidAudio";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.17.7;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -555,6 +567,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
 			productName = DependenciesMacros;
+		};
+		A90000000000000000000002 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
