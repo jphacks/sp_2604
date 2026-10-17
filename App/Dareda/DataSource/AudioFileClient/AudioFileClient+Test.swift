@@ -17,4 +17,14 @@ nonisolated extension AudioFileClient {
         }
         return .inMemory(sampleRate: Double(sampleRate), samples: samples)
     }
+
+    /// 前半 15 秒を大きい声 (本人)、後半 15 秒を小さい声 (相手) とした 2 人の会話を返すテストダブル。
+    static func conversation() -> AudioFileClient {
+        let sampleRate = 16_000
+        let samples = (0..<(sampleRate * 30)).map { index in
+            let amplitude: Float = index < sampleRate * 15 ? 0.3 : 0.1
+            return amplitude * sin(2 * .pi * 220 * Float(index) / Float(sampleRate))
+        }
+        return .inMemory(sampleRate: Double(sampleRate), samples: samples)
+    }
 }

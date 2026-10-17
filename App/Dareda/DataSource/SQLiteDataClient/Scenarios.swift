@@ -28,11 +28,12 @@ nonisolated func seedProfilesScenario(_ database: any DatabaseWriter) throws {
 }
 
 /// UI テスト用に本人の声を登録済みにする。
-nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter) throws {
+/// `vector` を省略すると空のベクトルになる。
+nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter, vector: [Float] = []) throws {
     try database.write { db in
         try SelfVoiceRecord.insert {
             SelfVoiceRecord(
-                id: SelfVoiceRecord.singletonID, vector: Data(),
+                id: SelfVoiceRecord.singletonID, vector: Data(vector: vector),
                 createdAt: Date(timeIntervalSince1970: 1_700_000_000)
             )
         }.execute(db)

@@ -12,7 +12,10 @@ prepareDependencies {
             try! seedProfilesScenario(database)
         }
         // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
-        if !scenario.hasPrefix("voiceEnrollment") {
+        // 新規登録のシナリオは、録音の前半 (大きい声) を本人と自動判定できる声で登録しておく
+        if scenario.hasPrefix("registration") {
+            try! seedSelfVoiceScenario(database, vector: SpeakerEmbeddingModelClient.loudnessVector([1]))
+        } else if !scenario.hasPrefix("voiceEnrollment") {
             try! seedSelfVoiceScenario(database)
         }
         $0.defaultDatabase = database
@@ -31,6 +34,17 @@ prepareDependencies {
             $0.speechClient = .inMemory()
             $0.fluidAudioClient = .twoSpeakers()
         }
+        if scenario.hasPrefix("registration") {
+            $0.speakerEmbeddingModelClient = .byLoudness()
+        }
+        switch scenario {
+        case "registrationNoPartner":
+            $0.fluidAudioClient = .oneSpeaker()
+        case "registrationSaveFailure":
+            $0.sqliteDataClient = .failing(insertProfileFailures: 1)
+        default:
+            break
+        }
         switch scenario {
         case "voiceEnrollmentShort", "voiceReregistrationShort":
             $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
@@ -41,6 +55,8 @@ prepareDependencies {
             $0.audioFileClient = .speech(seconds: 31, amplitude: 0.3)
         case "voiceEnrollmentQuiet":
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.005)
+        case "registration", "registrationSaveFailure":
+            $0.audioFileClient = .conversation()
         default:
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
         }
