@@ -1,0 +1,22 @@
+{
+  "core": {
+    "workingDir": ".reg",
+    "actualDir": "actual",
+    "thresholdRate": 0.001,
+    "addIgnore": true,
+    "ximgdiff": {
+      "invocationType": "client"
+    }
+  },
+  "plugins": {
+    "reg-keygen-git-hash-plugin": true,
+    "reg-publish-gcs-plugin": {
+      "bucketName": "$VRT_BUCKET_NAME"
+    },
+    "reg-notify-github-with-api-plugin": {
+      "owner": "jphacks",
+      "repository": "sp_2604",
+      "privateToken": "$GITHUB_TOKEN"
+    }
+  }
+}

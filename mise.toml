@@ -2,6 +2,8 @@
 minimum_release_age = "7d"
 
 [tools]
+jq = "1.8.1"
+node = "24.11.1"
 "npm:rulesync" = "29.0.0"
 ruby = "3.4.11"
 terraform = "1.16.4"
@@ -61,6 +63,31 @@ xcodebuild test \
   -skipPackagePluginValidation \
   CODE_SIGN_IDENTITY=-
 """
+
+[tasks."test:snapshot"]
+description = "iPhone 18 Pro シミュレーターで #Preview のスナップショットを撮る"
+run = """
+rm -rf SnapshotResults.xcresult
+xcrun simctl bootstatus 'iPhone 18 Pro' -b
+xcodebuild test \
+  -workspace Dareda.xcworkspace \
+  -scheme Dareda \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -only-testing:DaredaSnapshotTests \
+  -resultBundlePath SnapshotResults.xcresult \
+  -skipMacroValidation \
+  -skipPackagePluginValidation \
+  CODE_SIGN_IDENTITY=-
+"""
+
+[tasks.vrt]
+description = "#Preview のスナップショットを reg-suit で比較する (test:snapshot の後に実行する)"
+dir = "{{config_root}}/vrt"
+run = [
+  "bash extract-screenshots.sh ../SnapshotResults.xcresult actual",
+  "npm install --no-audit --no-fund",
+  "npx reg-suit run",
+]
 
 [tasks."terraform:init"]
 description = "terraform init を実行する (例: mise run terraform:init google)"

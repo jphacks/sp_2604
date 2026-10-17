@@ -1,0 +1,7 @@
+test_configuration:
+  target: Dareda
+  test_target_path: ${PROJECT_DIR}/DaredaSnapshotTests
+  template_file_path: PreviewTests.stencil
+  use_grouped_snapshots: false
+  sources:
+    - ${PROJECT_DIR}/Dareda/Presentation/

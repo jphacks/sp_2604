@@ -24,6 +24,7 @@ resource "google_project_service" "this" {
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
     "firebaseappdistribution.googleapis.com",
+    "storage.googleapis.com",
   ])
 
   service            = each.key
