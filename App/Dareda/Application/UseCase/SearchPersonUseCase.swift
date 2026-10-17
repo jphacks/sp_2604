@@ -64,6 +64,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
     @Dependency(\.audioFileGateway) private var audioFileGateway
     @Dependency(\.speakerEmbeddingGateway) private var speakerEmbeddingGateway
     @Dependency(\.profileRepository) private var profileRepository
+    @Dependency(\.metricsGateway) private var metricsGateway
 
     func search(
         _ recordings: [PersonSearchRecording]
@@ -105,6 +106,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
             samples: partnerSegments.flatMap(\.samples)
         )
         let partnerSpeechDuration = speechQualityService.analyze(partnerAudio, .default).effectiveSpeechDuration
+        metricsGateway.recordValue("metrics.personSearch.partnerSpeechDuration", partnerSpeechDuration)
         guard partnerSpeechDuration >= SearchPersonUseCase.minimumPartnerSpeechDuration else {
             return .needsAdditionalRecording(partnerSpeechDuration: partnerSpeechDuration)
         }
@@ -117,9 +119,14 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
                 try await speakerEmbeddingGateway.embedding(partnerSegments)
             }
         let profiles = try await profileRepository.getAll()
-        return .candidates(
-            try vectorMatchingService.rankProfiles(query.values, profiles, VectorMatchingService.defaultMatchLimit)
+        let candidates = try vectorMatchingService.rankProfiles(
+            query.values, profiles, VectorMatchingService.defaultMatchLimit
         )
+        // 確信度の算出方法を検討するため、候補の類似度を順位ごとに記録する
+        for (rank, candidate) in candidates.enumerated() {
+            metricsGateway.recordValue("metrics.personSearch.similarity.rank\(rank + 1)", Double(candidate.similarity))
+        }
+        return .candidates(candidates)
     }
 
     private func analyze(
