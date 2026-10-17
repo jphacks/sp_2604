@@ -13,7 +13,7 @@ prepareDependencies {
         }
         // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
         if !scenario.hasPrefix("voiceEnrollment") {
-            try! seedSelfVoiceScenario(database)
+            try! seedSelfVoiceScenario(database, matchesStub: scenario != "processingSelfUnknown")
         }
         $0.defaultDatabase = database
         $0.audioRecorderClient = .inMemory()
@@ -29,6 +29,11 @@ prepareDependencies {
         }
         $0.appSettingsClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
+        $0.speechClient = .inMemory(failsOnRetranscription: scenario == "processingFailure")
+        $0.fluidAudioClient = .conversation(failureCount: scenario == "processingFailure" ? 1 : 0)
+        if scenario.hasPrefix("processing") {
+            $0.audioFileClient = .conversation()
+        }
         if scenario == "recordingCleanupFailure" {
             let client = FileSystemClient.inMemory(removeFailures: 1)
             try! client.createDirectory(client.temporaryDirectory().appending(path: "Recordings"))

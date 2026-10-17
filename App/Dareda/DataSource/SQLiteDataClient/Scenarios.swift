@@ -28,10 +28,17 @@ nonisolated func seedProfilesScenario(_ database: any DatabaseWriter) throws {
 }
 
 /// UI テスト用に本人の声を登録済みにする。
-nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter) throws {
+/// ベクトルは `SpeakerEmbeddingModelClient.stub()` が無音・正弦波から生成するベクトルと同じ向きにする。
+/// `matchesStub` が `false` なら逆向きにし、どの話者も本人と判定されないようにする。
+nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter, matchesStub: Bool = true) throws {
+    let vector = (0..<192).map { Float($0 + 1) * (matchesStub ? 1 : -1) }
     try database.write { db in
         try SelfVoiceRecord.insert {
-            SelfVoiceRecord(id: SelfVoiceRecord.singletonID, vector: Data(), createdAt: Date())
+            SelfVoiceRecord(
+                id: SelfVoiceRecord.singletonID,
+                vector: vector.withUnsafeBufferPointer { Data(buffer: $0) },
+                createdAt: Date()
+            )
         }.execute(db)
     }
 }

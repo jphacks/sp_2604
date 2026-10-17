@@ -17,4 +17,14 @@ nonisolated extension AudioFileClient {
         }
         return .inMemory(sampleRate: Double(sampleRate), samples: samples)
     }
+
+    /// 本人 (前半 15 秒の正弦波) と相手 (後半 20 秒の、直流成分で声の特徴をずらした正弦波) の会話 (16kHz) を返すテストダブル
+    static func conversation() -> AudioFileClient {
+        let sampleRate = 16_000
+        let samples = (0..<(sampleRate * 35)).map { index in
+            let wave = 0.3 * sin(2 * .pi * 220 * Float(index) / Float(sampleRate))
+            return index < sampleRate * 15 ? wave : wave - 200
+        }
+        return .inMemory(sampleRate: Double(sampleRate), samples: samples)
+    }
 }
