@@ -14,12 +14,19 @@ final class ProcessingViewModel {
         case registrationSaved(Profile.ID)
         case selfSpeakerSelected(AnalyzedSpeaker.ID)
         case rerecordButtonTapped
+        case candidateSelected(Profile.ID)
+        case manualSelectionButtonTapped
+        case manualSelectionPresentedChanged(Bool)
+        case newRegistrationButtonTapped
+        case additionalRecordingButtonTapped
+        case additionalRecordingPresentedChanged(Bool)
+        case additionalRecordingAdded(Recording)
     }
 
     enum StageStatus { case waiting, processing, completed, failed }
 
     let mode: RecordingViewModel.Mode
-    let stages: [ConversationAnalysisStage]
+    private(set) var stages: [ConversationAnalysisStage]
     private(set) var currentStage: ConversationAnalysisStage?
     private(set) var completedStages: [ConversationAnalysisStage] = []
     private(set) var failedStage: ConversationAnalysisStage?
@@ -33,17 +40,37 @@ final class ProcessingViewModel {
     private(set) var isFinished = false
     /// 新規登録の入力に進める解析結果。本人と相手の声がそろい、要約が済んだときだけ値を持つ。
     private(set) var registrationSource: RegistrationViewModel.Source?
-    /// 新規登録で保存したプロフィール。閉じた後に詳細を表示するために使う。
+    /// 新規登録で保存した、または人物検索で確定したプロフィール。閉じた後に詳細を表示するために使う。
     private(set) var registeredProfileID: Profile.ID?
+    /// 人物検索の候補 (類似度の高い順)。照合が済むまでは `nil`、登録済みの人物がいなければ空。
+    private(set) var searchCandidates: [ProfileDetailServiceModel]?
+    /// 相手の有効発話が足りず、追加録音を促すときの、これまでの相手の有効発話時間 (秒)。
+    private(set) var insufficientPartnerSpeechDuration: TimeInterval?
+    private(set) var isAdditionalRecordingPresented = false
+    private(set) var isManualSelectionPresented = false
+    /// 手動選択で選べる保存済みのプロフィール。
+    private(set) var manualSelectionProfiles: [Profile] = []
+    /// 人物の確定 (一時データの削除) 中。
+    private(set) var isConfirming = false
 
     @ObservationIgnored @Dependency(\.processingSessionService) private var processingSessionService
     @ObservationIgnored @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
     @ObservationIgnored @Dependency(\.searchPersonUseCase) private var searchPersonUseCase
     @ObservationIgnored @Dependency(\.cancelProcessingUseCase) private var cancelProcessingUseCase
+    @ObservationIgnored @Dependency(\.completePersonSearchUseCase) private var completePersonSearchUseCase
+    @ObservationIgnored @Dependency(\.notifyPersonSearchResultUseCase) private var notifyPersonSearchResultUseCase
+    @ObservationIgnored @Dependency(\.fetchProfileDetailUseCase) private var fetchProfileDetailUseCase
+    @ObservationIgnored @Dependency(\.fetchProfilesUseCase) private var fetchProfilesUseCase
     @ObservationIgnored private let recording: Recording
     @ObservationIgnored private var session: ProcessingSession?
     /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
     @ObservationIgnored private var selfSpeakerID: AnalyzedSpeaker.ID?
+    /// 人物検索の追加録音。最初の録音とあわせて照合する。
+    @ObservationIgnored private var additionalRecordings: [PersonSearchRecording] = []
+    /// 人物検索から新規登録へ進んだか。
+    @ObservationIgnored private var isRegisteringFromSearch = false
+    /// 本人を手動選択している録音。
+    @ObservationIgnored private var selfSelectionRecordingID: Recording.ID?
     @ObservationIgnored private var processingTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
 
@@ -90,14 +117,82 @@ final class ProcessingViewModel {
             }
         case let .selfSpeakerSelected(speakerID):
             guard selfSelectionAnalysis?.speakers.contains(where: { $0.id == speakerID }) == true else { return }
-            selfSpeakerID = speakerID
+            if let index = additionalRecordings.firstIndex(where: { $0.recording.id == selfSelectionRecordingID }) {
+                additionalRecordings[index].selfSpeakerID = speakerID
+            } else {
+                selfSpeakerID = speakerID
+            }
+            selfSelectionRecordingID = nil
             selfSelectionAnalysis = nil
             process()
+        case let .candidateSelected(profileID):
+            confirm(profileID)
+        case .manualSelectionButtonTapped:
+            isManualSelectionPresented = true
+            Task {
+                // 読み込めなくても一覧が空になるだけで、他の選択肢は選べる
+                manualSelectionProfiles = (try? await fetchProfilesUseCase.execute()) ?? []
+            }
+        case let .manualSelectionPresentedChanged(isPresented):
+            isManualSelectionPresented = isPresented
+        case .newRegistrationButtonTapped:
+            guard mode == .search, !isRegisteringFromSearch else { return }
+            isRegisteringFromSearch = true
+            searchCandidates = nil
+            insufficientPartnerSpeechDuration = nil
+            isCompleted = false
+            stages = [.transcribing, .identifyingSpeakers, .summarizing]
+            completedStages = [.transcribing, .identifyingSpeakers]
+            // 新規登録には最初の録音だけを使うため、追加録音の一時データは先に削除する
+            let additional = additionalRecordings
+            additionalRecordings = []
+            Task {
+                try? await completePersonSearchUseCase.execute(additional)
+                process()
+            }
+        case .additionalRecordingButtonTapped:
+            isAdditionalRecordingPresented = true
+        case let .additionalRecordingPresentedChanged(isPresented):
+            isAdditionalRecordingPresented = isPresented
+        case let .additionalRecordingAdded(added):
+            isAdditionalRecordingPresented = false
+            Task {
+                do {
+                    let session = try await processingSessionService.start()
+                    additionalRecordings.append(PersonSearchRecording(recording: added, session: session, selfSpeakerID: nil))
+                    insufficientPartnerSpeechDuration = nil
+                    isCompleted = false
+                    completedStages = []
+                    process()
+                } catch {
+                    // 追加録音の案内は残したまま、もう一度録音できるようにする
+                    try? await cancelProcessingUseCase.execute(added, nil)
+                    errorMessage = "追加録音を処理できませんでした。もう一度お試しください。"
+                }
+            }
         case .rerecordButtonTapped:
             discard {
                 self.isRerecordRequested = true
             } onFailure: {
                 self.errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+            }
+        }
+    }
+
+    /// 人物検索で既存の人物を確定する。一時データを削除し、そのプロフィールの詳細を表示する。
+    private func confirm(_ profileID: Profile.ID) {
+        guard !isConfirming else { return }
+        isConfirming = true
+        isManualSelectionPresented = false
+        errorMessage = nil
+        Task {
+            defer { isConfirming = false }
+            do {
+                try await completePersonSearchUseCase.execute(try await searchRecordings())
+                registeredProfileID = profileID
+                isFinished = true
+            } catch {
+                errorMessage = "確定できませんでした。もう一度お試しください。"
             }
         }
     }
@@ -108,6 +203,8 @@ final class ProcessingViewModel {
         Task {
             do {
                 try await cancelProcessingUseCase.execute(recording, session)
+                try await completePersonSearchUseCase.execute(additionalRecordings)
+                additionalRecordings = []
                 onSuccess()
             } catch {
                 onFailure()
@@ -125,18 +222,18 @@ final class ProcessingViewModel {
             defer { processingTask = nil }
             do {
                 let session = try await currentSession()
-                switch mode {
-                case .registration:
+                if mode == .registration || isRegisteringFromSearch {
                     try await register(session)
-                case .search:
-                    try await search(session)
+                } else {
+                    try await search()
                 }
             } catch is CancellationError {
                 return
             } catch ConversationAnalysisError.suspended {
                 isSuspended = true
-            } catch let PersonSearchError.selfNotIdentified(analysis) {
+            } catch let PersonSearchError.selfNotIdentified(analysis, recordingID) {
                 completeCurrentStage()
+                selfSelectionRecordingID = recordingID
                 selfSelectionAnalysis = analysis
             } catch {
                 guard !Task.isCancelled else { return }
@@ -189,13 +286,33 @@ final class ProcessingViewModel {
         }
     }
 
-    private func search(_ session: ProcessingSession) async throws {
-        for try await event in searchPersonUseCase.search([
-            PersonSearchRecording(recording: recording, session: session, selfSpeakerID: selfSpeakerID)
-        ]) {
+    private func searchRecordings() async throws -> [PersonSearchRecording] {
+        let first = PersonSearchRecording(recording: recording, session: try await currentSession(), selfSpeakerID: selfSpeakerID)
+        return [first] + additionalRecordings
+    }
+
+    private func search() async throws {
+        for try await event in searchPersonUseCase.search(try await searchRecordings()) {
             switch event {
             case let .stageChanged(stage): stageChanged(stage)
-            case .completed: complete()
+            case let .completed(result):
+                // アプリ表示中は通知されない。通知できなくても結果はアプリ内で確認できる
+                try? await notifyPersonSearchResultUseCase.execute(result)
+                switch result {
+                case let .needsAdditionalRecording(duration):
+                    completeCurrentStage()
+                    completedStages = stages
+                    insufficientPartnerSpeechDuration = duration
+                case let .candidates(matches):
+                    var details: [ProfileDetailServiceModel] = []
+                    for match in matches {
+                        if let detail = try await fetchProfileDetailUseCase.execute(match.profileID) {
+                            details.append(detail)
+                        }
+                    }
+                    searchCandidates = details
+                    complete()
+                }
             }
         }
     }

@@ -27,6 +27,12 @@ struct ProcessingScreen: View {
             selfSelectionAnalysis: viewModel.selfSelectionAnalysis,
             isCancelConfirmationPresented: viewModel.isCancelConfirmationPresented,
             registrationSource: viewModel.registrationSource,
+            searchCandidates: viewModel.searchCandidates,
+            insufficientPartnerSpeechDuration: viewModel.insufficientPartnerSpeechDuration,
+            isConfirming: viewModel.isConfirming,
+            isManualSelectionPresented: viewModel.isManualSelectionPresented,
+            manualSelectionProfiles: viewModel.manualSelectionProfiles,
+            isAdditionalRecordingPresented: viewModel.isAdditionalRecordingPresented,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }

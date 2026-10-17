@@ -11,6 +11,7 @@ struct RecordingContent: View {
     let selectedMode: RecordingViewModel.Mode?
     let errorMessage: LocalizedStringResource?
     let isDiscardConfirmationPresented: Bool
+    var isAdditional = false
     let send: (RecordingViewModel.Action) -> Void
 
     private var hasRecording: Bool { recording != nil }
@@ -29,6 +30,10 @@ struct RecordingContent: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                             .accessibilityIdentifier("recording.stopButton")
+                    } else if hasRecording, isAdditional {
+                        Button("この録音を追加", systemImage: "plus") { send(.addButtonTapped) }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("recording.addButton")
                     } else if hasRecording {
                         RecordingChoiceContent(send: send)
                     }
@@ -45,7 +50,7 @@ struct RecordingContent: View {
                 .frame(maxWidth: .infinity)
                 .padding(24)
             }
-            .navigationTitle("会話の録音")
+            .navigationTitle(isAdditional ? "追加録音" : "会話の録音")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     // 録音後の操作を選んだ後は、処理のキャンセルになる

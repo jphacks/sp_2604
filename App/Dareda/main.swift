@@ -11,6 +11,9 @@ prepareDependencies {
         if scenario == "profiles" || scenario == "personSearchNotificationTapped" {
             try! seedProfilesScenario(database)
         }
+        if scenario.hasPrefix("personSearch") && scenario != "personSearchNotificationTapped" {
+            try! seedPersonSearchScenario(database)
+        }
         // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
         if !scenario.hasPrefix("voiceEnrollment") {
             try! seedSelfVoiceScenario(database, matchesStub: scenario != "processingSelfUnknown")
@@ -62,6 +65,9 @@ prepareDependencies {
         case "registrationNoPartner":
             // 本人の声だけの録音 (相手を分離できない)
             $0.fluidAudioClient = .oneSpeaker()
+        case "personSearchShortPartner":
+            // 相手の発話が 6 秒しかない。追加録音 (同じ会話) と合わせると照合できる
+            $0.fluidAudioClient = .twoSpeakers(partnerEnd: 21)
         case "registrationSaveFailure":
             $0.sqliteDataClient = .failing(insertProfileFailures: 1)
         default:
@@ -76,7 +82,7 @@ prepareDependencies {
             } else {
                 .inMemory()
             }
-        if scenario.hasPrefix("processing") || scenario == "analysisSuspended"
+        if scenario.hasPrefix("processing") || scenario.hasPrefix("personSearch") || scenario == "analysisSuspended"
             || scenario == "registration" || scenario == "registrationSaveFailure" {
             $0.audioFileClient = .conversation()
         }

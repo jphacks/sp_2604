@@ -106,7 +106,8 @@ final class RootViewModel {
         case let .settingsPresentedChanged(isPresented):
             isSettingsPresented = isPresented
         case .personSearchNotificationTapped:
-            // TODO: #23 で人物検索の候補一覧画面に差し替える。それまではルートのプロフィール一覧に戻す
+            // 候補一覧は録音画面の上の処理状況画面に表示されている。上に重なったシートを閉じてそれを見せる。
+            // 録音画面を閉じた後のタップでは、ルートのプロフィール一覧に戻る
             isSettingsPresented = false
         }
     }

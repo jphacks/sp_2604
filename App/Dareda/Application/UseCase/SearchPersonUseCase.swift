@@ -37,8 +37,8 @@ nonisolated enum PersonSearchResult: Sendable, Equatable {
 }
 
 nonisolated enum PersonSearchError: Error, Equatable {
-    /// 本人を自動判定できなかった。解析結果から本人を手動で選び、`selfSpeakerID` を指定して呼び直す。
-    case selfNotIdentified(ConversationAnalysis)
+    /// 本人を自動判定できなかった。解析結果から本人を手動で選び、該当する録音の `selfSpeakerID` を指定して呼び直す。
+    case selfNotIdentified(ConversationAnalysis, recordingID: Recording.ID)
     /// 本人以外の話者を検出できなかった。
     case partnerNotDetected
 }
@@ -94,7 +94,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
         for target in recordings {
             let analysis = try await analyze(target, continuation)
             guard let selfSpeakerID = target.selfSpeakerID ?? analysis.selfSpeakerID else {
-                throw PersonSearchError.selfNotIdentified(analysis)
+                throw PersonSearchError.selfNotIdentified(analysis, recordingID: target.recording.id)
             }
             // 本人の発話は含めない
             guard let partner = analysis.partner(selfSpeakerID: selfSpeakerID) else { continue }
