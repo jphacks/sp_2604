@@ -17,7 +17,11 @@ final class RecordingViewModel {
         /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
         case processingFinished(Profile.ID?)
         case rerecordRequested
+        case addButtonTapped
     }
+
+    /// 人物検索で相手の発話が足りないときの追加録音か。追加録音では操作を選ばせず、録音を処理状況画面へ返す。
+    let isAdditional: Bool
 
     private(set) var recording: Recording?
     private(set) var isRecording = false
@@ -32,6 +36,8 @@ final class RecordingViewModel {
     private(set) var isFinished = false
     /// 新規登録で保存したプロフィール。閉じた後に詳細を表示するために使う。
     private(set) var registeredProfileID: Profile.ID?
+    /// 追加録音で「追加する」を選んだ録音。
+    private(set) var addedRecording: Recording?
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
@@ -40,6 +46,10 @@ final class RecordingViewModel {
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
     @ObservationIgnored private var interruptedWhileStarting = false
+
+    init(isAdditional: Bool = false) {
+        self.isAdditional = isAdditional
+    }
 
     func send(_ action: Action) {
         switch action {
@@ -59,6 +69,10 @@ final class RecordingViewModel {
             selectedMode = .search
             // 検索結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で検索は続けられる
             Task { _ = try? await requestNotificationPermissionUseCase.execute() }
+        case .addButtonTapped:
+            guard isAdditional, let recording, !isRecording else { return }
+            addedRecording = recording
+            isFinished = true
         case let .processingFinished(profileID):
             registeredProfileID = profileID
             isFinished = true
