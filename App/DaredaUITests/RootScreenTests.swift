@@ -97,8 +97,11 @@ final class RootScreenTests: XCTestCase {
     @MainActor
     func test設定アプリから戻った後に再操作して許可を確認できる() {
         let app = assertMicrophoneDenied(scenario: "microphoneSettingsGranted")
-        app.buttons["root.openSettingsButton"].tap()
+        app.buttons["root.openSettingsButton"].firstMatch.tap()
         app.buttons["root.recordButton"].tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.openSettingsButton"].exists)
     }
@@ -109,6 +112,9 @@ final class RootScreenTests: XCTestCase {
         let button = app.buttons["root.recordButton"]
         XCTAssertTrue(button.waitForExistence(timeout: 5))
         button.tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.openSettingsButton"].exists)
     }
@@ -120,6 +126,9 @@ final class RootScreenTests: XCTestCase {
         let button = app.buttons["root.recordButton"]
         XCTAssertTrue(button.waitForExistence(timeout: 5))
         button.tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         XCTAssertTrue(app.alerts["マイクの使用が許可されていません"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["root.openSettingsButton"].exists)
         return app

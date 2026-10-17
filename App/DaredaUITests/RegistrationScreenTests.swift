@@ -12,6 +12,9 @@ final class RegistrationScreenTests: XCTestCase {
         let recordButton = app.buttons["root.recordButton"]
         XCTAssertTrue(recordButton.waitForExistence(timeout: 5))
         recordButton.tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         let stopButton = app.buttons["recording.stopButton"]
         XCTAssertTrue(stopButton.waitForExistence(timeout: 5))
         stopButton.tap()
@@ -95,7 +98,7 @@ final class RegistrationScreenTests: XCTestCase {
         type("高橋 次郎", into: "registration.nameTextField", in: app)
         app.buttons["registration.saveButton"].tap()
 
-        let alertOKButton = app.buttons["registration.saveErrorAlertOKButton"]
+        let alertOKButton = app.buttons["registration.saveErrorAlertOKButton"].firstMatch
         XCTAssertTrue(alertOKButton.waitForExistence(timeout: 5))
         attach(app, name: "registration-save-failure-alert")
         alertOKButton.tap()
