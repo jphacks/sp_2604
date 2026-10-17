@@ -103,6 +103,38 @@ final class RecordingScreenTests: XCTestCase {
     }
 
     @MainActor
+    private func startAnalysis(scenario: String) -> XCUIApplication {
+        let app = start(scenario: scenario)
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+        app.buttons["recording.stopButton"].tap()
+        XCTAssertTrue(app.buttons["recording.searchButton"].waitForExistence(timeout: 5))
+        app.buttons["recording.searchButton"].tap()
+        return app
+    }
+
+    @MainActor
+    func test操作を選ぶと解析が完了する() {
+        let app = startAnalysis(scenario: "default")
+        XCTAssertTrue(app.staticTexts["recording.analysisCompleted"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["recording.analysisError"].exists)
+    }
+
+    @MainActor
+    func test解析がOSに中断されても復帰後に未完了の処理だけを再試行して完了する() {
+        let app = startAnalysis(scenario: "analysisSuspended")
+        // 文字起こしを終えて話者分離中にバックグラウンドへ移行し、OS に打ち切られる
+        XCTAssertTrue(app.descendants(matching: .any)["recording.analysisStage"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+
+        app.activate()
+        // 文字起こしは 2 回目が失敗するテストダブルなので、完了すれば文字起こしは再実行されていない
+        XCTAssertTrue(app.staticTexts["recording.analysisCompleted"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["recording.analysisError"].exists)
+        attach(app, name: "recording-analysis-resumed-after")
+    }
+
+    @MainActor
     private func attach(_ app: XCUIApplication, name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
