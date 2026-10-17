@@ -148,6 +148,7 @@ fastlane/.env
 .bundle/
 vendor/bundle/
 TestResults.xcresult/
+SnapshotResults.xcresult/
 
 # Terraform
 .terraform/

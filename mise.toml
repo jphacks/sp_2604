@@ -64,11 +64,27 @@ xcodebuild test \
   CODE_SIGN_IDENTITY=-
 """
 
+[tasks."test:snapshot"]
+description = "iPhone 18 Pro シミュレーターで #Preview のスナップショットを撮る"
+run = """
+rm -rf SnapshotResults.xcresult
+xcrun simctl bootstatus 'iPhone 18 Pro' -b
+xcodebuild test \
+  -workspace Dareda.xcworkspace \
+  -scheme Dareda \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -only-testing:DaredaSnapshotTests \
+  -resultBundlePath SnapshotResults.xcresult \
+  -skipMacroValidation \
+  -skipPackagePluginValidation \
+  CODE_SIGN_IDENTITY=-
+"""
+
 [tasks.vrt]
-description = "UI テストのスクリーンショットを reg-suit で比較する (test:ui の後に実行する)"
+description = "#Preview のスナップショットを reg-suit で比較する (test:snapshot の後に実行する)"
 dir = "{{config_root}}/vrt"
 run = [
-  "bash extract-screenshots.sh ../TestResults.xcresult actual",
+  "bash extract-screenshots.sh ../SnapshotResults.xcresult actual",
   "npm install --no-audit --no-fund",
   "npx reg-suit run",
 ]
