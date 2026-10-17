@@ -60,36 +60,29 @@ struct RecordingContent: View {
                         .accessibilityIdentifier("recording.discardButton")
                         // iPad ではポップオーバーの起点になるため、トリガーのボタンに付ける
                         .confirmationDialog(
-                            "録音を破棄しますか？",
+                            selectedMode == nil ? "録音を破棄しますか？" : "処理をキャンセルしますか？",
                             isPresented: Binding(
-                                get: { isDiscardConfirmationPresented && selectedMode == nil },
+                                get: { isDiscardConfirmationPresented },
                                 set: { send(.discardConfirmationChanged($0)) }
                             ),
                             titleVisibility: .visible
                         ) {
-                            Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
-                                .accessibilityIdentifier("recording.confirmDiscardButton")
-                            Button("破棄しない", role: .cancel) { send(.discardConfirmationChanged(false)) }
-                                .accessibilityIdentifier("recording.cancelDiscardButton")
+                            Button(selectedMode == nil ? "録音を破棄" : "キャンセルする", role: .destructive) {
+                                send(.discardConfirmed)
+                            }
+                            .accessibilityIdentifier("recording.confirmDiscardButton")
+                            Button(selectedMode == nil ? "破棄しない" : "続ける", role: .cancel) {
+                                send(.discardConfirmationChanged(false))
+                            }
+                            .accessibilityIdentifier("recording.cancelDiscardButton")
                         } message: {
-                            Text("この録音は削除されます。")
+                            Text(
+                                selectedMode == nil
+                                    ? "この録音は削除されます。"
+                                    : "録音と処理中のデータは削除され、元に戻せません。"
+                            )
                         }
                 }
-            }
-            .sheet(isPresented: Binding(
-                get: { isDiscardConfirmationPresented && selectedMode != nil },
-                set: { send(.discardConfirmationChanged($0)) }
-            )) {
-                CancelConfirmation(
-                    title: "処理をキャンセルしますか？",
-                    message: "録音と処理中のデータは削除され、元に戻せません。",
-                    confirmTitle: "キャンセルする",
-                    keepTitle: "続ける",
-                    identifierPrefix: "recording",
-                    onConfirm: { send(.discardConfirmed) },
-                    onKeep: { send(.discardConfirmationChanged(false)) }
-                )
-                .presentationDetents([.medium])
             }
             .navigationDestination(isPresented: .constant(selectedMode != nil)) {
                 if let recording, let selectedMode {
