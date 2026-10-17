@@ -29,11 +29,12 @@ nonisolated extension FluidAudioClient {
 
     /// 2 人の話者 (0〜15 秒と 15〜30 秒) に分けるテストダブル。`delay` だけ待ってから返す。
     /// 最初の `failureCount` 回は失敗する。
-    static func twoSpeakers(delay: Duration = .zero, failureCount: Int = 0) -> FluidAudioClient {
+    /// `partnerEnd` で 2 人目 (15 秒から話し始める相手) の発話の終わりを指定できる。
+    static func twoSpeakers(delay: Duration = .zero, failureCount: Int = 0, partnerEnd: Float = 30) -> FluidAudioClient {
         let callCount = Mutex(0)
         let result = DiarizationResult(segments: [
             TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 15, qualityScore: 1),
-            TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: 30, qualityScore: 1),
+            TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: partnerEnd, qualityScore: 1),
         ])
         return FluidAudioClient(diarize: { _ in
             try await Task.sleep(for: delay)

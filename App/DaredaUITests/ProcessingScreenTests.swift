@@ -37,9 +37,9 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test人物を探すでは要約せずに照合まで完了する() {
+    func test人物を探すでは要約せずに照合まで完了し登録0人ならその旨を表示する() {
         let app = start(mode: "recording.searchButton")
-        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["personSearch.noProfilesNotice"].waitForExistence(timeout: 30))
         XCTAssertEqual(stageValue(app, "identifyingSpeakers"), "完了")
         XCTAssertFalse(app.descendants(matching: .any)["processing.stage.summarizing"].exists)
     }
@@ -72,7 +72,7 @@ final class ProcessingScreenTests: XCTestCase {
 
         app.activate()
         // 文字起こしは 2 回目が失敗するテストダブルなので、完了すれば文字起こしは再実行されていない
-        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["personSearch.noProfilesNotice"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["processing.errorNotice"].exists)
         attach(app, name: "processing-resumed-after")
     }
@@ -107,7 +107,7 @@ final class ProcessingScreenTests: XCTestCase {
         let candidate = app.buttons["processing.selfCandidate.0"]
         XCTAssertTrue(candidate.waitForExistence(timeout: 30))
         candidate.tap()
-        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["personSearch.noProfilesNotice"].waitForExistence(timeout: 30))
         XCTAssertFalse(app.staticTexts["processing.errorNotice"].exists)
     }
 
@@ -149,6 +149,103 @@ final class ProcessingScreenTests: XCTestCase {
         // 前回の録音は残らず、操作選択前の新しい録音から始まる
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["processing.cancelButton"].exists)
+    }
+
+    @MainActor
+    func test人物を探すと声の近い順に候補を表示し選ぶとプロフィール詳細を表示する() {
+        let app = start(scenario: "personSearch", mode: "recording.searchButton")
+        let first = app.buttons["personSearch.candidate.0"]
+        XCTAssertTrue(first.waitForExistence(timeout: 30))
+        // 登録済みの 3 人を全て表示し、1 位は相手の声と同じ「山田 太郎」。未登録の情報は表示しない
+        XCTAssertTrue(first.label.contains("山田 太郎"))
+        XCTAssertTrue(first.label.contains("株式会社サンプル"))
+        XCTAssertTrue(first.label.contains("渋谷駅"))
+        XCTAssertTrue(first.label.contains("新規事業について話した"))
+        XCTAssertTrue(app.buttons["personSearch.candidate.2"].exists)
+        XCTAssertFalse(app.buttons["personSearch.candidate.3"].exists)
+        XCTAssertTrue(app.buttons["personSearch.manualSelectionButton"].exists)
+        XCTAssertTrue(app.buttons["personSearch.newRegistrationButton"].exists)
+        attach(app, name: "person-search-candidates")
+
+        first.tap()
+        let name = app.staticTexts["profileDetail.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 10))
+        XCTAssertEqual(name.label, "山田 太郎")
+        // 既存の人物を選んでもプロフィールは増えない
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label == %@", "山田 太郎")).count, 1)
+    }
+
+    @MainActor
+    func test別の人を選ぶと保存済みのプロフィールから選んで確定できる() {
+        let app = start(scenario: "personSearch", mode: "recording.searchButton")
+        let manual = app.buttons["personSearch.manualSelectionButton"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 30))
+        manual.tap()
+        let option = app.buttons["personSearch.manualSelection.2"]
+        XCTAssertTrue(option.waitForExistence(timeout: 5))
+        attach(app, name: "person-search-manual-selection")
+        let selectedName = option.label.components(separatedBy: ",").first ?? ""
+        option.tap()
+        let name = app.staticTexts["profileDetail.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 10))
+        XCTAssertTrue(selectedName.contains(name.label))
+    }
+
+    @MainActor
+    func test該当なしを選ぶと要約を経て新規登録の入力画面に進む() {
+        let app = start(scenario: "personSearch", mode: "recording.searchButton")
+        let newRegistration = app.buttons["personSearch.newRegistrationButton"]
+        XCTAssertTrue(newRegistration.waitForExistence(timeout: 30))
+        newRegistration.tap()
+        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
+    }
+
+    @MainActor
+    func test登録0人のときは新規登録に進める() {
+        let app = start(mode: "recording.searchButton")
+        XCTAssertTrue(app.staticTexts["personSearch.noProfilesNotice"].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.buttons["personSearch.candidate.0"].exists)
+        attach(app, name: "person-search-no-profiles")
+        app.buttons["personSearch.newRegistrationButton"].tap()
+        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
+    }
+
+    @MainActor
+    func test相手の発話が足りないときは追加録音を促し追加すると候補を表示する() {
+        let app = start(scenario: "personSearchShortPartner", mode: "recording.searchButton")
+        let additional = app.buttons["personSearch.additionalRecordingButton"]
+        XCTAssertTrue(additional.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.descendants(matching: .any)["personSearch.insufficientSpeechNotice"].exists)
+        XCTAssertFalse(app.buttons["personSearch.candidate.0"].exists)
+        attach(app, name: "person-search-insufficient-speech")
+
+        additional.tap()
+        // 録音画面を再利用して追加録音する
+        let stop = app.buttons["recording.stopButton"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 5))
+        stop.tap()
+        let add = app.buttons["recording.addButton"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["recording.searchButton"].exists)
+        add.tap()
+
+        let first = app.buttons["personSearch.candidate.0"]
+        XCTAssertTrue(first.waitForExistence(timeout: 30))
+        XCTAssertTrue(first.label.contains("山田 太郎"))
+    }
+
+    @MainActor
+    func test相手の発話が足りないときは追加せずに手動で選べる() {
+        let app = start(scenario: "personSearchShortPartner", mode: "recording.searchButton")
+        let skip = app.buttons["personSearch.skipAdditionalRecordingButton"]
+        XCTAssertTrue(skip.waitForExistence(timeout: 30))
+        skip.tap()
+        let option = app.buttons["personSearch.manualSelection.0"]
+        XCTAssertTrue(option.waitForExistence(timeout: 5))
+        option.tap()
+        XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 10))
     }
 
     @MainActor
