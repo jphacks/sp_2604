@@ -42,7 +42,6 @@ struct ProfileListContent<Actions: View>: View {
         ],
         path: [],
         send: { _ in },
-        header: { EmptyView() },
         actions: { EmptyView() }
     )
 }
