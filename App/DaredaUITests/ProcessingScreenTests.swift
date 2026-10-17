@@ -145,45 +145,17 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test人物を探すと声の近い順に候補を表示し選ぶとプロフィール詳細を表示する() {
+    func test人物を探すと最も声が近い1人を表示する() {
         let app = start(scenario: "personSearch")
-        let first = app.buttons["personSearch.candidate.0"]
-        XCTAssertTrue(first.waitForExistence(timeout: 30))
-        // 登録済みの 3 人を全て表示し、1 位は相手の声と同じ「山田 太郎」。未登録の情報は表示しない
-        XCTAssertTrue(first.label.contains("山田 太郎"))
-        XCTAssertTrue(first.label.contains("株式会社サンプル"))
-        XCTAssertTrue(first.label.contains("渋谷駅"))
-        XCTAssertTrue(first.label.contains("新規事業について話した"))
-        XCTAssertTrue(app.buttons["personSearch.candidate.2"].exists)
-        XCTAssertFalse(app.buttons["personSearch.candidate.3"].exists)
-        XCTAssertTrue(app.buttons["personSearch.manualSelectionButton"].exists)
+        let candidate = app.descendants(matching: .any)["personSearch.candidate"]
+        XCTAssertTrue(candidate.waitForExistence(timeout: 30))
+        // 相手の声と同じ「山田 太郎」を表示する。未登録の情報は表示しない
+        XCTAssertTrue(candidate.label.contains("山田 太郎"))
+        XCTAssertTrue(candidate.label.contains("株式会社サンプル"))
+        XCTAssertTrue(candidate.label.contains("渋谷駅"))
+        XCTAssertTrue(candidate.label.contains("新規事業について話した"))
         XCTAssertTrue(app.buttons["personSearch.newRegistrationButton"].exists)
         attach(app, name: "person-search-candidates")
-
-        first.tap()
-        let name = app.staticTexts["profileDetail.name"]
-        XCTAssertTrue(name.waitForExistence(timeout: 10))
-        XCTAssertEqual(name.label, "山田 太郎")
-        // 既存の人物を選んでもプロフィールは増えない
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label == %@", "山田 太郎")).count, 1)
-    }
-
-    @MainActor
-    func test別の人を選ぶと保存済みのプロフィールから選んで確定できる() {
-        let app = start(scenario: "personSearch")
-        let manual = app.buttons["personSearch.manualSelectionButton"]
-        XCTAssertTrue(manual.waitForExistence(timeout: 30))
-        manual.tap()
-        let option = app.buttons["personSearch.manualSelection.2"]
-        XCTAssertTrue(option.waitForExistence(timeout: 5))
-        attach(app, name: "person-search-manual-selection")
-        let selectedName = option.label.components(separatedBy: ",").first ?? ""
-        option.tap()
-        let name = app.staticTexts["profileDetail.name"]
-        XCTAssertTrue(name.waitForExistence(timeout: 10))
-        XCTAssertTrue(selectedName.contains(name.label))
     }
 
     @MainActor
@@ -199,7 +171,7 @@ final class ProcessingScreenTests: XCTestCase {
     func test登録0人のときは新規登録に進める() {
         let app = start()
         XCTAssertTrue(app.staticTexts["personSearch.noProfilesNotice"].waitForExistence(timeout: 30))
-        XCTAssertFalse(app.buttons["personSearch.candidate.0"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["personSearch.candidate"].exists)
         attach(app, name: "person-search-no-profiles")
         app.buttons["personSearch.newRegistrationButton"].tap()
         XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
@@ -211,7 +183,7 @@ final class ProcessingScreenTests: XCTestCase {
         let additional = app.buttons["personSearch.additionalRecordingButton"]
         XCTAssertTrue(additional.waitForExistence(timeout: 30))
         XCTAssertTrue(app.descendants(matching: .any)["personSearch.insufficientSpeechNotice"].exists)
-        XCTAssertFalse(app.buttons["personSearch.candidate.0"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["personSearch.candidate"].exists)
         attach(app, name: "person-search-insufficient-speech")
 
         additional.tap()
@@ -223,9 +195,9 @@ final class ProcessingScreenTests: XCTestCase {
         XCTAssertTrue(add.waitForExistence(timeout: 5))
         add.tap()
 
-        let first = app.buttons["personSearch.candidate.0"]
-        XCTAssertTrue(first.waitForExistence(timeout: 30))
-        XCTAssertTrue(first.label.contains("山田 太郎"))
+        let candidate = app.descendants(matching: .any)["personSearch.candidate"]
+        XCTAssertTrue(candidate.waitForExistence(timeout: 30))
+        XCTAssertTrue(candidate.label.contains("山田 太郎"))
     }
 
     @MainActor

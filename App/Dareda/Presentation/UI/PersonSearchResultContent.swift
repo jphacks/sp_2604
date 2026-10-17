@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 人物検索の結果。候補から選ぶ・保存済みから手動で選ぶ・該当なしで新規登録に進む、のいずれかを選ばせる。
+/// 人物検索の結果。最も声が近い 1 人を表示し、該当なしなら新規登録に進ませる。
 /// 相手の発話が足りない場合は、追加録音か、追加せずに手動で選ぶかを選ばせる。
 struct PersonSearchResultContent: View {
     /// 類似度の高い順の候補。相手の発話が足りないときは `nil`。
@@ -50,22 +50,12 @@ struct PersonSearchResultContent: View {
 
     private func candidateList(_ candidates: [ProfileDetailServiceModel]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("この人ですか？").font(.headline)
-                Text("声が近い順に表示しています。正しい人物を選んでください。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            Text("この人ではありませんか？").font(.headline)
+            if let candidate = candidates.first {
+                PersonSearchCandidateRow(candidate: candidate)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("personSearch.candidate")
             }
-            ForEach(Array(candidates.enumerated()), id: \.element.profile.id) { index, candidate in
-                Button { send(.candidateSelected(candidate.profile.id)) } label: {
-                    PersonSearchCandidateRow(candidate: candidate)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("personSearch.candidate.\(index)")
-            }
-            Button("別の人を選ぶ", systemImage: "list.bullet") { send(.manualSelectionButtonTapped) }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("personSearch.manualSelectionButton")
             Button("該当なし・新規登録", systemImage: "person.badge.plus") { send(.newRegistrationButtonTapped) }
                 .buttonStyle(.bordered)
                 .accessibilityIdentifier("personSearch.newRegistrationButton")
@@ -98,7 +88,6 @@ private struct PersonSearchCandidateRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(.fill.tertiary, in: .rect(cornerRadius: 12))
-        .contentShape(.rect)
     }
 }
 
