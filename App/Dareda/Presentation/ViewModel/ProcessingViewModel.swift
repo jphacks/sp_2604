@@ -11,6 +11,8 @@ final class ProcessingViewModel {
         case cancelConfirmationChanged(Bool)
         case cancelConfirmed
         case sceneBecameActive
+        case selfSpeakerSelected(AnalyzedSpeaker.ID)
+        case rerecordButtonTapped
     }
 
     enum StageStatus { case waiting, processing, completed, failed }
@@ -23,7 +25,9 @@ final class ProcessingViewModel {
     private(set) var errorMessage: LocalizedStringResource?
     private(set) var isCompleted = false
     private(set) var isSuspended = false
-    private(set) var needsSelfSelection = false
+    /// 本人を自動判定できず、手動選択が必要なときの解析結果。
+    private(set) var selfSelectionAnalysis: ConversationAnalysis?
+    private(set) var isRerecordRequested = false
     private(set) var isCancelConfirmationPresented = false
     private(set) var isFinished = false
 
@@ -33,6 +37,8 @@ final class ProcessingViewModel {
     @ObservationIgnored @Dependency(\.cancelProcessingUseCase) private var cancelProcessingUseCase
     @ObservationIgnored private let recording: Recording
     @ObservationIgnored private var session: ProcessingSession?
+    /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
+    @ObservationIgnored private var selfSpeakerID: AnalyzedSpeaker.ID?
     @ObservationIgnored private var processingTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
 
@@ -69,14 +75,34 @@ final class ProcessingViewModel {
             isCancelConfirmationPresented = isPresented
         case .cancelConfirmed:
             isCancelConfirmationPresented = false
-            processingTask?.cancel()
-            Task {
-                do {
-                    try await cancelProcessingUseCase.execute(recording, session)
-                    isFinished = true
-                } catch {
-                    errorMessage = "キャンセルできませんでした。もう一度お試しください。"
-                }
+            discard {
+                self.isFinished = true
+            } onFailure: {
+                self.errorMessage = "キャンセルできませんでした。もう一度お試しください。"
+            }
+        case let .selfSpeakerSelected(speakerID):
+            guard selfSelectionAnalysis?.speakers.contains(where: { $0.id == speakerID }) == true else { return }
+            selfSpeakerID = speakerID
+            selfSelectionAnalysis = nil
+            process()
+        case .rerecordButtonTapped:
+            discard {
+                self.isRerecordRequested = true
+            } onFailure: {
+                self.errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+            }
+        }
+    }
+
+    /// 処理を止め、録音と処理セッションの一時データを削除する。
+    private func discard(onSuccess: @escaping () -> Void, onFailure: @escaping () -> Void) {
+        processingTask?.cancel()
+        Task {
+            do {
+                try await cancelProcessingUseCase.execute(recording, session)
+                onSuccess()
+            } catch {
+                onFailure()
             }
         }
     }
@@ -101,9 +127,9 @@ final class ProcessingViewModel {
                 return
             } catch ConversationAnalysisError.suspended {
                 isSuspended = true
-            } catch PersonSearchError.selfNotIdentified {
+            } catch let PersonSearchError.selfNotIdentified(analysis) {
                 completeCurrentStage()
-                needsSelfSelection = true
+                selfSelectionAnalysis = analysis
             } catch {
                 guard !Task.isCancelled else { return }
                 failedStage = currentStage ?? stages.first
@@ -128,9 +154,9 @@ final class ProcessingViewModel {
             }
         }
         guard let analysis else { throw CancellationError() }
-        guard let selfSpeakerID = analysis.selfSpeakerID else {
+        guard let selfSpeakerID = selfSpeakerID ?? analysis.selfSpeakerID else {
             completeCurrentStage()
-            needsSelfSelection = true
+            selfSelectionAnalysis = analysis
             return
         }
         for try await event in conversationAnalysisService.summarize(
@@ -144,7 +170,9 @@ final class ProcessingViewModel {
     }
 
     private func search(_ session: ProcessingSession) async throws {
-        for try await event in searchPersonUseCase.search([PersonSearchRecording(recording: recording, session: session)]) {
+        for try await event in searchPersonUseCase.search([
+            PersonSearchRecording(recording: recording, session: session, selfSpeakerID: selfSpeakerID)
+        ]) {
             switch event {
             case let .stageChanged(stage): stageChanged(stage)
             case .completed: complete()

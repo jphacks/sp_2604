@@ -7,7 +7,7 @@ struct ProcessingContent: View {
     let canRetry: Bool
     let isCompleted: Bool
     var isSuspended = false
-    let needsSelfSelection: Bool
+    var selfSelectionAnalysis: ConversationAnalysis?
     let isCancelConfirmationPresented: Bool
     let send: (ProcessingViewModel.Action) -> Void
 
@@ -36,11 +36,10 @@ struct ProcessingContent: View {
                     Text("解析が中断されました。アプリに戻ると続きから再開します。")
                         .accessibilityIdentifier("processing.suspendedNotice")
                 }
-                // 完了後・本人未確定時の画面は #17 / #21 / #23 で置き換える
-                if needsSelfSelection {
-                    Text("本人の声を判別できませんでした。")
-                        .accessibilityIdentifier("processing.selfSelectionNotice")
+                if let selfSelectionAnalysis {
+                    SelfSpeakerSelectionContent(analysis: selfSelectionAnalysis, send: send)
                 }
+                // 完了後の画面は #21 / #23 で置き換える
                 if isCompleted {
                     Text(mode == .registration ? "解析が完了しました" : "照合が完了しました")
                         .font(.headline)
@@ -72,6 +71,56 @@ struct ProcessingContent: View {
             )
             .presentationDetents([.medium])
         }
+    }
+}
+
+/// 本人を自動判定できなかったときに、話者ごとの発言から本人 (利用者自身) を選ばせる。
+private struct SelfSpeakerSelectionContent: View {
+    let analysis: ConversationAnalysis
+    let send: (ProcessingViewModel.Action) -> Void
+
+    /// 発言のある話者 (話し始めた順)。
+    private var speakers: [(speaker: AnalyzedSpeaker, speeches: [SpeechSegment])] {
+        analysis.speakers
+            .map { ($0, analysis.speeches(of: $0.id)) }
+            .filter { !$0.1.isEmpty }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("どれがあなたの発言ですか？").font(.headline)
+                Text("あなたの声を自動で判別できませんでした。あなたの発言を選ぶと、残りの話者を相手として処理を続けます。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier("processing.selfSelectionNotice")
+
+            ForEach(Array(speakers.enumerated()), id: \.element.speaker.id) { index, item in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("話者\(index + 1)").font(.subheadline.bold())
+                    ForEach(Array(item.speeches.enumerated()), id: \.offset) { _, speech in
+                        Text(speech.text)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                            .background(.fill.tertiary, in: .rect(cornerRadius: 12))
+                    }
+                    Button("この話者が自分") { send(.selfSpeakerSelected(item.speaker.id)) }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("processing.selfCandidate.\(index)")
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("判断できない場合は、録音し直すかキャンセルしてください。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Button("録音し直す", systemImage: "mic") { send(.rerecordButtonTapped) }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("processing.rerecordButton")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -121,7 +170,7 @@ private struct ProcessingStageRow: View {
         ProcessingContent(
             mode: .registration,
             stages: [(.transcribing, .completed), (.identifyingSpeakers, .processing), (.summarizing, .waiting)],
-            errorMessage: nil, canRetry: false, isCompleted: false, needsSelfSelection: false,
+            errorMessage: nil, canRetry: false, isCompleted: false,
             isCancelConfirmationPresented: false, send: { _ in }
         )
     }
@@ -133,7 +182,29 @@ private struct ProcessingStageRow: View {
             mode: .search,
             stages: [(.transcribing, .completed), (.identifyingSpeakers, .failed)],
             errorMessage: "処理に失敗しました。もう一度お試しください。", canRetry: true,
-            isCompleted: false, needsSelfSelection: false,
+            isCompleted: false,
+            isCancelConfirmationPresented: false, send: { _ in }
+        )
+    }
+}
+
+#Preview("本人の手動選択") {
+    NavigationStack {
+        ProcessingContent(
+            mode: .registration,
+            stages: [(.transcribing, .completed), (.identifyingSpeakers, .completed), (.summarizing, .waiting)],
+            errorMessage: nil, canRetry: false, isCompleted: false,
+            selfSelectionAnalysis: ConversationAnalysis(
+                speeches: [
+                    AttributedSpeech(segment: SpeechSegment(text: "はじめまして、田中です。", startTime: 0, endTime: 2), speakerID: "S1"),
+                    AttributedSpeech(segment: SpeechSegment(text: "よろしくお願いします。", startTime: 2, endTime: 4), speakerID: "S2"),
+                ],
+                speakers: [
+                    AnalyzedSpeaker(id: "S1", segments: [], embedding: nil),
+                    AnalyzedSpeaker(id: "S2", segments: [], embedding: nil),
+                ],
+                selfSpeakerID: nil
+            ),
             isCancelConfirmationPresented: false, send: { _ in }
         )
     }

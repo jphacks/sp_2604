@@ -15,6 +15,7 @@ final class RecordingViewModel {
         case discardConfirmed
         case retryButtonTapped
         case processingFinished
+        case rerecordRequested
     }
 
     private(set) var recording: Recording?
@@ -57,6 +58,16 @@ final class RecordingViewModel {
             Task { _ = try? await requestNotificationPermissionUseCase.execute() }
         case .processingFinished:
             isFinished = true
+        case .rerecordRequested:
+            // 前の録音と処理データは処理状況画面で削除済み。操作選択前の状態に戻して新しく録音する
+            recording = nil
+            selectedMode = nil
+            elapsedTime = 0
+            wasInterrupted = false
+            reachedLimit = false
+            isOneMinuteRemaining = false
+            errorMessage = nil
+            start()
         case .discardButtonTapped:
             guard !isStarting else { return }
             isDiscardConfirmationPresented = true
