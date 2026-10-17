@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C10000000000000000000001 /* DaredaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* DaredaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A00000000000000000000023 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000013 /* SQLiteData */; };
 		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
 		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
@@ -17,6 +18,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C10000000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C10000000000000000000010;
+			remoteInfo = DaredaWidget;
+		};
 		B10000000000000000000007 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 000000000000000000000000 /* Project object */;
@@ -33,13 +41,33 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		C10000000000000000000004 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C10000000000000000000001 /* DaredaWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		C10000000000000000000002 /* DaredaWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DaredaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000120 /* Dareda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dareda.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000001 /* DaredaSnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaredaSnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F157C6803082907700C4613A /* DaredaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaredaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C10000000000000000000005 /* Exceptions for "DaredaWidget" folder in "DaredaWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C10000000000000000000010 /* DaredaWidget */;
+		};
 		000000000000000000000011 /* Exceptions for "Dareda" folder in "Dareda" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -50,6 +78,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		C10000000000000000000006 /* DaredaShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DaredaShared;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000007 /* DaredaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C10000000000000000000005 /* Exceptions for "DaredaWidget" folder in "DaredaWidget" target */,
+			);
+			path = DaredaWidget;
+			sourceTree = "<group>";
+		};
 		000000000000000000000010 /* Dareda */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -71,6 +112,11 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		C10000000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -100,6 +146,8 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000010 /* Dareda */,
+				C10000000000000000000006 /* DaredaShared */,
+				C10000000000000000000007 /* DaredaWidget */,
 				F157C6813082907700C4613A /* DaredaUITests */,
 				B10000000000000000000002 /* DaredaSnapshotTests */,
 				000000000000000000000020 /* Products */,
@@ -110,6 +158,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* Dareda.app */,
+				C10000000000000000000002 /* DaredaWidget.appex */,
 				F157C6803082907700C4613A /* DaredaUITests.xctest */,
 				B10000000000000000000001 /* DaredaSnapshotTests.xctest */,
 			);
@@ -119,6 +168,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		C10000000000000000000010 /* DaredaWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10000000000000000000011 /* Build configuration list for PBXNativeTarget "DaredaWidget" */;
+			buildPhases = (
+				C10000000000000000000014 /* Sources */,
+				C10000000000000000000008 /* Frameworks */,
+				C10000000000000000000015 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				C10000000000000000000007 /* DaredaWidget */,
+				C10000000000000000000006 /* DaredaShared */,
+			);
+			name = DaredaWidget;
+			productName = DaredaWidget;
+			productReference = C10000000000000000000002 /* DaredaWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		000000000000000100000000 /* Dareda */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "Dareda" */;
@@ -126,11 +194,16 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				C10000000000000000000004 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
+			dependencies = (
+				C10000000000000000000009 /* PBXTargetDependency */,
+			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* Dareda */,
+				C10000000000000000000006 /* DaredaShared */,
 			);
 			name = Dareda;
 			packageProductDependencies = (
@@ -201,6 +274,9 @@
 				LastSwiftUpdateCheck = 2710;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
+					C10000000000000000000010 = {
+						CreatedOnToolsVersion = 27.1;
+					};
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -237,6 +313,7 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* Dareda */,
+				C10000000000000000000010 /* DaredaWidget */,
 				F157C67F3082907700C4613A /* DaredaUITests */,
 				B10000000000000000000006 /* DaredaSnapshotTests */,
 			);
@@ -244,6 +321,11 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		C10000000000000000000015 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 		000000000000000140000000 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
@@ -262,6 +344,11 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		C10000000000000000000014 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		000000000000000120000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -280,6 +367,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		C10000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C10000000000000000000010 /* DaredaWidget */;
+			targetProxy = C10000000000000000000003 /* PBXContainerItemProxy */;
+		};
 		B10000000000000000000008 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 000000000000000100000000 /* Dareda */;
@@ -297,6 +389,71 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		C10000000000000000000012 /* Debug configuration for PBXNativeTarget "DaredaWidget" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4YP7SQBLYV;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DaredaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dareda;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.Dareda.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match Development com.kantacky.Dareda.Widget";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WIDGET_EXTENSION $(inherited)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C10000000000000000000013 /* Release configuration for PBXNativeTarget "DaredaWidget" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4YP7SQBLYV;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DaredaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dareda;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.Dareda.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match Development com.kantacky.Dareda.Widget";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WIDGET_EXTENSION $(inherited)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		000000000000000011000000 /* Debug configuration for PBXProject "Dareda" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -454,6 +611,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Dareda/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "録音した会話を文字起こしし、要約や話者の確認に利用するために音声認識を使用します。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -500,6 +658,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Dareda/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "録音した会話を文字起こしし、要約や話者の確認に利用するために音声認識を使用します。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -630,6 +789,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		C10000000000000000000011 /* Build configuration list for PBXNativeTarget "DaredaWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000012 /* Debug configuration for PBXNativeTarget "DaredaWidget" */,
+				C10000000000000000000013 /* Release configuration for PBXNativeTarget "DaredaWidget" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		000000000000000010000000 /* Build configuration list for PBXProject "Dareda" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
