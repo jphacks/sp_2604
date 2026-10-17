@@ -340,6 +340,7 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "Dareda" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Dareda/Dareda.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -348,6 +349,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Dareda/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "録音した会話を文字起こしし、要約や話者の確認に利用するために音声認識を使用します。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -356,9 +360,6 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_FILE = Dareda/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "録音した会話を文字起こしし、要約や話者の確認に利用するために音声認識を使用します。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -384,6 +385,7 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "Dareda" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Dareda/Dareda.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -392,6 +394,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Dareda/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "録音した会話を文字起こしし、要約や話者の確認に利用するために音声認識を使用します。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -400,9 +405,6 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_FILE = Dareda/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "録音した会話を文字起こしし、要約や話者の確認に利用するために音声認識を使用します。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
