@@ -38,8 +38,6 @@ nonisolated enum SelfVoiceSource: Sendable, Equatable {
 nonisolated enum SelfVoiceRegistrationError: Error, Sendable, Equatable {
     /// 有効な発話が基準 (暫定 30 秒) に満たない。
     case insufficientSpeech(TimeInterval)
-    /// 音量不足・音割れがある。
-    case poorQuality(Set<SpeechQualityIssue>)
 }
 
 extension RegisterSelfVoiceUseCase {
@@ -107,12 +105,6 @@ private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
         let audio = try await audioFileGateway.samples(url)
         let quality = speechQualityService.analyze(audio, .default)
         metricsGateway.recordValue("metrics.selfVoice.effectiveSpeechDuration", quality.effectiveSpeechDuration)
-        metricsGateway.recordValue("metrics.selfVoice.tooQuiet", quality.issues.contains(.tooQuiet) ? 1 : 0)
-        metricsGateway.recordValue("metrics.selfVoice.clipping", quality.issues.contains(.clipping) ? 1 : 0)
-        guard quality.isAcceptable else {
-            Self.logger.notice("Enrollment recording quality is insufficient")
-            throw SelfVoiceRegistrationError.poorQuality(quality.issues)
-        }
         guard quality.effectiveSpeechDuration >= RegisterSelfVoiceUseCase.requiredSpeechDuration else {
             Self.logger.notice("Enrollment speech duration is insufficient")
             throw SelfVoiceRegistrationError.insufficientSpeech(quality.effectiveSpeechDuration)
