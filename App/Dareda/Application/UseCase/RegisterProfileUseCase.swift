@@ -1,6 +1,7 @@
 import Dependencies
 import DependenciesMacros
 import Foundation
+import Logging
 
 /// 新規登録を保存し、録音と処理セッションの一時データを削除する。保存したプロフィールの ID を返す。
 @DependencyClient
@@ -34,6 +35,8 @@ nonisolated extension DependencyValues {
 }
 
 private nonisolated struct RegisterProfileUseCaseImpl: Sendable {
+    private static let logger = Logger(label: "Dareda.RegisterProfileUseCase")
+
     @Dependency(\.profileRepository) private var profileRepository
     @Dependency(\.recordingService) private var recordingService
     @Dependency(\.processingSessionService) private var processingSessionService
@@ -56,11 +59,30 @@ private nonisolated struct RegisterProfileUseCaseImpl: Sendable {
             vector: partnerVector
         )
         let encounter = Encounter(id: uuid(), profileID: profile.id, summary: summary, metAt: metAt, place: place)
-        try await profileRepository.add(profile, encounter)
+        Self.logger.info("Profile registration started")
+        do {
+            try await profileRepository.add(profile, encounter)
+        } catch {
+            if error is CancellationError || Task.isCancelled {
+                Self.logger.debug("Profile registration cancelled")
+            } else {
+                Self.logger.error("Profile registration failed", metadata: ["error_type": "\(type(of: error))"])
+            }
+            throw error
+        }
+        Self.logger.info("Profile registration completed")
         // 保存済みのため、削除に失敗しても登録は成功とする (再試行で二重に保存させない)。
         // 残った一時データは次回起動時のクリーンアップで削除される。
-        try? recordingService.discard(recording)
-        try? await processingSessionService.discard(session)
+        do {
+            try recordingService.discard(recording)
+        } catch {
+            Self.logger.warning("Failed to discard recording after registration", metadata: ["error_type": "\(type(of: error))"])
+        }
+        do {
+            try await processingSessionService.discard(session)
+        } catch {
+            Self.logger.warning("Failed to discard session after registration", metadata: ["error_type": "\(type(of: error))"])
+        }
         return profile.id
     }
 }
