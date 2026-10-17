@@ -3,7 +3,7 @@ import SwiftUI
 struct RecordingContent: View {
     let isRecording: Bool
     let isStarting: Bool
-    let hasRecording: Bool
+    let recording: Recording?
     let elapsedTime: TimeInterval
     let wasInterrupted: Bool
     let reachedLimit: Bool
@@ -11,60 +11,41 @@ struct RecordingContent: View {
     let selectedMode: RecordingViewModel.Mode?
     let errorMessage: LocalizedStringResource?
     let isDiscardConfirmationPresented: Bool
-    var analysisStage: ConversationAnalysisStage?
-    var isAnalysisCompleted = false
-    var isAnalysisSuspended = false
-    var analysisErrorMessage: LocalizedStringResource?
-    var registrationSource: RegistrationViewModel.Source?
-    var registrationNotice: LocalizedStringResource?
     let send: (RecordingViewModel.Action) -> Void
+
+    private var hasRecording: Bool { recording != nil }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let registrationSource {
-                    RegistrationScreen(source: registrationSource) { send(.registrationSaved($0)) }
-                } else {
-                    ScrollView {
-                        VStack(spacing: 28) {
-                            RecordingStatusContent(
-                                isRecording: isRecording, isStarting: isStarting, hasRecording: hasRecording,
-                                elapsedTime: elapsedTime, wasInterrupted: wasInterrupted,
-                                reachedLimit: reachedLimit, isOneMinuteRemaining: isOneMinuteRemaining
-                            )
-                            if isRecording {
-                                Button("録音を停止", systemImage: "stop.fill") { send(.stopButtonTapped) }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.red)
-                                    .accessibilityIdentifier("recording.stopButton")
-                            } else if hasRecording {
-                                RecordingChoiceContent(selectedMode: selectedMode, send: send)
-                                RecordingAnalysisContent(
-                                    stage: analysisStage, isCompleted: isAnalysisCompleted,
-                                    isSuspended: isAnalysisSuspended, errorMessage: analysisErrorMessage
-                                )
-                                if let registrationNotice {
-                                    Text(registrationNotice)
-                                        .foregroundStyle(.red)
-                                        .accessibilityIdentifier("recording.registrationNotice")
-                                }
-                            }
-                            if let errorMessage {
-                                Text(errorMessage)
-                                    .foregroundStyle(.red)
-                                    .accessibilityIdentifier("recording.errorNotice")
-                                if !hasRecording {
-                                    Button("もう一度録音する") { send(.retryButtonTapped) }
-                                        .accessibilityIdentifier("recording.retryButton")
-                                }
-                            }
+            ScrollView {
+                VStack(spacing: 28) {
+                    RecordingStatusContent(
+                        isRecording: isRecording, isStarting: isStarting, hasRecording: hasRecording,
+                        elapsedTime: elapsedTime, wasInterrupted: wasInterrupted,
+                        reachedLimit: reachedLimit, isOneMinuteRemaining: isOneMinuteRemaining
+                    )
+                    if isRecording {
+                        Button("録音を停止", systemImage: "stop.fill") { send(.stopButtonTapped) }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .accessibilityIdentifier("recording.stopButton")
+                    } else if hasRecording {
+                        RecordingChoiceContent(send: send)
+                    }
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("recording.errorNotice")
+                        if !hasRecording {
+                            Button("もう一度録音する") { send(.retryButtonTapped) }
+                                .accessibilityIdentifier("recording.retryButton")
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(24)
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(24)
             }
-            .navigationTitle(registrationSource == nil ? "会話の録音" : "新規登録")
+            .navigationTitle("会話の録音")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     // 録音後の操作を選んだ後は、処理のキャンセルになる
@@ -99,6 +80,11 @@ struct RecordingContent: View {
                         onKeep: { send(.discardConfirmationChanged(false)) }
                     )
                     .presentationDetents([.medium])
+                }
+            }
+            .navigationDestination(isPresented: .constant(selectedMode != nil)) {
+                if let recording, let selectedMode {
+                    ProcessingScreen(recording: recording, mode: selectedMode) { send(.processingFinished($0)) }
                 }
             }
         }
@@ -157,7 +143,6 @@ private struct RecordingStatusContent: View {
 }
 
 private struct RecordingChoiceContent: View {
-    let selectedMode: RecordingViewModel.Mode?
     let send: (RecordingViewModel.Action) -> Void
 
     var body: some View {
@@ -169,55 +154,19 @@ private struct RecordingChoiceContent: View {
             Button("人物を探す", systemImage: "person.crop.circle.badge.magnifyingglass") { send(.searchButtonTapped) }
                 .buttonStyle(.bordered)
                 .accessibilityIdentifier("recording.searchButton")
-            if let selectedMode {
-                Text(selectedMode == .registration ? "新規登録を選択しました" : "人物を探すを選択しました")
-                    .accessibilityIdentifier(selectedMode == .registration
-                        ? "recording.selectedMode.registration" : "recording.selectedMode.search")
-            }
         }
     }
 }
 
 /// 解析の処理状況。詳細な表示と再試行 UI は #29 で作る。
-private struct RecordingAnalysisContent: View {
-    let stage: ConversationAnalysisStage?
-    let isCompleted: Bool
-    let isSuspended: Bool
-    let errorMessage: LocalizedStringResource?
-
-    var body: some View {
-        if let stage {
-            ProgressView(stage.label)
-                .accessibilityIdentifier("recording.analysisStage")
-        } else if isCompleted {
-            Text("解析が完了しました")
-                .accessibilityIdentifier("recording.analysisCompleted")
-        } else if isSuspended {
-            Text("解析が中断されました。アプリに戻ると続きから再開します。")
-                .accessibilityIdentifier("recording.analysisSuspended")
-        } else if let errorMessage {
-            Text(errorMessage)
-                .foregroundStyle(.red)
-                .accessibilityIdentifier("recording.analysisError")
-        }
-    }
-}
-
-#Preview("解析中") {
-    RecordingContent(isRecording: false, isStarting: false, hasRecording: true,
-        elapsedTime: 120, wasInterrupted: false, reachedLimit: false,
-        selectedMode: .search, errorMessage: nil, isDiscardConfirmationPresented: false,
-        analysisStage: .identifyingSpeakers, send: { _ in })
-}
-
 #Preview("録音中") {
-    RecordingContent(isRecording: true, isStarting: false, hasRecording: true,
+    RecordingContent(isRecording: true, isStarting: false, recording: Recording(id: UUID(), fileURL: URL(filePath: "/tmp/a.m4a"), startedAt: .now, duration: 120),
         elapsedTime: 540, wasInterrupted: false, reachedLimit: false,
         selectedMode: nil, errorMessage: nil, isDiscardConfirmationPresented: false, send: { _ in })
 }
 
 #Preview("録音後") {
-    RecordingContent(isRecording: false, isStarting: false, hasRecording: true,
+    RecordingContent(isRecording: false, isStarting: false, recording: Recording(id: UUID(), fileURL: URL(filePath: "/tmp/a.m4a"), startedAt: .now, duration: 120),
         elapsedTime: 120, wasInterrupted: true, reachedLimit: false,
         selectedMode: nil, errorMessage: nil, isDiscardConfirmationPresented: false, send: { _ in })
 }

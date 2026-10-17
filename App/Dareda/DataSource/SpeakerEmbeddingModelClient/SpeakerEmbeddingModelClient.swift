@@ -31,18 +31,6 @@ nonisolated extension SpeakerEmbeddingModelClient: DependencyKey {
             }
         )
     }
-
-    /// 振幅の大きい声と小さい声で直交するベクトルを返すテストダブル。本人と相手を区別する検証に使う。
-    static func byLoudness() -> SpeakerEmbeddingModelClient {
-        SpeakerEmbeddingModelClient(embed: { samples in loudnessVector(samples) })
-    }
-
-    /// `byLoudness()` が返すベクトル。本人の声の初期データにも使う。
-    static func loudnessVector(_ samples: [Float]) -> [Float] {
-        let peak = samples.map(abs).max() ?? 0
-        let isLoud = peak > 0.2
-        return (0..<192).map { ($0.isMultiple(of: 2) == isLoud) ? 1 : 0 }
-    }
 }
 
 nonisolated extension DependencyValues {

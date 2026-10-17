@@ -23,10 +23,8 @@ final class RegistrationScreenTests: XCTestCase {
 
     @MainActor
     private func waitForForm(_ app: XCUIApplication) {
-        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 20))
-        // 要約が終わるまで待つ
-        XCTAssertTrue(app.textViews["registration.summaryTextField"].firstMatch.waitForExistence(timeout: 20)
-            || app.textFields["registration.summaryTextField"].waitForExistence(timeout: 1))
+        // 要約まで済むと登録画面に切り替わる
+        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
     }
 
     @MainActor
@@ -103,7 +101,8 @@ final class RegistrationScreenTests: XCTestCase {
     @MainActor
     func test相手の声を検出できないと登録に進めない() {
         let app = startRegistration(scenario: "registrationNoPartner")
-        XCTAssertTrue(app.staticTexts["recording.registrationNotice"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["processing.errorNotice"].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.buttons["processing.retryButton"].exists)
         XCTAssertFalse(app.textFields["registration.nameTextField"].exists)
     }
 

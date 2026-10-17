@@ -12,17 +12,20 @@ prepareDependencies {
             try! seedProfilesScenario(database)
         }
         // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
-        // 新規登録のシナリオは、録音の前半 (大きい声) を本人と自動判定できる声で登録しておく
-        if scenario.hasPrefix("registration") {
-            try! seedSelfVoiceScenario(database, vector: SpeakerEmbeddingModelClient.loudnessVector([1]))
-        } else if !scenario.hasPrefix("voiceEnrollment") {
-            try! seedSelfVoiceScenario(database)
+        if !scenario.hasPrefix("voiceEnrollment") {
+            try! seedSelfVoiceScenario(database, matchesStub: scenario != "processingSelfUnknown")
         }
         $0.defaultDatabase = database
         $0.audioRecorderClient = .inMemory()
         $0.fileSystemClient = .inMemory()
         $0.speakerEmbeddingModelClient = .stub()
         switch scenario {
+        case "processingFailure":
+            // 話者分離は 1 回目だけ失敗し、文字起こしは 2 回目以降失敗する。再試行で完了すれば、
+            // 完了済みの文字起こしを再実行していないことになる。
+            $0.backgroundTaskClient = .inMemory()
+            $0.speechClient = .inMemory(succeedsOnce: true)
+            $0.fluidAudioClient = .twoSpeakers(failureCount: 1)
         case "analysisSuspended":
             // 話者分離中にバックグラウンドへ移行して打ち切られる。文字起こしは 2 回目以降失敗するので、
             // 復帰後の再試行で完了すれば、完了済みの文字起こしを再実行していないことになる。
@@ -34,17 +37,6 @@ prepareDependencies {
             $0.speechClient = .inMemory()
             $0.fluidAudioClient = .twoSpeakers()
         }
-        if scenario.hasPrefix("registration") {
-            $0.speakerEmbeddingModelClient = .byLoudness()
-        }
-        switch scenario {
-        case "registrationNoPartner":
-            $0.fluidAudioClient = .oneSpeaker()
-        case "registrationSaveFailure":
-            $0.sqliteDataClient = .failing(insertProfileFailures: 1)
-        default:
-            break
-        }
         switch scenario {
         case "voiceEnrollmentShort", "voiceReregistrationShort":
             $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
@@ -55,13 +47,20 @@ prepareDependencies {
             $0.audioFileClient = .speech(seconds: 31, amplitude: 0.3)
         case "voiceEnrollmentQuiet":
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.005)
-        case "registration", "registrationSaveFailure":
-            $0.audioFileClient = .conversation()
         default:
             $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
         }
-        $0.appSettingsClient = .inMemory()
+        switch scenario {
+        case "registrationNoPartner":
+            // 本人の声だけの録音 (相手を分離できない)
+            $0.fluidAudioClient = .oneSpeaker()
+        case "registrationSaveFailure":
+            $0.sqliteDataClient = .failing(insertProfileFailures: 1)
+        default:
+            break
+        }
         $0.mapKitClient = .inMemory()
+        $0.appSettingsClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
         $0.userNotificationClient =
             if scenario == "personSearchNotificationTapped" {
@@ -69,6 +68,10 @@ prepareDependencies {
             } else {
                 .inMemory()
             }
+        if scenario.hasPrefix("processing") || scenario == "analysisSuspended"
+            || scenario == "registration" || scenario == "registrationSaveFailure" {
+            $0.audioFileClient = .conversation()
+        }
         if scenario == "recordingCleanupFailure" {
             let client = FileSystemClient.inMemory(removeFailures: 1)
             try! client.createDirectory(client.temporaryDirectory().appending(path: "Recordings"))

@@ -4,16 +4,16 @@ import Observation
 
 @Observable
 final class RegistrationViewModel {
-    /// 登録に使う、本人を確定した解析結果。人物検索から遷移する場合も完了済みの結果をそのまま渡す。
+    /// 登録に使う、本人を確定して要約まで済んだ解析結果。人物検索から遷移する場合も完了済みの結果をそのまま渡す。
     nonisolated struct Source: Sendable, Equatable {
         var recording: Recording
         var session: ProcessingSession
-        var transcript: Transcript
+        /// 生成した要約。確認・編集の初期値で、保存ボタンが押されるまで保存しない。
+        var summary: String
         var partnerVector: [Float]
     }
 
     enum Action {
-        case onAppear
         case nameChanged(String)
         case affiliationChanged(String)
         case metAtChanged(Date)
@@ -22,7 +22,6 @@ final class RegistrationViewModel {
         case placeSelected(Place)
         case placeClearButtonTapped
         case summaryChanged(String)
-        case summaryRetryButtonTapped
         case saveButtonTapped
     }
 
@@ -31,33 +30,26 @@ final class RegistrationViewModel {
     private(set) var affiliation = ""
     private(set) var metAt: Date
     private(set) var place: Place?
-    private(set) var summary = ""
-    private(set) var isSummarizing = false
-    private(set) var summaryErrorMessage: LocalizedStringResource?
+    private(set) var summary: String
     private(set) var isPlaceSearchPresented = false
     private(set) var isSaving = false
     private(set) var saveErrorMessage: LocalizedStringResource?
     private(set) var savedProfileID: Profile.ID?
 
     var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSummarizing && !isSaving
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSaving
     }
 
-    @ObservationIgnored @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
     @ObservationIgnored @Dependency(\.registerProfileUseCase) private var registerProfileUseCase
-    @ObservationIgnored private var hasAppeared = false
 
     init(source: Source) {
         self.source = source
         metAt = source.recording.startedAt
+        summary = source.summary
     }
 
     func send(_ action: Action) {
         switch action {
-        case .onAppear:
-            guard !hasAppeared else { return }
-            hasAppeared = true
-            summarize()
         case let .nameChanged(name):
             self.name = name
         case let .affiliationChanged(affiliation):
@@ -75,27 +67,8 @@ final class RegistrationViewModel {
             place = nil
         case let .summaryChanged(summary):
             self.summary = summary
-        case .summaryRetryButtonTapped:
-            summarize()
         case .saveButtonTapped:
             save()
-        }
-    }
-
-    /// 要約は表示して確認・編集させるだけで、保存ボタンが押されるまで保存しない。
-    private func summarize() {
-        guard !isSummarizing else { return }
-        isSummarizing = true
-        summaryErrorMessage = nil
-        Task {
-            defer { isSummarizing = false }
-            do {
-                for try await event in conversationAnalysisService.summarize(source.transcript, source.session) {
-                    if case let .completed(summary) = event { self.summary = summary.text }
-                }
-            } catch {
-                summaryErrorMessage = "要約を作成できませんでした。再試行するか、要約を入力してください。"
-            }
         }
     }
 

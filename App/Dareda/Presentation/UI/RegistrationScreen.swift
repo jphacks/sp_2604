@@ -16,15 +16,12 @@ struct RegistrationScreen: View {
             metAt: viewModel.metAt,
             place: viewModel.place,
             summary: viewModel.summary,
-            isSummarizing: viewModel.isSummarizing,
-            summaryErrorMessage: viewModel.summaryErrorMessage,
             isPlaceSearchPresented: viewModel.isPlaceSearchPresented,
             isSaving: viewModel.isSaving,
             canSave: viewModel.canSave,
             saveErrorMessage: viewModel.saveErrorMessage,
             send: viewModel.send
         )
-        .onAppear { viewModel.send(.onAppear) }
         .onChange(of: viewModel.savedProfileID) { _, id in
             if let id { onSaved(id) }
         }

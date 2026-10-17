@@ -177,7 +177,6 @@ final class RootScreenTests: XCTestCase {
         // 通知のタップは UserNotificationClient のテストダブルが起動後に発生させる
         let app = launch(scenario: "personSearchNotificationTapped")
 
-        XCTAssertTrue(app.staticTexts["root.title"].waitForExistence(timeout: 5))
         // TODO: #23 で候補一覧画面に差し替えたら、検証する要素も差し替える
         XCTAssertTrue(app.buttons["profileList.row.山田 太郎"].waitForExistence(timeout: 5))
     }

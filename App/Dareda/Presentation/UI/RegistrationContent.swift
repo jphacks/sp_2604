@@ -6,8 +6,6 @@ struct RegistrationContent: View {
     let metAt: Date
     let place: Place?
     let summary: String
-    let isSummarizing: Bool
-    let summaryErrorMessage: LocalizedStringResource?
     let isPlaceSearchPresented: Bool
     let isSaving: Bool
     let canSave: Bool
@@ -32,25 +30,13 @@ struct RegistrationContent: View {
                 )
             }
             Section("会話の要約") {
-                if isSummarizing {
-                    ProgressView("要約中")
-                        .accessibilityIdentifier("registration.summarizing")
-                } else {
-                    TextField(
-                        "要約",
-                        text: Binding(get: { summary }, set: { send(.summaryChanged($0)) }),
-                        axis: .vertical
-                    )
-                    .lineLimit(3...10)
-                    .accessibilityIdentifier("registration.summaryTextField")
-                }
-                if let summaryErrorMessage {
-                    Text(summaryErrorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("registration.summaryError")
-                    Button("要約を再試行") { send(.summaryRetryButtonTapped) }
-                        .accessibilityIdentifier("registration.summaryRetryButton")
-                }
+                TextField(
+                    "要約",
+                    text: Binding(get: { summary }, set: { send(.summaryChanged($0)) }),
+                    axis: .vertical
+                )
+                .lineLimit(3...10)
+                .accessibilityIdentifier("registration.summaryTextField")
             }
             Section {
                 Button {
@@ -85,19 +71,8 @@ struct RegistrationContent: View {
         RegistrationContent(
             name: "山田 太郎", affiliation: "株式会社サンプル", metAt: .now,
             place: Place(name: "札幌駅", latitude: 43.0687, longitude: 141.3508),
-            summary: "新規事業について話した。", isSummarizing: false, summaryErrorMessage: nil,
-            isPlaceSearchPresented: false, isSaving: false, canSave: true, saveErrorMessage: nil,
-            send: { _ in }
-        )
-    }
-}
-
-#Preview("要約中") {
-    NavigationStack {
-        RegistrationContent(
-            name: "", affiliation: "", metAt: .now, place: nil, summary: "", isSummarizing: true,
-            summaryErrorMessage: nil, isPlaceSearchPresented: false, isSaving: false, canSave: false,
-            saveErrorMessage: nil, send: { _ in }
+            summary: "新規事業について話した。", isPlaceSearchPresented: false,
+            isSaving: false, canSave: true, saveErrorMessage: nil, send: { _ in }
         )
     }
 }
@@ -105,8 +80,8 @@ struct RegistrationContent: View {
 #Preview("保存失敗") {
     NavigationStack {
         RegistrationContent(
-            name: "山田 太郎", affiliation: "", metAt: .now, place: nil, summary: "要約", isSummarizing: false,
-            summaryErrorMessage: nil, isPlaceSearchPresented: false, isSaving: false, canSave: true,
+            name: "山田 太郎", affiliation: "", metAt: .now, place: nil, summary: "要約",
+            isPlaceSearchPresented: false, isSaving: false, canSave: true,
             saveErrorMessage: "保存できませんでした。もう一度お試しください。", send: { _ in }
         )
     }
