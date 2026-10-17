@@ -7,6 +7,7 @@ struct RootScreen: View {
         RootContent(
             availability: viewModel.availability,
             isProfileListPresented: viewModel.isProfileListPresented,
+            isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }

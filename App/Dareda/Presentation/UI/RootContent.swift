@@ -3,6 +3,7 @@ import SwiftUI
 struct RootContent: View {
     let availability: DeviceAvailability?
     let isProfileListPresented: Bool
+    let isVoiceEnrollmentPresented: Bool
     let send: (RootViewModel.Action) -> Void
 
     var body: some View {
@@ -39,17 +40,21 @@ struct RootContent: View {
         ) {
             ProfileListScreen()
         }
+        // 登録が済むまで閉じられないよう、完了時のみ閉じる
+        .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {
+            VoiceEnrollmentScreen { send(.voiceEnrollmentCompleted) }
+        }
     }
 }
 
 #Preview("利用可") {
-    RootContent(availability: .available, isProfileListPresented: false, send: { _ in })
+    RootContent(availability: .available, isProfileListPresented: false, isVoiceEnrollmentPresented: false, send: { _ in })
 }
 
 #Preview("非対応") {
-    RootContent(availability: .unsupported, isProfileListPresented: false, send: { _ in })
+    RootContent(availability: .unsupported, isProfileListPresented: false, isVoiceEnrollmentPresented: false, send: { _ in })
 }
 
 #Preview("一時的に利用不可") {
-    RootContent(availability: .temporarilyUnavailable(.modelNotReady), isProfileListPresented: false, send: { _ in })
+    RootContent(availability: .temporarilyUnavailable(.modelNotReady), isProfileListPresented: false, isVoiceEnrollmentPresented: false, send: { _ in })
 }
