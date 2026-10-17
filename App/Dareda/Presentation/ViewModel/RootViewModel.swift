@@ -9,8 +9,6 @@ final class RootViewModel {
         case recheckButtonTapped
         case recordButtonTapped
         case settingsButtonTapped
-        case profilesButtonTapped
-        case profileListPresentedChanged(Bool)
         case privateCloudComputeSettingsButtonTapped
         case privateCloudComputeSettingsPresentedChanged(Bool)
         case recordingFinished
@@ -23,7 +21,6 @@ final class RootViewModel {
     private(set) var settingsErrorMessage: String?
 
     private(set) var availability: DeviceAvailability?
-    private(set) var isProfileListPresented = false
     private(set) var isPrivateCloudComputeSettingsPresented = false
     private(set) var isRecordingPresented = false
     private(set) var isPreparedForRecording = false
@@ -94,10 +91,6 @@ final class RootViewModel {
             }
         case .recordingFinished:
             isRecordingPresented = false
-        case .profilesButtonTapped:
-            isProfileListPresented = true
-        case let .profileListPresentedChanged(isPresented):
-            isProfileListPresented = isPresented
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
         case .privateCloudComputeSettingsButtonTapped:

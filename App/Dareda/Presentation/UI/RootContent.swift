@@ -5,7 +5,6 @@ struct RootContent: View {
     let isRequestingPermission: Bool
     let settingsErrorMessage: String?
     let availability: DeviceAvailability?
-    let isProfileListPresented: Bool
     let isPrivateCloudComputeSettingsPresented: Bool
     let isRecordingPresented: Bool
     let isVoiceEnrollmentPresented: Bool
@@ -14,71 +13,29 @@ struct RootContent: View {
     let send: (RootViewModel.Action) -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            Text("Dareda")
-                .font(.largeTitle)
-                .accessibilityIdentifier("root.title")
-
-            if let availability {
-                if !availability.isAvailable {
-                    AvailabilityNotice(availability: availability) {
-                        send(.recheckButtonTapped)
-                    }
-                }
-
-                // 録音・解析は利用可否が `available` のときのみ有効にする。
-                Button("録音") { send(.recordButtonTapped) }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!availability.isAvailable || !isPreparedForRecording || isRequestingPermission)
-                    .accessibilityIdentifier("root.recordButton")
-
-                if let preparationErrorMessage {
-                    Text(preparationErrorMessage)
-                        .accessibilityIdentifier("root.preparationErrorNotice")
-                    Button("再試行") { send(.preparationRetryButtonTapped) }
-                        .accessibilityIdentifier("root.preparationRetryButton")
-                }
-
-                if recordingPermission == .denied {
-                    Text("マイクの使用が許可されていません。設定アプリでDaredaのマイクを許可し、戻ってからもう一度録音ボタンを押してください。")
-                        .accessibilityIdentifier("root.microphoneDeniedNotice")
-                    Button("設定アプリを開く") { send(.settingsButtonTapped) }
-                        .accessibilityIdentifier("root.openSettingsButton")
-                } else if recordingPermission == .granted {
-                    Text("マイクの使用が許可されました")
-                        .accessibilityIdentifier("root.microphoneGrantedNotice")
-                }
-
-                if let settingsErrorMessage {
-                    Text(settingsErrorMessage)
-                        .accessibilityIdentifier("root.settingsErrorNotice")
-                }
-
-                // 保存済みプロフィールの閲覧は利用可否にかかわらず可能にする。
-                Button("プロフィール") { send(.profilesButtonTapped) }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("root.profilesButton")
-
-                // 要約の設定は利用可否にかかわらず変更可能にする。
-                Button("要約の設定") { send(.privateCloudComputeSettingsButtonTapped) }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("root.privateCloudComputeSettingsButton")
+        ProfileListScreen {
+            notices
+        } actions: {
+            // 録音・解析は利用可否が `available` のときのみ有効にする。
+            Button { send(.recordButtonTapped) } label: {
+                Label("録音", systemImage: "mic")
             }
+            .disabled(
+                availability?.isAvailable != true || !isPreparedForRecording || isRequestingPermission
+            )
+            .accessibilityIdentifier("root.recordButton")
+
+            // 要約の設定は利用可否にかかわらず変更可能にする。
+            Button { send(.privateCloudComputeSettingsButtonTapped) } label: {
+                Label("要約の設定", systemImage: "gearshape")
+            }
+            .accessibilityIdentifier("root.privateCloudComputeSettingsButton")
         }
-        .padding()
         .fullScreenCover(isPresented: Binding(
             get: { isRecordingPresented },
             set: { if !$0 { send(.recordingFinished) } }
         )) {
             RecordingScreen { send(.recordingFinished) }
-        }
-        .sheet(
-            isPresented: Binding(
-                get: { isProfileListPresented },
-                set: { send(.profileListPresentedChanged($0)) }
-            )
-        ) {
-            ProfileListScreen()
         }
         // 登録が済むまで閉じられないよう、完了時のみ閉じる
         .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {
@@ -93,6 +50,40 @@ struct RootContent: View {
             PrivateCloudComputeSettingsScreen()
         }
     }
+
+    @ViewBuilder
+    private var notices: some View {
+        VStack(spacing: 12) {
+            if let availability, !availability.isAvailable {
+                AvailabilityNotice(availability: availability) {
+                    send(.recheckButtonTapped)
+                }
+            }
+
+            if let preparationErrorMessage {
+                Text(preparationErrorMessage)
+                    .accessibilityIdentifier("root.preparationErrorNotice")
+                Button("再試行") { send(.preparationRetryButtonTapped) }
+                    .accessibilityIdentifier("root.preparationRetryButton")
+            }
+
+            if recordingPermission == .denied {
+                Text("マイクの使用が許可されていません。設定アプリでDaredaのマイクを許可し、戻ってからもう一度録音ボタンを押してください。")
+                    .accessibilityIdentifier("root.microphoneDeniedNotice")
+                Button("設定アプリを開く") { send(.settingsButtonTapped) }
+                    .accessibilityIdentifier("root.openSettingsButton")
+            } else if recordingPermission == .granted {
+                Text("マイクの使用が許可されました")
+                    .accessibilityIdentifier("root.microphoneGrantedNotice")
+            }
+
+            if let settingsErrorMessage {
+                Text(settingsErrorMessage)
+                    .accessibilityIdentifier("root.settingsErrorNotice")
+            }
+        }
+        .padding(.horizontal)
+    }
 }
 
 #Preview("利用可") {
@@ -101,7 +92,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .available,
-        isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
@@ -117,7 +107,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .unsupported,
-        isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
@@ -133,7 +122,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .temporarilyUnavailable(.modelNotReady),
-        isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
@@ -149,7 +137,6 @@ struct RootContent: View {
         isRequestingPermission: false,
         settingsErrorMessage: nil,
         availability: .available,
-        isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,

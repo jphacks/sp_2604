@@ -9,7 +9,6 @@ struct RootScreen: View {
             isRequestingPermission: viewModel.isRequestingPermission,
             settingsErrorMessage: viewModel.settingsErrorMessage,
             availability: viewModel.availability,
-            isProfileListPresented: viewModel.isProfileListPresented,
             isPrivateCloudComputeSettingsPresented: viewModel.isPrivateCloudComputeSettingsPresented,
             isRecordingPresented: viewModel.isRecordingPresented,
             isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,

@@ -1,9 +1,11 @@
 import SwiftUI
 
-struct ProfileListContent: View {
+struct ProfileListContent<Header: View, Actions: View>: View {
     let profiles: [Profile]
     let path: [Profile.ID]
     let send: (ProfileListViewModel.Action) -> Void
+    @ViewBuilder let header: () -> Header
+    @ViewBuilder let actions: () -> Actions
 
     var body: some View {
         NavigationStack(
@@ -22,7 +24,11 @@ struct ProfileListContent: View {
                         .accessibilityIdentifier("profileList.emptyLabel")
                 }
             }
+            .safeAreaInset(edge: .top) { header() }
             .navigationTitle("プロフィール")
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) { actions() }
+            }
             .navigationDestination(for: Profile.ID.self) { id in
                 ProfileDetailScreen(profileID: id)
             }
@@ -37,6 +43,8 @@ struct ProfileListContent: View {
             Profile(id: UUID(), name: "佐藤 花子", affiliation: "", vector: []),
         ],
         path: [],
-        send: { _ in }
+        send: { _ in },
+        header: { EmptyView() },
+        actions: { EmptyView() }
     )
 }
