@@ -29,6 +29,7 @@ description: GitHub Project の Issue から取り組むタスクを決めて実
 
 ## 2. 着手準備
 
+0. **着手が決まったら、他の作業より先に** Issue を自分にアサインし、GitHub Project の Status を `In progress` に更新する (`gh issue edit <番号> --add-assignee @me`、`gh project item-edit --project-id <Project ID> --id <Item ID> --field-id <Status Field ID> --single-select-option-id <In progress の Option ID>`。ID は `gh project field-list` / `gh project item-list` で取得する)。複数 Issue を並列で進める場合も、全件の更新を済ませてから作業を始める。
 1. ベースブランチを決める。
    - 依存先の Issue が無い、または全て Close 済みなら `main`。
    - Open の依存先がある場合は、その依存先を実装したブランチ (依存先 Issue に紐づく PR の head branch。`gh pr list --search "<依存先番号> in:body" --json number,headRefName,state` や `gh issue view <依存先番号> --json closedByPullRequestsReferences` で特定) をベースにする。Open の依存先が複数あり、それらが同じスタック上に無い場合は、ユーザーにどれをベースにするか確認する。
@@ -38,7 +39,6 @@ description: GitHub Project の Issue から取り組むタスクを決めて実
    - 以降の作業 (実装・ビルド・テスト・コミット・PR 作成) はすべて作成したワークツリー内で行う。
    - ベースが依存先ブランチの場合: `gh extension install github/gh-stack` (未導入時) の後、ワークツリー内で、依存先ブランチがまだスタック管理されていなければ `gh stack init <依存先ブランチ>` (依存先がさらに別ブランチに積まれているなら下から順に列挙) で取り込み、`feature/<番号>-<説明>` をその上に積む。
    - 決めたベースブランチは手順 5 の PR 作成時に `pr` スキルへ渡す。
-3. Issue を自分にアサインし、Project の Status を In Progress 相当に更新する (`gh issue edit <番号> --add-assignee @me`、`gh project item-edit`)。
 
 ## 3. 不明点の解消
 
