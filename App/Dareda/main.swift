@@ -65,6 +65,9 @@ prepareDependencies {
         case "registrationNoPartner":
             // 本人の声だけの録音 (相手を分離できない)
             $0.fluidAudioClient = .oneSpeaker()
+        case "registrationSelfSplit":
+            // 本人の声だけの録音を、話者分離が 2 人に分けてしまう
+            $0.fluidAudioClient = .twoSpeakers()
         case "personSearchShortPartner":
             // 相手の発話が 6 秒しかない。追加録音 (同じ会話) と合わせると照合できる
             $0.fluidAudioClient = .twoSpeakers(partnerEnd: 21)

@@ -107,6 +107,13 @@ final class RegistrationScreenTests: XCTestCase {
     }
 
     @MainActor
+    func test本人の声が2人に分かれても相手として登録されない() {
+        let app = startRegistration(scenario: "registrationSelfSplit")
+        XCTAssertTrue(app.staticTexts["processing.errorNotice"].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.textFields["registration.nameTextField"].exists)
+    }
+
+    @MainActor
     private func attach(_ app: XCUIApplication, name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

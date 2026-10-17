@@ -64,8 +64,9 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             guard let selfVoice = try await selfVoiceRepository.get() else {
                 throw ConversationAnalysisError.selfVoiceNotRegistered
             }
-            let speakerSegments = try await speakerSegments(recording, session)
-            let embeddings = try await speakerEmbeddings(recording, speakerSegments, session)
+            let diarizedSegments = try await speakerSegments(recording, session)
+            let embeddings = try await speakerEmbeddings(recording, diarizedSegments, session)
+            let speakerSegments = try mergingSelfLikeSpeakers(diarizedSegments, embeddings, selfVoice)
 
             let speakers = Dictionary(grouping: speakerSegments, by: \.speakerID)
                 .map { AnalyzedSpeaker(id: $0.key, segments: $0.value, embedding: embeddings[$0.key]) }
@@ -150,6 +151,23 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             try await analysisCacheRepository.setSpeakerEmbeddings(embeddings, session)
         }
         return embeddings
+    }
+
+    /// 本人の声と十分に似た話者が複数いれば、話者分離で本人が分かれたものとみなし、最も似た話者にまとめる。
+    private func mergingSelfLikeSpeakers(
+        _ segments: [SpeakerSegment], _ embeddings: [String: VoiceEmbedding], _ selfVoice: SelfVoice
+    ) throws -> [SpeakerSegment] {
+        let selfLike = try embeddings
+            .map { (id: $0.key, similarity: try vectorMatchingService.cosineSimilarity($0.value.values, selfVoice.vector)) }
+            .filter { $0.similarity > ProvisionalParameters.selfMergeThreshold }
+            .sorted { ($0.similarity, $0.id) > ($1.similarity, $1.id) }
+        guard selfLike.count >= 2 else { return segments }
+        let mergedIDs = Set(selfLike.map(\.id))
+        return segments.map {
+            mergedIDs.contains($0.speakerID)
+                ? SpeakerSegment(speakerID: selfLike[0].id, startTime: $0.startTime, endTime: $0.endTime)
+                : $0
+        }
     }
 
     /// 本人識別しきい値の検証用に、各話者と本人の声の類似度を記録する。
