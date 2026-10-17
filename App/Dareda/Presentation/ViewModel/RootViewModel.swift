@@ -18,6 +18,7 @@ final class RootViewModel {
         case recordingFinished
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
+        case personSearchNotificationTapped
     }
 
     private(set) var recordingPermission: RecordingPermission?
@@ -43,6 +44,8 @@ final class RootViewModel {
     @Dependency(\.requestRecordingPermissionUseCase) private var requestRecordingPermissionUseCase
     @ObservationIgnored
     @Dependency(\.openAppSettingsUseCase) private var openAppSettingsUseCase
+    @ObservationIgnored
+    @Dependency(\.observePersonSearchNotificationTapUseCase) private var observePersonSearchNotificationTapUseCase
     @ObservationIgnored
     private var hasAttemptedPreparation = false
     @ObservationIgnored
@@ -73,6 +76,7 @@ final class RootViewModel {
             hasAttemptedPreparation = true
             prepareForRecording()
             Task { await presentVoiceEnrollmentIfNeeded() }
+            observePersonSearchNotificationTaps()
         case .preparationRetryButtonTapped:
             prepareForRecording()
         case .recheckButtonTapped:
@@ -111,6 +115,20 @@ final class RootViewModel {
             isSettingsPresented = true
         case let .settingsPresentedChanged(isPresented):
             isSettingsPresented = isPresented
+        case .personSearchNotificationTapped:
+            // TODO: #23 で人物検索の候補一覧画面に差し替える。それまではプロフィール一覧を開く
+            isPrivateCloudComputeSettingsPresented = false
+            isSettingsPresented = false
+            isProfileListPresented = true
+        }
+    }
+
+    private func observePersonSearchNotificationTaps() {
+        let taps = observePersonSearchNotificationTapUseCase.execute()
+        Task { [weak self] in
+            for await _ in taps {
+                self?.send(.personSearchNotificationTapped)
+            }
         }
     }
 
