@@ -5,7 +5,8 @@ nonisolated extension AudioFileClient {
     /// 指定したサンプルをそのまま返すテストダブル
     static func inMemory(sampleRate: Double, samples: [Float]) -> AudioFileClient {
         AudioFileClient(
-            readSamples: { _ in (sampleRate, samples) }
+            readSamples: { _ in (sampleRate, samples) },
+            duration: { _ in sampleRate > 0 ? Double(samples.count) / sampleRate : 0 }
         )
     }
 
