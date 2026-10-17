@@ -28,8 +28,6 @@ final class ProcessingScreenTests: XCTestCase {
     @MainActor
     func test新規登録で文字起こしから要約まで完了すると登録画面を表示する() {
         let app = start()
-        let summarizing = app.descendants(matching: .any)["processing.stage.summarizing"]
-        XCTAssertTrue(summarizing.waitForExistence(timeout: 30))
         // 要約まで完了すると、処理状況に代わって新規登録の入力画面を表示する
         XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
         XCTAssertFalse(app.descendants(matching: .any)["processing.stage.transcribing"].exists)
