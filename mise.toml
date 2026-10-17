@@ -43,3 +43,18 @@ run = "bundle exec fastlane ios renew_certificates"
 [tasks."certs:register-device"]
 description = "デバイスを登録して Development プロファイルを更新する (例: mise run register-device -- name:iPhone udid:XXXX)"
 run = "bundle exec fastlane ios add_device"
+
+[tasks."test:ui"]
+description = "iPhone 18 Pro シミュレーターで UI テストを実行する"
+run = """
+set -o pipefail
+xcodebuild test \
+  -workspace Dareda.xcworkspace \
+  -scheme Dareda \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -only-testing:DaredaUITests \
+  -resultBundlePath TestResults.xcresult \
+  -skipMacroValidation \
+  -skipPackagePluginValidation \
+  CODE_SIGNING_ALLOWED=NO
+"""

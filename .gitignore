@@ -147,3 +147,4 @@ fastlane/.env
 # bundler
 .bundle/
 vendor/bundle/
+TestResults.xcresult/
