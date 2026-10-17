@@ -1,7 +1,9 @@
 default_platform(:ios)
 
 platform :ios do
-  before_all do
+  # readonly の match は Git リポジトリから取得するだけなので API Key は不要。
+  # 書き込みを伴うレーンでだけ API Key を読み込む。
+  private_lane :load_api_key do
     app_store_connect_api_key(
       key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
       issuer_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ISSUER_ID"),
@@ -19,6 +21,7 @@ platform :ios do
 
   desc "証明書とプロファイルを作成・更新して保存する"
   lane :renew_certificates do
+    load_api_key
     %w[development adhoc appstore].each do |type|
       match(type: type, readonly: false)
     end
@@ -26,6 +29,7 @@ platform :ios do
 
   desc "デバイスを登録して Development・Ad Hoc プロファイルを更新する (name: 名前, udid: UDID)"
   lane :add_device do |options|
+    load_api_key
     register_devices(devices: { options.fetch(:name) => options.fetch(:udid) })
     %w[development adhoc].each do |type|
       match(type: type, readonly: false)
