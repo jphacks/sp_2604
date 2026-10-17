@@ -47,7 +47,7 @@ run = "bundle exec fastlane ios add_device"
 [tasks."test:ui"]
 description = "iPhone 18 Pro シミュレーターで UI テストを実行する"
 run = """
-set -o pipefail
+rm -rf TestResults.xcresult
 xcodebuild test \
   -workspace Dareda.xcworkspace \
   -scheme Dareda \
@@ -56,5 +56,5 @@ xcodebuild test \
   -resultBundlePath TestResults.xcresult \
   -skipMacroValidation \
   -skipPackagePluginValidation \
-  CODE_SIGNING_ALLOWED=NO
+  CODE_SIGN_IDENTITY=-
 """
