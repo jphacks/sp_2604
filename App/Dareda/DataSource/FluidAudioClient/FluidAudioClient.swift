@@ -2,6 +2,7 @@ import Dependencies
 import DependenciesMacros
 import FluidAudio
 import Foundation
+import Synchronization
 
 @DependencyClient
 nonisolated struct FluidAudioClient: Sendable {
@@ -27,13 +28,20 @@ nonisolated extension FluidAudioClient {
     }
 
     /// 2 人の話者 (0〜15 秒と 15〜30 秒) に分けるテストダブル。`delay` だけ待ってから返す。
-    static func twoSpeakers(delay: Duration = .zero) -> FluidAudioClient {
+    /// 最初の `failureCount` 回は失敗する。
+    static func twoSpeakers(delay: Duration = .zero, failureCount: Int = 0) -> FluidAudioClient {
+        let callCount = Mutex(0)
         let result = DiarizationResult(segments: [
             TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 15, qualityScore: 1),
             TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: 30, qualityScore: 1),
         ])
         return FluidAudioClient(diarize: { _ in
             try await Task.sleep(for: delay)
+            let count = callCount.withLock { value in
+                value += 1
+                return value
+            }
+            if count <= failureCount { throw CocoaError(.fileReadUnknown) }
             return result
         })
     }

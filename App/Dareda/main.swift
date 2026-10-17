@@ -13,13 +13,19 @@ prepareDependencies {
         }
         // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
         if !scenario.hasPrefix("voiceEnrollment") {
-            try! seedSelfVoiceScenario(database)
+            try! seedSelfVoiceScenario(database, matchesStub: scenario != "processingSelfUnknown")
         }
         $0.defaultDatabase = database
         $0.audioRecorderClient = .inMemory()
         $0.fileSystemClient = .inMemory()
         $0.speakerEmbeddingModelClient = .stub()
         switch scenario {
+        case "processingFailure":
+            // 話者分離は 1 回目だけ失敗し、文字起こしは 2 回目以降失敗する。再試行で完了すれば、
+            // 完了済みの文字起こしを再実行していないことになる。
+            $0.backgroundTaskClient = .inMemory()
+            $0.speechClient = .inMemory(succeedsOnce: true)
+            $0.fluidAudioClient = .twoSpeakers(failureCount: 1)
         case "analysisSuspended":
             // 話者分離中にバックグラウンドへ移行して打ち切られる。文字起こしは 2 回目以降失敗するので、
             // 復帰後の再試行で完了すれば、完了済みの文字起こしを再実行していないことになる。
@@ -52,6 +58,9 @@ prepareDependencies {
             } else {
                 .inMemory()
             }
+        if scenario.hasPrefix("processing") || scenario == "analysisSuspended" {
+            $0.audioFileClient = .conversation()
+        }
         if scenario == "recordingCleanupFailure" {
             let client = FileSystemClient.inMemory(removeFailures: 1)
             try! client.createDirectory(client.temporaryDirectory().appending(path: "Recordings"))
