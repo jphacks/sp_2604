@@ -53,7 +53,7 @@ prepareDependencies {
             // 復帰後の再試行で完了すれば、完了済みの文字起こしを再実行していないことになる。
             $0.backgroundTaskClient = .inMemory(expiresOnEnteringBackground: true)
             $0.speechClient = .inMemory(succeedsOnce: true)
-            $0.fluidAudioClient = .twoSpeakers(delay: .seconds(3))
+            $0.fluidAudioClient = .twoSpeakers(delay: .seconds(8))
         default:
             $0.backgroundTaskClient = .inMemory()
             $0.speechClient = .inMemory()

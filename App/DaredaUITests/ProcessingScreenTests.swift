@@ -11,6 +11,9 @@ final class ProcessingScreenTests: XCTestCase {
         let record = app.buttons["root.recordButton"]
         XCTAssertTrue(record.waitForExistence(timeout: 5))
         record.tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         let stop = app.buttons["recording.stopButton"]
         XCTAssertTrue(stop.waitForExistence(timeout: 5))
         stop.tap()
@@ -122,9 +125,9 @@ final class ProcessingScreenTests: XCTestCase {
         let app = start(scenario: "processingFailure")
         XCTAssertTrue(app.buttons["processing.retryButton"].waitForExistence(timeout: 30))
         app.buttons["processing.cancelButton"].tap()
-        let keep = app.buttons["processing.cancelDiscardButton"].firstMatch
-        XCTAssertTrue(keep.waitForExistence(timeout: 5))
-        keep.tap()
+        XCTAssertTrue(app.buttons["processing.confirmDiscardButton"].firstMatch.waitForExistence(timeout: 5))
+        // iPhone の confirmationDialog は cancel ロールのボタンを表示しないため、外側をタップして閉じる
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
         XCTAssertTrue(app.buttons["processing.retryButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.recordButton"].isHittable)
     }
@@ -139,6 +142,9 @@ final class ProcessingScreenTests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 5))
         app.buttons["root.recordButton"].tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         // 前回の録音は残らず、新しい録音から始まる
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["processing.cancelButton"].exists)

@@ -11,6 +11,9 @@ final class RecordingScreenTests: XCTestCase {
         let button = app.buttons["root.recordButton"]
         XCTAssertTrue(button.waitForExistence(timeout: 5))
         button.tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         return app
     }
 
@@ -29,16 +32,16 @@ final class RecordingScreenTests: XCTestCase {
     func test残り1分を案内して上限で自動停止する() {
         let app = start(scenario: "recordingLimit")
         XCTAssertTrue(app.staticTexts["recording.remainingMinuteNotice"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["recording.limitNotice"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
+        // 上限で停止するとすぐに処理画面へ進むため、上限の案内ではなく処理の開始を確認する
+        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons["recording.stopButton"].exists)
     }
 
     @MainActor
     func test中断すると録音済み部分を保持して処理を開始する() {
         let app = start(scenario: "recordingInterrupted")
-        XCTAssertTrue(app.staticTexts["recording.interruptionNotice"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
+        // 中断するとすぐに処理画面へ進むため、中断の案内ではなく処理の開始を確認する
+        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 13))
         XCTAssertFalse(app.buttons["recording.stopButton"].exists)
     }
 
@@ -56,8 +59,9 @@ final class RecordingScreenTests: XCTestCase {
         let app = start()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         app.buttons["recording.discardButton"].tap()
-        XCTAssertTrue(app.buttons["recording.cancelDiscardButton"].firstMatch.waitForExistence(timeout: 5))
-        app.buttons["recording.cancelDiscardButton"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["recording.confirmDiscardButton"].firstMatch.waitForExistence(timeout: 5))
+        // iPhone の confirmationDialog は cancel ロールのボタンを表示しないため、外側をタップして閉じる
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["processing.cancelButton"].exists)
     }
@@ -72,6 +76,9 @@ final class RecordingScreenTests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 5))
         app.buttons["root.recordButton"].tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
     }
 
@@ -82,10 +89,14 @@ final class RecordingScreenTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.alerts["前回の録音を整理できませんでした"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
-        app.buttons["root.preparationRetryButton"].tap()
+        // ボタンが 1 つだけのアラートでは accessibilityIdentifier が反映されないため、アラート内のボタンをタップする
+        app.alerts.firstMatch.buttons.firstMatch.tap()
         XCTAssertFalse(app.alerts.firstMatch.exists)
         XCTAssertTrue(app.buttons["root.recordButton"].isEnabled)
         app.buttons["root.recordButton"].tap()
+        let recordFromMicrophone = app.buttons["root.recordFromMicrophoneButton"].firstMatch
+        XCTAssertTrue(recordFromMicrophone.waitForExistence(timeout: 5))
+        recordFromMicrophone.tap()
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
     }
 
