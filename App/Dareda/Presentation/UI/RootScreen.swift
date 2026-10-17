@@ -5,6 +5,9 @@ struct RootScreen: View {
 
     var body: some View {
         RootContent(
+            recordingPermission: viewModel.recordingPermission,
+            isRequestingPermission: viewModel.isRequestingPermission,
+            settingsErrorMessage: viewModel.settingsErrorMessage,
             availability: viewModel.availability,
             isProfileListPresented: viewModel.isProfileListPresented,
             send: viewModel.send
