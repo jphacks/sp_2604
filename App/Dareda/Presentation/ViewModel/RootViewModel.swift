@@ -11,6 +11,8 @@ final class RootViewModel {
         case settingsButtonTapped
         case profilesButtonTapped
         case profileListPresentedChanged(Bool)
+        case privateCloudComputeSettingsButtonTapped
+        case privateCloudComputeSettingsPresentedChanged(Bool)
         case recordingFinished
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
@@ -22,6 +24,7 @@ final class RootViewModel {
 
     private(set) var availability: DeviceAvailability?
     private(set) var isProfileListPresented = false
+    private(set) var isPrivateCloudComputeSettingsPresented = false
     private(set) var isRecordingPresented = false
     private(set) var isPreparedForRecording = false
     private(set) var preparationErrorMessage: LocalizedStringResource?
@@ -97,6 +100,10 @@ final class RootViewModel {
             isProfileListPresented = isPresented
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
+        case .privateCloudComputeSettingsButtonTapped:
+            isPrivateCloudComputeSettingsPresented = true
+        case let .privateCloudComputeSettingsPresentedChanged(isPresented):
+            isPrivateCloudComputeSettingsPresented = isPresented
         }
     }
 

@@ -6,6 +6,7 @@ struct RootContent: View {
     let settingsErrorMessage: String?
     let availability: DeviceAvailability?
     let isProfileListPresented: Bool
+    let isPrivateCloudComputeSettingsPresented: Bool
     let isRecordingPresented: Bool
     let isVoiceEnrollmentPresented: Bool
     let isPreparedForRecording: Bool
@@ -57,6 +58,11 @@ struct RootContent: View {
                 Button("プロフィール") { send(.profilesButtonTapped) }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("root.profilesButton")
+
+                // 要約の設定は利用可否にかかわらず変更可能にする。
+                Button("要約の設定") { send(.privateCloudComputeSettingsButtonTapped) }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("root.privateCloudComputeSettingsButton")
             }
         }
         .padding()
@@ -78,6 +84,14 @@ struct RootContent: View {
         .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {
             VoiceEnrollmentScreen { send(.voiceEnrollmentCompleted) }
         }
+        .sheet(
+            isPresented: Binding(
+                get: { isPrivateCloudComputeSettingsPresented },
+                set: { send(.privateCloudComputeSettingsPresentedChanged($0)) }
+            )
+        ) {
+            PrivateCloudComputeSettingsScreen()
+        }
     }
 }
 
@@ -88,6 +102,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .available,
         isProfileListPresented: false,
+        isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
@@ -103,6 +118,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .unsupported,
         isProfileListPresented: false,
+        isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
@@ -118,6 +134,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .temporarilyUnavailable(.modelNotReady),
         isProfileListPresented: false,
+        isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
@@ -133,6 +150,7 @@ struct RootContent: View {
         settingsErrorMessage: nil,
         availability: .available,
         isProfileListPresented: false,
+        isPrivateCloudComputeSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
