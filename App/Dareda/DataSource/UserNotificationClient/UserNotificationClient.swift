@@ -5,6 +5,14 @@ import UserNotifications
 
 @DependencyClient
 nonisolated struct UserNotificationClient: Sendable {
+    enum AuthorizationStatus: Sendable, Equatable {
+        case notDetermined
+        case authorized
+        case denied
+    }
+
+    /// 現在の通知の許可状態を返す。確認ダイアログは出さない。
+    var authorizationStatus: @Sendable () async -> AuthorizationStatus = { .notDetermined }
     /// 通知の許可を求め、許可されたかを返す。決定済みなら確認ダイアログは出ずに現在の設定を返す。
     var requestAuthorization: @Sendable () async throws -> Bool
     /// ローカル通知を即時に配信する。`userInfo` はタップ時に `responses` へそのまま渡る。
@@ -22,6 +30,7 @@ nonisolated extension UserNotificationClient: DependencyKey {
     static let liveValue: UserNotificationClient = {
         let impl = UserNotificationClientImpl()
         return UserNotificationClient(
+            authorizationStatus: impl.authorizationStatus,
             requestAuthorization: impl.requestAuthorization,
             add: impl.add(_:_:_:_:),
             responses: impl.responses
@@ -45,6 +54,14 @@ private nonisolated struct UserNotificationClientImpl: Sendable {
 
     init() {
         UNUserNotificationCenter.current().delegate = delegate
+    }
+
+    func authorizationStatus() async -> UserNotificationClient.AuthorizationStatus {
+        switch await UNUserNotificationCenter.current().notificationSettings().authorizationStatus {
+        case .notDetermined: .notDetermined
+        case .denied: .denied
+        default: .authorized
+        }
     }
 
     func requestAuthorization() async throws -> Bool {

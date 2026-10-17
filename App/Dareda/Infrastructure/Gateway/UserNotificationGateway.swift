@@ -3,6 +3,8 @@ import DependenciesMacros
 
 @DependencyClient
 nonisolated struct UserNotificationGateway: Sendable {
+    /// 現在の通知の許可状態を返す。
+    var permission: @Sendable () async -> NotificationPermission = { .undetermined }
     /// 通知の許可を求め、許可されたかを返す。
     var requestAuthorization: @Sendable () async throws -> Bool
     /// 人物検索の 1 位の候補を通知する。名前以外 (所属・日時・場所・要約) は含めない。
@@ -15,6 +17,7 @@ nonisolated extension UserNotificationGateway: DependencyKey {
     static let liveValue: UserNotificationGateway = {
         let impl = UserNotificationGatewayImpl()
         return UserNotificationGateway(
+            permission: impl.permission,
             requestAuthorization: impl.requestAuthorization,
             notifyPersonSearchCandidate: impl.notifyPersonSearchCandidate(_:),
             personSearchNotificationTaps: impl.personSearchNotificationTaps
@@ -34,6 +37,14 @@ private nonisolated struct UserNotificationGatewayImpl: Sendable {
     private static let personSearchKind = "personSearch"
 
     @Dependency(\.userNotificationClient) private var userNotificationClient
+
+    func permission() async -> NotificationPermission {
+        switch await userNotificationClient.authorizationStatus() {
+        case .notDetermined: .undetermined
+        case .authorized: .granted
+        case .denied: .denied
+        }
+    }
 
     func requestAuthorization() async throws -> Bool {
         try await userNotificationClient.requestAuthorization()
