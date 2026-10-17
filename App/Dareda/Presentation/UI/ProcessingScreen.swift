@@ -4,10 +4,15 @@ struct ProcessingScreen: View {
     @State private var viewModel: ProcessingViewModel
     @Environment(\.scenePhase) private var scenePhase
     let onFinished: () -> Void
+    let onRerecord: () -> Void
 
-    init(recording: Recording, mode: RecordingViewModel.Mode, onFinished: @escaping () -> Void) {
+    init(
+        recording: Recording, mode: RecordingViewModel.Mode,
+        onFinished: @escaping () -> Void, onRerecord: @escaping () -> Void
+    ) {
         _viewModel = State(initialValue: ProcessingViewModel(recording: recording, mode: mode))
         self.onFinished = onFinished
+        self.onRerecord = onRerecord
     }
 
     var body: some View {
@@ -18,7 +23,7 @@ struct ProcessingScreen: View {
             canRetry: viewModel.failedStage != nil,
             isCompleted: viewModel.isCompleted,
             isSuspended: viewModel.isSuspended,
-            needsSelfSelection: viewModel.needsSelfSelection,
+            selfSelectionAnalysis: viewModel.selfSelectionAnalysis,
             isCancelConfirmationPresented: viewModel.isCancelConfirmationPresented,
             send: viewModel.send
         )
@@ -28,6 +33,9 @@ struct ProcessingScreen: View {
         }
         .onChange(of: viewModel.isFinished) { _, finished in
             if finished { onFinished() }
+        }
+        .onChange(of: viewModel.isRerecordRequested) { _, requested in
+            if requested { onRerecord() }
         }
     }
 }

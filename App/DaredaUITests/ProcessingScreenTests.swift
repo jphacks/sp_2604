@@ -83,11 +83,44 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test本人を判別できない場合は案内を表示する() {
+    func test本人を判別できない場合は話者別の発言から自分を選ぶと要約まで進む() {
         let app = start(scenario: "processingSelfUnknown")
-        XCTAssertTrue(app.staticTexts["processing.selfSelectionNotice"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.descendants(matching: .any)["processing.selfSelectionNotice"].waitForExistence(timeout: 30))
         XCTAssertEqual(stageValue(app, "identifyingSpeakers"), "完了")
         XCTAssertEqual(stageValue(app, "summarizing"), "待機中")
+        // 2 人の話者それぞれの発言を表示する
+        XCTAssertTrue(app.staticTexts["はじめまして、田中です。"].exists)
+        XCTAssertTrue(app.staticTexts["よろしくお願いします。"].exists)
+        XCTAssertTrue(app.buttons["processing.selfCandidate.1"].exists)
+        attach(app, name: "processing-self-selection")
+
+        app.buttons["processing.selfCandidate.0"].tap()
+        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
+        XCTAssertEqual(stageValue(app, "summarizing"), "完了")
+        XCTAssertFalse(app.descendants(matching: .any)["processing.selfSelectionNotice"].exists)
+    }
+
+    @MainActor
+    func test人物を探すでも自分を選ぶと残りの話者を相手として照合まで進む() {
+        let app = start(scenario: "processingSelfUnknown", mode: "recording.searchButton")
+        let candidate = app.buttons["processing.selfCandidate.0"]
+        XCTAssertTrue(candidate.waitForExistence(timeout: 30))
+        candidate.tap()
+        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 30))
+        XCTAssertFalse(app.staticTexts["processing.errorNotice"].exists)
+    }
+
+    @MainActor
+    func test自分を判断できないときは録音し直せる() {
+        let app = start(scenario: "processingSelfUnknown")
+        let rerecord = app.buttons["processing.rerecordButton"]
+        XCTAssertTrue(rerecord.waitForExistence(timeout: 30))
+        rerecord.tap()
+        // 録音画面に戻り、操作選択前の新しい録音が始まる
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["processing.cancelButton"].exists)
+        app.buttons["recording.stopButton"].tap()
+        XCTAssertTrue(app.buttons["recording.registrationButton"].waitForExistence(timeout: 5))
     }
 
     @MainActor
