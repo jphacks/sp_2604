@@ -60,6 +60,29 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
+    func test解析がOSに中断されても復帰後に未完了の処理だけを再試行して完了する() {
+        let app = start(scenario: "analysisSuspended", mode: "recording.searchButton")
+        // 文字起こしを終えて話者分離中にバックグラウンドへ移行し、OS に打ち切られる
+        let identifying = app.descendants(matching: .any)["processing.stage.identifyingSpeakers"]
+        XCTAssertTrue(identifying.waitForExistence(timeout: 5))
+        XCTAssertTrue(waitForValue(identifying, "処理中"))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+
+        app.activate()
+        // 文字起こしは 2 回目が失敗するテストダブルなので、完了すれば文字起こしは再実行されていない
+        XCTAssertTrue(app.staticTexts["processing.completedNotice"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["processing.errorNotice"].exists)
+        attach(app, name: "processing-resumed-after")
+    }
+
+    @MainActor
+    private func waitForValue(_ element: XCUIElement, _ value: String) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: element)
+        return XCTWaiter.wait(for: [expectation], timeout: 5) == .completed
+    }
+
+    @MainActor
     func test本人を判別できない場合は案内を表示する() {
         let app = start(scenario: "processingSelfUnknown")
         XCTAssertTrue(app.staticTexts["processing.selfSelectionNotice"].waitForExistence(timeout: 30))

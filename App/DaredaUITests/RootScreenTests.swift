@@ -17,16 +17,12 @@ final class RootScreenTests: XCTestCase {
     func test起動するとルート画面が表示される() {
         let app = launch(scenario: "default")
 
-        XCTAssertTrue(app.staticTexts["root.title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testプロフィールボタンでプロフィール一覧が表示される() {
+    func test起動するとプロフィール一覧が表示される() {
         let app = launch(scenario: "profiles")
-
-        let profilesButton = app.buttons["root.profilesButton"]
-        XCTAssertTrue(profilesButton.waitForExistence(timeout: 5))
-        profilesButton.tap()
 
         XCTAssertTrue(app.buttons["profileList.row.山田 太郎"].waitForExistence(timeout: 5))
     }
@@ -47,7 +43,7 @@ final class RootScreenTests: XCTestCase {
 
         XCTAssertTrue(app.otherElements["root.availabilityNotice.unsupported"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
-        XCTAssertTrue(app.buttons["root.profilesButton"].isEnabled)
+        XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].exists)
     }
 
     @MainActor
@@ -56,7 +52,7 @@ final class RootScreenTests: XCTestCase {
 
         XCTAssertTrue(app.otherElements["root.availabilityNotice.temporarilyUnavailable"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
-        XCTAssertTrue(app.buttons["root.profilesButton"].isEnabled)
+        XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].exists)
     }
 
     @MainActor
@@ -66,7 +62,6 @@ final class RootScreenTests: XCTestCase {
         XCTAssertTrue(app.otherElements["root.availabilityNotice.temporarilyUnavailable"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
         XCTAssertTrue(app.staticTexts["root.availabilityMessage"].exists)
-        app.buttons["root.profilesButton"].tap()
 
         XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].waitForExistence(timeout: 5))
     }
@@ -76,7 +71,6 @@ final class RootScreenTests: XCTestCase {
         let app = launch(scenario: "unsupported")
 
         XCTAssertTrue(app.otherElements["root.availabilityNotice.unsupported"].waitForExistence(timeout: 5))
-        app.buttons["root.profilesButton"].tap()
 
         XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].waitForExistence(timeout: 5))
     }
@@ -178,4 +172,12 @@ final class RootScreenTests: XCTestCase {
         return app
     }
 
+    @MainActor
+    func test人物検索の通知をタップすると候補一覧が開く() {
+        // 通知のタップは UserNotificationClient のテストダブルが起動後に発生させる
+        let app = launch(scenario: "personSearchNotificationTapped")
+
+        // TODO: #23 で候補一覧画面に差し替えたら、検証する要素も差し替える
+        XCTAssertTrue(app.buttons["profileList.row.山田 太郎"].waitForExistence(timeout: 5))
+    }
 }

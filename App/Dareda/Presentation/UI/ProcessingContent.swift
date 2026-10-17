@@ -6,6 +6,7 @@ struct ProcessingContent: View {
     let errorMessage: LocalizedStringResource?
     let canRetry: Bool
     let isCompleted: Bool
+    var isSuspended = false
     let needsSelfSelection: Bool
     let isCancelConfirmationPresented: Bool
     let send: (ProcessingViewModel.Action) -> Void
@@ -30,6 +31,10 @@ struct ProcessingContent: View {
                             .buttonStyle(.borderedProminent)
                             .accessibilityIdentifier("processing.retryButton")
                     }
+                }
+                if isSuspended {
+                    Text("解析が中断されました。アプリに戻ると続きから再開します。")
+                        .accessibilityIdentifier("processing.suspendedNotice")
                 }
                 // 完了後・本人未確定時の画面は #17 / #21 / #23 で置き換える
                 if needsSelfSelection {

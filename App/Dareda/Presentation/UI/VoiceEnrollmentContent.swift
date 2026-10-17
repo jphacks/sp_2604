@@ -4,6 +4,7 @@ struct VoiceEnrollmentContent: View {
     let isRecording: Bool
     let isProcessing: Bool
     let failure: VoiceEnrollmentViewModel.Failure?
+    var isCancellable = false
     let send: (VoiceEnrollmentViewModel.Action) -> Void
 
     private static let sampleText = """
@@ -17,6 +18,21 @@ struct VoiceEnrollmentContent: View {
         """
 
     var body: some View {
+        NavigationStack {
+            content
+                .toolbar {
+                    if isCancellable {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("キャンセル") { send(.cancelButtonTapped) }
+                                .disabled(isProcessing)
+                                .accessibilityIdentifier("voiceEnrollment.cancelButton")
+                        }
+                    }
+                }
+        }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -74,7 +90,7 @@ struct VoiceEnrollmentContent: View {
         case .permissionDenied:
             "マイクの使用が許可されていません。設定アプリでマイクへのアクセスを許可してください。"
         case let .insufficientSpeech(duration):
-            "声が十分に録音できませんでした (\(Int(duration))秒)。文章を最後まで読んで、30秒以上話してください。"
+            "声が十分に録音できませんでした (\(Int(duration))秒)。文章を最後まで読んで、\(Int(ProvisionalParameters.selfVoiceRequiredSpeechDuration))秒以上話してください。"
         case let .poorQuality(issues):
             issues.contains(.clipping)
                 ? "音が割れています。マイクから少し離れて、もう一度録音してください。"
@@ -91,6 +107,10 @@ struct VoiceEnrollmentContent: View {
 
 #Preview("録音中") {
     VoiceEnrollmentContent(isRecording: true, isProcessing: false, failure: nil, send: { _ in })
+}
+
+#Preview("再登録") {
+    VoiceEnrollmentContent(isRecording: false, isProcessing: false, failure: nil, isCancellable: true, send: { _ in })
 }
 
 #Preview("発話不足") {

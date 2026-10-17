@@ -81,4 +81,6 @@ nonisolated enum ConversationAnalysisError: Error, Equatable {
     case selfVoiceNotRegistered
     /// ベクトルを生成できた話者がいない (話者分離が不十分)。再録音またはキャンセルを促す。
     case noSpeakerDetected
+    /// バックグラウンドでの実行を OS に打ち切られた。アプリに戻ったら同じセッションで呼び直し、未完了の処理だけを再試行する。
+    case suspended
 }

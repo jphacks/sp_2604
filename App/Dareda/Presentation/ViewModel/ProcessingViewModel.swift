@@ -10,6 +10,7 @@ final class ProcessingViewModel {
         case cancelButtonTapped
         case cancelConfirmationChanged(Bool)
         case cancelConfirmed
+        case sceneBecameActive
     }
 
     enum StageStatus { case waiting, processing, completed, failed }
@@ -21,6 +22,7 @@ final class ProcessingViewModel {
     private(set) var failedStage: ConversationAnalysisStage?
     private(set) var errorMessage: LocalizedStringResource?
     private(set) var isCompleted = false
+    private(set) var isSuspended = false
     private(set) var needsSelfSelection = false
     private(set) var isCancelConfirmationPresented = false
     private(set) var isFinished = false
@@ -58,6 +60,9 @@ final class ProcessingViewModel {
             process()
         case .retryButtonTapped:
             process()
+        case .sceneBecameActive:
+            // OS に打ち切られた解析は、アプリに戻ったら未完了の処理だけを再試行する。
+            if isSuspended { process() }
         case .cancelButtonTapped:
             isCancelConfirmationPresented = true
         case let .cancelConfirmationChanged(isPresented):
@@ -81,6 +86,7 @@ final class ProcessingViewModel {
         guard processingTask == nil else { return }
         failedStage = nil
         errorMessage = nil
+        isSuspended = false
         processingTask = Task {
             defer { processingTask = nil }
             do {
@@ -93,6 +99,8 @@ final class ProcessingViewModel {
                 }
             } catch is CancellationError {
                 return
+            } catch ConversationAnalysisError.suspended {
+                isSuspended = true
             } catch PersonSearchError.selfNotIdentified {
                 completeCurrentStage()
                 needsSelfSelection = true

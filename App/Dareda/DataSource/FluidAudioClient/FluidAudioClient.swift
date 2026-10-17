@@ -27,15 +27,16 @@ nonisolated extension FluidAudioClient {
         FluidAudioClient(diarize: { _ in result })
     }
 
-    /// 本人 (0〜15 秒) と相手 (15〜35 秒) の 2 人に分ける結果を返すテストダブル。
+    /// 2 人の話者 (0〜15 秒と 15〜30 秒) に分けるテストダブル。`delay` だけ待ってから返す。
     /// 最初の `failureCount` 回は失敗する。
-    static func conversation(failureCount: Int = 0) -> FluidAudioClient {
+    static func twoSpeakers(delay: Duration = .zero, failureCount: Int = 0) -> FluidAudioClient {
         let callCount = Mutex(0)
         let result = DiarizationResult(segments: [
             TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 15, qualityScore: 1),
-            TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: 35, qualityScore: 1),
+            TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: 30, qualityScore: 1),
         ])
         return FluidAudioClient(diarize: { _ in
+            try await Task.sleep(for: delay)
             let count = callCount.withLock { value in
                 value += 1
                 return value

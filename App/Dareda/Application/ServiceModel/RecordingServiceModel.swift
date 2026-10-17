@@ -18,7 +18,10 @@ nonisolated struct RecordingConfiguration: Sendable, Equatable {
     /// 上限のどれだけ前に `oneMinuteRemaining` を通知するか (1 分)。
     var warningRemaining: TimeInterval
 
-    static let `default` = RecordingConfiguration(maxDuration: 10 * 60, warningRemaining: 60)
+    static let `default` = RecordingConfiguration(
+        maxDuration: ProvisionalParameters.recordingMaxDuration,
+        warningRemaining: ProvisionalParameters.recordingWarningRemaining
+    )
 }
 
 nonisolated enum RecordingError: Error, Sendable, Equatable {

@@ -37,7 +37,7 @@ nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter, matchesSt
             SelfVoiceRecord(
                 id: SelfVoiceRecord.singletonID,
                 vector: vector.withUnsafeBufferPointer { Data(buffer: $0) },
-                createdAt: Date()
+                createdAt: Date(timeIntervalSince1970: 1_700_000_000)
             )
         }.execute(db)
     }

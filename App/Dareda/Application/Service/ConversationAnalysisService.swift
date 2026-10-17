@@ -6,6 +6,7 @@ import Foundation
 ///
 /// 成功した処理の結果はセッションに保存し、同じセッションで再度呼ばれたときは再実行しない。
 /// 失敗・中断後に同じセッションで呼び直すと、未完了の処理だけを実行する。時間を理由に打ち切らない。
+/// バックグラウンドに移行しても処理を続け、OS に打ち切られたら `ConversationAnalysisError.suspended` で終了する。
 @DependencyClient
 nonisolated struct ConversationAnalysisService: Sendable {
     /// 第 1 段階の話者識別までを行う。処理状況を流し、最後に `.completed` で結果を流して終了する。
@@ -48,6 +49,9 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     @Dependency(\.audioFileGateway) private var audioFileGateway
     @Dependency(\.conversationSummaryService) private var conversationSummaryService
     @Dependency(\.vectorMatchingService) private var vectorMatchingService
+    @Dependency(\.backgroundExecutionGateway) private var backgroundExecutionGateway
+    @Dependency(\.metricsGateway) private var metricsGateway
+    @Dependency(\.date) private var date
 
     func analyze(
         _ recording: Recording, session: ProcessingSession
@@ -69,6 +73,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             let candidates = speakers.filter { $0.embedding != nil }
             guard !candidates.isEmpty else { throw ConversationAnalysisError.noSpeakerDetected }
 
+            try recordSelfSimilarities(candidates, selfVoice)
             let identification = try vectorMatchingService.identifySelf(
                 candidates.compactMap { $0.embedding?.values },
                 selfVoice.vector,
@@ -76,6 +81,9 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             )
             let selfSpeakerID: AnalyzedSpeaker.ID? =
                 if case let .identified(index) = identification { candidates[index].id } else { nil }
+            metricsGateway.recordValue("metrics.analysis.speakerCount", Double(speakers.count))
+            metricsGateway.recordValue("metrics.analysis.selfIdentified", selfSpeakerID == nil ? 0 : 1)
+            metricsGateway.recordMemoryFootprint("metrics.analysis.memory")
 
             return ConversationAnalysis(
                 speeches: speechSegments.map {
@@ -93,7 +101,10 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
         stream { continuation in
             if let cached = try await analysisCacheRepository.getSummary(session) { return cached }
             continuation.yield(.stageChanged(.summarizing))
+            let start = date.now
             let summary = try await conversationSummaryService.summarize(transcript)
+            metricsGateway.recordDuration("metrics.summary.duration", date.now.timeIntervalSince(start))
+            metricsGateway.recordMemoryFootprint("metrics.summary.memory")
             try await analysisCacheRepository.setSummary(summary, session)
             return summary
         }
@@ -101,14 +112,19 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
 
     private func speechSegments(_ recording: Recording, _ session: ProcessingSession) async throws -> [SpeechSegment] {
         if let cached = try await analysisCacheRepository.getSpeechSegments(session) { return cached }
+        let start = date.now
         let segments = try await transcriptionService.transcribe(recording.fileURL)
+        metricsGateway.recordDuration("metrics.transcription.duration", date.now.timeIntervalSince(start))
         try await analysisCacheRepository.setSpeechSegments(segments, session)
         return segments
     }
 
     private func speakerSegments(_ recording: Recording, _ session: ProcessingSession) async throws -> [SpeakerSegment] {
         if let cached = try await analysisCacheRepository.getSpeakerSegments(session) { return cached }
+        let start = date.now
         let segments = try await speakerDiarizationGateway.diarize(recording.fileURL)
+        metricsGateway.recordDuration("metrics.diarization.duration", date.now.timeIntervalSince(start))
+        metricsGateway.recordMemoryFootprint("metrics.diarization.memory")
         try await analysisCacheRepository.setSpeakerSegments(segments, session)
         return segments
     }
@@ -121,6 +137,8 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
         let pending = Dictionary(grouping: speakerSegments, by: \.speakerID).filter { embeddings[$0.key] == nil }
         guard !pending.isEmpty else { return embeddings }
 
+        let start = date.now
+        defer { metricsGateway.recordDuration("metrics.embedding.duration", date.now.timeIntervalSince(start)) }
         let audio = try await audioFileGateway.samples(recording.fileURL)
         for (speakerID, segments) in pending.sorted(by: { $0.key < $1.key }) {
             let voiceSegments = segments.map { audio.voiceSegment(from: $0.startTime, to: $0.endTime) }
@@ -132,6 +150,15 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             try await analysisCacheRepository.setSpeakerEmbeddings(embeddings, session)
         }
         return embeddings
+    }
+
+    /// 本人識別しきい値の検証用に、各話者と本人の声の類似度を記録する。
+    private func recordSelfSimilarities(_ candidates: [AnalyzedSpeaker], _ selfVoice: SelfVoice) throws {
+        for candidate in candidates {
+            guard let embedding = candidate.embedding else { continue }
+            let similarity = try vectorMatchingService.cosineSimilarity(embedding.values, selfVoice.vector)
+            metricsGateway.recordValue("metrics.selfIdentification.similarity", Double(similarity))
+        }
     }
 
     /// 文字起こしの区間と最も長く重なる話者の ID。
@@ -151,6 +178,11 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<Value>, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
+                // バックグラウンドに移行しても続ける。OS に打ち切られたら中断として終了し、
+                // ストリームの終了で処理もキャンセルする。完了済みの処理の結果はセッションに残る。
+                let execution = await backgroundExecutionGateway.begin {
+                    continuation.finish(throwing: ConversationAnalysisError.suspended)
+                }
                 do {
                     let value = try await body(continuation)
                     continuation.yield(.completed(value))
@@ -158,6 +190,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+                await backgroundExecutionGateway.end(execution)
             }
             continuation.onTermination = { _ in task.cancel() }
         }
