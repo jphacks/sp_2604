@@ -60,6 +60,8 @@ final class ProcessingViewModel {
     @ObservationIgnored @Dependency(\.notifyPersonSearchResultUseCase) private var notifyPersonSearchResultUseCase
     @ObservationIgnored @Dependency(\.fetchProfileDetailUseCase) private var fetchProfileDetailUseCase
     @ObservationIgnored @Dependency(\.fetchProfilesUseCase) private var fetchProfilesUseCase
+    @ObservationIgnored @Dependency(\.watchSyncService) private var watchSyncService
+    @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored private let recording: Recording
     @ObservationIgnored private var session: ProcessingSession?
     /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
@@ -92,6 +94,8 @@ final class ProcessingViewModel {
             guard !hasAppeared else { return }
             hasAppeared = true
             process()
+            observeForWatch()
+            observeWatchOperations()
         case .retryButtonTapped:
             process()
         case .sceneBecameActive:
@@ -175,6 +179,60 @@ final class ProcessingViewModel {
                 self.isRerecordRequested = true
             } onFailure: {
                 self.errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+            }
+        }
+    }
+
+    /// Apple Watch に表示する処理状況。
+    private var watchState: WatchProcessingState? {
+        if isFinished {
+            guard let registeredProfileID else { return nil }
+            return .completed(searchCandidates?.first { $0.profile.id == registeredProfileID }.map(WatchProfile.init))
+        }
+        if let errorMessage { return .failed(message: String(localized: errorMessage)) }
+        if selfSelectionAnalysis != nil || registrationSource != nil || isSuspended || isManualSelectionPresented {
+            return .needsInputOnPhone
+        }
+        if insufficientPartnerSpeechDuration != nil { return .needsAdditionalRecording }
+        if isCompleted, let searchCandidates { return .candidates(searchCandidates.map(WatchProfile.init)) }
+        return .processing(WatchProcessingStage(currentStage ?? .transcribing))
+    }
+
+    /// 処理状況が変わるたびに Apple Watch へ送る。
+    private func observeForWatch() {
+        let state = withObservationTracking { watchState } onChange: { [weak self] in
+            Task { @MainActor in self?.observeForWatch() }
+        }
+        watchSyncService.updateProcessing(state)
+    }
+
+    /// Apple Watch での候補の確定・キャンセル・追加録音を受け取る。
+    private func observeWatchOperations() {
+        let commands = watchSyncService.commands()
+        Task { [weak self] in
+            for await command in commands {
+                guard let self, !self.isFinished else { return }
+                switch command {
+                case let .selectCandidate(profileID):
+                    guard self.searchCandidates?.contains(where: { $0.profile.id == profileID }) == true else { continue }
+                    self.confirm(profileID)
+                case .cancelProcessing:
+                    self.send(.cancelConfirmed)
+                case .requestSnapshot:
+                    self.watchSyncService.updateProcessing(self.watchState)
+                }
+            }
+        }
+        let recordings = watchSyncService.recordings()
+        Task { [weak self] in
+            for await recording in recordings where recording.isAdditional {
+                guard let self, !self.isFinished, self.insufficientPartnerSpeechDuration != nil else { continue }
+                // ファイルアプリの音声ファイルと同じように取り込み、iPhone で追加録音したときと同様に処理する
+                guard let added = try? self.recordingService.importFile(recording.fileURL) else {
+                    self.errorMessage = "追加録音を処理できませんでした。もう一度お試しください。"
+                    continue
+                }
+                self.send(.additionalRecordingAdded(added))
             }
         }
     }
@@ -379,6 +437,16 @@ final class ProcessingViewModel {
             "相手の声を検出できませんでした。もう一度お試しいただくか、キャンセルして録音し直してください。"
         default:
             "処理に失敗しました。もう一度お試しください。"
+        }
+    }
+}
+
+private extension WatchProcessingStage {
+    init(_ stage: ConversationAnalysisStage) {
+        switch stage {
+        case .transcribing: self = .transcribing
+        case .identifyingSpeakers: self = .identifyingSpeakers
+        case .summarizing: self = .summarizing
         }
     }
 }

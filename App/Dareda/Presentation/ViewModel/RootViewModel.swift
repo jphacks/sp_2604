@@ -21,6 +21,8 @@ final class RootViewModel {
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
         case personSearchNotificationTapped
+        /// Apple Watch で録音したファイルが届いた。
+        case watchRecordingReceived(URL)
     }
 
     enum Alert: Equatable {
@@ -57,7 +59,12 @@ final class RootViewModel {
     @ObservationIgnored
     @Dependency(\.observePersonSearchNotificationTapUseCase) private var observePersonSearchNotificationTapUseCase
     @ObservationIgnored
+    @Dependency(\.watchSyncService) private var watchSyncService
+    @ObservationIgnored
     private var hasAttemptedPreparation = false
+    /// 録音画面の表示中に Apple Watch から届いた録音。録音画面を閉じたら順に処理する。
+    @ObservationIgnored
+    private var pendingWatchRecordings: [URL] = []
     @ObservationIgnored
     private var isPreparing = false
 
@@ -68,6 +75,7 @@ final class RootViewModel {
             do {
                 try await cleanUpTemporaryDataUseCase.execute()
                 isPreparedForRecording = true
+                syncWatchRecordingAvailability()
             } catch {
                 alert = .preparationFailed
             }
@@ -86,6 +94,7 @@ final class RootViewModel {
             prepareForRecording()
             Task { await presentVoiceEnrollmentIfNeeded() }
             observePersonSearchNotificationTaps()
+            startWatchSync()
         case .preparationRetryButtonTapped:
             alert = nil
             prepareForRecording()
@@ -127,8 +136,11 @@ final class RootViewModel {
             isRecordingPresented = false
             importedFileURL = nil
             if let profileID { registeredProfileID = profileID }
+            Task { await watchSyncService.syncProfiles() }
+            presentNextWatchRecording()
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
+            syncWatchRecordingAvailability()
         case .settingsMenuButtonTapped:
             isSettingsPresented = true
         case let .settingsPresentedChanged(isPresented):
@@ -137,7 +149,48 @@ final class RootViewModel {
             // 候補一覧は録音画面の上の処理状況画面に表示されている。上に重なったシートを閉じてそれを見せる。
             // 録音画面を閉じた後のタップでは、ルートのプロフィール一覧に戻る
             isSettingsPresented = false
+        case let .watchRecordingReceived(url):
+            pendingWatchRecordings.append(url)
+            presentNextWatchRecording()
         }
+    }
+
+    /// Apple Watch の録音は、ファイルアプリで選んだ音声ファイルと同じように取り込んで処理する。
+    private func presentNextWatchRecording() {
+        guard !isRecordingPresented, !isVoiceEnrollmentPresented,
+              availability?.isAvailable == true, isPreparedForRecording,
+              !pendingWatchRecordings.isEmpty
+        else { return }
+        isSettingsPresented = false
+        importedFileURL = pendingWatchRecordings.removeFirst()
+        isRecordingPresented = true
+    }
+
+    private func startWatchSync() {
+        watchSyncService.activate()
+        syncWatchRecordingAvailability()
+        Task { await watchSyncService.syncProfiles() }
+        let recordings = watchSyncService.recordings()
+        Task { [weak self] in
+            // 追加録音は処理状況画面が受け取る
+            for await recording in recordings where !recording.isAdditional {
+                self?.send(.watchRecordingReceived(recording.fileURL))
+            }
+        }
+        let commands = watchSyncService.commands()
+        Task { [weak self] in
+            for await command in commands where command == .requestSnapshot {
+                guard let self else { return }
+                self.syncWatchRecordingAvailability()
+                await self.watchSyncService.syncProfiles()
+            }
+        }
+    }
+
+    private func syncWatchRecordingAvailability() {
+        let isAvailable = availability?.isAvailable == true && isPreparedForRecording && !isVoiceEnrollmentPresented
+        watchSyncService.updateRecordingAvailability(isAvailable)
+        presentNextWatchRecording()
     }
 
     private func observePersonSearchNotificationTaps() {
@@ -154,5 +207,6 @@ final class RootViewModel {
         // 読み込みに失敗してもユーザーにできることがないため、登録画面は出さずに続行する。
         guard let isRegistered = try? await fetchSelfVoiceRegisteredUseCase.execute() else { return }
         isVoiceEnrollmentPresented = !isRegistered
+        syncWatchRecordingAvailability()
     }
 }
