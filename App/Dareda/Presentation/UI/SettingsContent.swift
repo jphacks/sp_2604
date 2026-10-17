@@ -9,6 +9,8 @@ struct SettingsContent: View {
     var appVersion: AppVersion?
     let send: (SettingsViewModel.Action) -> Void
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             Form {
@@ -65,6 +67,12 @@ struct SettingsContent: View {
                 }
             }
             .navigationTitle("設定")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .close) { dismiss() }
+                        .accessibilityIdentifier("settings.closeButton")
+                }
+            }
         }
         // 登録に失敗しても今の登録が残るよう、完了かキャンセルでのみ閉じる
         .fullScreenCover(isPresented: .constant(isVoiceReregistrationPresented)) {
