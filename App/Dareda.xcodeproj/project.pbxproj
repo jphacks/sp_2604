@@ -11,9 +11,18 @@
 		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
 		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
 		A90000000000000000000003 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000002 /* FluidAudio */; };
+		B1000000000000000000000B /* Prefire in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000021 /* Prefire */; };
+		B1000000000000000000000C /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000022 /* SnapshotTesting */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B10000000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = Dareda;
+		};
 		F157C6843082907700C4613A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 000000000000000000000000 /* Project object */;
@@ -25,6 +34,7 @@
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Dareda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dareda.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000001 /* DaredaSnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaredaSnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F157C6803082907700C4613A /* DaredaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaredaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -47,6 +57,11 @@
 			path = Dareda;
 			sourceTree = "<group>";
 		};
+		B10000000000000000000002 /* DaredaSnapshotTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DaredaSnapshotTests;
+			sourceTree = "<group>";
+		};
 		F157C6813082907700C4613A /* DaredaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = DaredaUITests;
@@ -64,6 +79,13 @@
 				A90000000000000000000003 /* FluidAudio in Frameworks */,
 			);
 		};
+		B10000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				B1000000000000000000000B /* Prefire in Frameworks */,
+				B1000000000000000000000C /* SnapshotTesting in Frameworks */,
+			);
+		};
 		F157C67D3082907700C4613A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -77,6 +99,7 @@
 			children = (
 				000000000000000000000010 /* Dareda */,
 				F157C6813082907700C4613A /* DaredaUITests */,
+				B10000000000000000000002 /* DaredaSnapshotTests */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -86,6 +109,7 @@
 			children = (
 				000000000000000000000120 /* Dareda.app */,
 				F157C6803082907700C4613A /* DaredaUITests.xctest */,
+				B10000000000000000000001 /* DaredaSnapshotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,6 +140,32 @@
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Dareda.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B10000000000000000000006 /* DaredaSnapshotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000010 /* Build configuration list for PBXNativeTarget "DaredaSnapshotTests" */;
+			buildPhases = (
+				B10000000000000000000003 /* Sources */,
+				B10000000000000000000004 /* Frameworks */,
+				B10000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B10000000000000000000008 /* PBXTargetDependency */,
+				B10000000000000000000009 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B10000000000000000000002 /* DaredaSnapshotTests */,
+			);
+			name = DaredaSnapshotTests;
+			packageProductDependencies = (
+				B10000000000000000000021 /* Prefire */,
+				B10000000000000000000022 /* SnapshotTesting */,
+			);
+			productName = DaredaSnapshotTests;
+			productReference = B10000000000000000000001 /* DaredaSnapshotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F157C67F3082907700C4613A /* DaredaUITests */ = {
 			isa = PBXNativeTarget;
@@ -151,6 +201,10 @@
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					B10000000000000000000006 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = 000000000000000100000000;
+					};
 					F157C67F3082907700C4613A = {
 						CreatedOnToolsVersion = 27.1;
 						TestTargetID = 000000000000000100000000;
@@ -170,6 +224,8 @@
 				A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */,
 				A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */,
+				B10000000000000000000032 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -178,12 +234,18 @@
 			targets = (
 				000000000000000100000000 /* Dareda */,
 				F157C67F3082907700C4613A /* DaredaUITests */,
+				B10000000000000000000006 /* DaredaSnapshotTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		B10000000000000000000005 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -201,6 +263,11 @@
 			files = (
 			);
 		};
+		B10000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		F157C67C3082907700C4613A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -209,6 +276,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		B10000000000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000100000000 /* Dareda */;
+			targetProxy = B10000000000000000000007 /* PBXContainerItemProxy */;
+		};
+		B10000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = B10000000000000000000023 /* PrefireTestsPlugin */;
+		};
 		F157C6853082907700C4613A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 000000000000000100000000 /* Dareda */;
@@ -451,6 +527,55 @@
 			};
 			name = Release;
 		};
+		B10000000000000000000011 /* Debug configuration for PBXNativeTarget "DaredaSnapshotTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4YP7SQBLYV;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.DaredaSnapshotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dareda.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dareda";
+			};
+			name = Debug;
+		};
+		B10000000000000000000012 /* Release configuration for PBXNativeTarget "DaredaSnapshotTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4YP7SQBLYV;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.DaredaSnapshotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dareda.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dareda";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		F157C6873082907700C4613A /* Debug configuration for PBXNativeTarget "DaredaUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -517,6 +642,14 @@
 			);
 			defaultConfigurationName = Release;
 		};
+		B10000000000000000000010 /* Build configuration list for PBXNativeTarget "DaredaSnapshotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000011 /* Debug configuration for PBXNativeTarget "DaredaSnapshotTests" */,
+				B10000000000000000000012 /* Release configuration for PBXNativeTarget "DaredaSnapshotTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		F157C6863082907700C4613A /* Build configuration list for PBXNativeTarget "DaredaUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -554,6 +687,22 @@
 				minimumVersion = 0.17.7;
 			};
 		};
+		B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/BarredEwe/Prefire";
+			requirement = {
+				kind = exactVersion;
+				version = 6.0.0;
+			};
+		};
+		B10000000000000000000032 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.19.5;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -576,6 +725,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A90000000000000000000001 /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		B10000000000000000000021 /* Prefire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */;
+			productName = Prefire;
+		};
+		B10000000000000000000022 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000032 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+		B10000000000000000000023 /* PrefireTestsPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000031 /* XCRemoteSwiftPackageReference "Prefire" */;
+			productName = "plugin:PrefireTestsPlugin";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,0 +1,96 @@
+// swiftlint:disable all
+// swiftformat:disable all
+
+// Prefire が #Preview ごとに生成するテストのテンプレート。
+// 期待値との比較は reg-suit で行うため、ここではアサーションせずに画像を XCTAttachment として残すだけにする。
+
+import XCTest
+import SwiftUI
+import Prefire
+{% if argument.mainTarget %}
+@testable import {{ argument.mainTarget }}
+{% endif %}
+import SnapshotTesting
+
+@MainActor class {PREVIEW_FILE_NAME}Tests: XCTestCase {
+    // iPhone 18 Pro
+    private let deviceConfig = DeviceConfig(
+        safeArea: UIEdgeInsets(top: 62, left: 0, bottom: 34, right: 0),
+        size: CGSize(width: 402, height: 874),
+        traits: UITraitCollection(traitsFrom: [
+            UITraitCollection(displayScale: 3),
+            UITraitCollection(userInterfaceIdiom: .phone),
+            UITraitCollection(horizontalSizeClass: .compact),
+            UITraitCollection(verticalSizeClass: .regular),
+        ])
+    )
+
+    override func setUp() async throws {
+        try await super.setUp()
+        UIView.setAnimationsEnabled(false)
+    }
+
+    {% if argument.previewsMacrosDict %}
+    {% for macroModel in argument.previewsMacrosDict %}
+    func test_{{ macroModel.componentTestName }}_Preview() {
+        {% if macroModel.properties %}
+        struct PreviewWrapper{{ macroModel.componentTestName }}: SwiftUI.View {
+            {{ macroModel.properties }}
+            var body: some View {
+                {{ macroModel.body|indent:12 }}
+            }
+        }
+        {% endif %}
+        let prefireSnapshot = PrefireSnapshot(
+            {
+                {% if macroModel.properties %}
+                PreviewWrapper{{ macroModel.componentTestName }}()
+                {% else %}
+                {{ macroModel.body|indent:12 }}
+                {% endif %}
+            },
+            name: "{{ macroModel.displayName }}",
+            isScreen: true,
+            device: deviceConfig
+        )
+
+        attachSnapshot(of: prefireSnapshot)
+    }
+    {%- if not forloop.last %}
+
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    // MARK: Private
+
+    private func attachSnapshot<Content: SwiftUI.View>(of prefireSnapshot: PrefireSnapshot<Content>) {
+        let (previewView, preferences) = prefireSnapshot.loadViewWithPreferences()
+        let layout: SwiftUISnapshotLayout = .device(config: ViewImageConfig(
+            safeArea: prefireSnapshot.device.safeArea,
+            size: prefireSnapshot.device.size,
+            traits: prefireSnapshot.device.traits
+        ))
+        let strategy: Snapshotting<AnyView, UIImage> = .wait(
+            for: preferences.delay,
+            on: .image(layout: layout, traits: prefireSnapshot.traits)
+        )
+
+        let expectation = expectation(description: prefireSnapshot.name)
+        var image: UIImage?
+        strategy.snapshot(previewView).run {
+            image = $0
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 30)
+
+        guard let image else {
+            XCTFail("スナップショットを生成できませんでした")
+            return
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "preview"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}
