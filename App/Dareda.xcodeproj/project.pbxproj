@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
 		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
+		A00000000000000000000023 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000013 /* SQLiteData */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,7 @@
 			files = (
 				A30000000000000000000011 /* Dependencies in Frameworks */,
 				A30000000000000000000012 /* DependenciesMacros in Frameworks */,
+				A00000000000000000000023 /* SQLiteData in Frameworks */,
 			);
 		};
 		F157C67D3082907700C4613A /* Frameworks */ = {
@@ -106,6 +108,7 @@
 			packageProductDependencies = (
 				A30000000000000000000021 /* Dependencies */,
 				A30000000000000000000022 /* DependenciesMacros */,
+				A00000000000000000000013 /* SQLiteData */,
 			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Dareda.app */;
@@ -161,6 +164,7 @@
 			mainGroup = 000000000000000000000001;
 			packageReferences = (
 				A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+				A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */,
 			);
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 90;
@@ -526,6 +530,14 @@
 				minimumVersion = 1.9.4;
 			};
 		};
+		A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.12.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -538,6 +550,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
 			productName = DependenciesMacros;
+		};
+		A00000000000000000000013 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000002 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
