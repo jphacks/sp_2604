@@ -109,7 +109,7 @@ final class RootScreenTests: XCTestCase {
         let app = assertMicrophoneDenied(scenario: "microphoneSettingsGranted")
         app.buttons["root.openSettingsButton"].tap()
         app.buttons["root.recordButton"].tap()
-        XCTAssertTrue(app.staticTexts["root.microphoneGrantedNotice"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.openSettingsButton"].exists)
     }
 
@@ -126,7 +126,7 @@ final class RootScreenTests: XCTestCase {
         let button = app.buttons["root.recordButton"]
         XCTAssertTrue(button.waitForExistence(timeout: 5))
         button.tap()
-        XCTAssertTrue(app.staticTexts["root.microphoneGrantedNotice"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["root.openSettingsButton"].exists)
     }
 
