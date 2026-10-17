@@ -34,8 +34,8 @@ nonisolated enum SelfVoiceRegistrationError: Error, Sendable, Equatable {
 }
 
 extension RegisterSelfVoiceUseCase {
-    /// 登録に必要な有効発話時間 (秒)。暫定値。
-    nonisolated static let requiredSpeechDuration: TimeInterval = 30
+    /// 登録に必要な有効発話時間 (秒)。
+    nonisolated static let requiredSpeechDuration = ProvisionalParameters.selfVoiceRequiredSpeechDuration
 }
 
 private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {

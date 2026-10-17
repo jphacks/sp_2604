@@ -13,11 +13,5 @@ nonisolated struct SpeechQualityThresholds: Sendable, Equatable {
     /// 全サンプルに占める音割れサンプルの割合がこれ以上なら音割れとする
     var clippingRatio: Float
 
-    static let `default` = SpeechQualityThresholds(
-        frameDuration: 0.02,
-        speechThresholdDB: -40,
-        minimumSpeechLevelDB: -30,
-        clippingSampleLevel: 0.99,
-        clippingRatio: 0.001
-    )
+    static let `default` = ProvisionalParameters.speechQuality
 }

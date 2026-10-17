@@ -17,8 +17,8 @@ nonisolated struct SearchPersonUseCase: Sendable {
 }
 
 nonisolated extension SearchPersonUseCase {
-    /// 照合に必要な相手の有効発話時間 (秒)。#27 の実機検証で確定する暫定値。
-    static let minimumPartnerSpeechDuration: TimeInterval = 10
+    /// 照合に必要な相手の有効発話時間 (秒)。
+    static let minimumPartnerSpeechDuration = ProvisionalParameters.partnerMinimumSpeechDuration
 }
 
 /// 人物検索に使う 1 回分の録音。解析結果はセッションごとに保存するため、録音ごとに別のセッションを渡す。
