@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct RootContent: View {
     let isRequestingPermission: Bool
@@ -6,6 +7,9 @@ struct RootContent: View {
     let availability: DeviceAvailability?
     let isSettingsPresented: Bool
     let isRecordingPresented: Bool
+    var isRecordingSourceSelectionPresented = false
+    var isFileImporterPresented = false
+    var importedFileURL: URL?
     let isVoiceEnrollmentPresented: Bool
     let isPreparedForRecording: Bool
     var registeredProfileID: Profile.ID?
@@ -23,6 +27,18 @@ struct RootContent: View {
                 availability?.isAvailable != true || !isPreparedForRecording || isRequestingPermission
             )
             .accessibilityIdentifier("root.recordButton")
+            .confirmationDialog(
+                "音声の入力方法",
+                isPresented: Binding(
+                    get: { isRecordingSourceSelectionPresented },
+                    set: { send(.recordingSourceSelectionChanged($0)) }
+                )
+            ) {
+                Button("録音する") { send(.recordFromMicrophoneTapped) }
+                    .accessibilityIdentifier("root.recordFromMicrophoneButton")
+                Button("ファイルから選ぶ") { send(.chooseAudioFileTapped) }
+                    .accessibilityIdentifier("root.chooseAudioFileButton")
+            }
 
             // 設定は利用可否にかかわらず変更可能にする。
             Button { send(.settingsMenuButtonTapped) } label: {
@@ -34,7 +50,17 @@ struct RootContent: View {
             get: { isRecordingPresented },
             set: { if !$0 { send(.recordingFinished(nil)) } }
         )) {
-            RecordingScreen { send(.recordingFinished($0)) }
+            RecordingScreen(importedFileURL: importedFileURL) { send(.recordingFinished($0)) }
+        }
+        .fileImporter(
+            isPresented: Binding(
+                get: { isFileImporterPresented },
+                set: { send(.fileImporterPresentedChanged($0)) }
+            ),
+            allowedContentTypes: [.audio]
+        ) { result in
+            // キャンセルや読み込み失敗時は何もしない
+            if case let .success(url) = result { send(.audioFileSelected(url)) }
         }
         // 登録が済むまで閉じられないよう、完了時のみ閉じる
         .fullScreenCover(isPresented: .constant(isVoiceEnrollmentPresented)) {

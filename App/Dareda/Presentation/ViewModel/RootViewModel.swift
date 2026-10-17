@@ -7,6 +7,11 @@ final class RootViewModel {
     enum Action {
         case onAppear
         case recordButtonTapped
+        case recordingSourceSelectionChanged(Bool)
+        case recordFromMicrophoneTapped
+        case chooseAudioFileTapped
+        case fileImporterPresentedChanged(Bool)
+        case audioFileSelected(URL)
         case settingsButtonTapped
         case alertDismissed
         case settingsMenuButtonTapped
@@ -29,6 +34,11 @@ final class RootViewModel {
     private(set) var availability: DeviceAvailability?
     private(set) var isSettingsPresented = false
     private(set) var isRecordingPresented = false
+    /// 録音するかファイルアプリから選ぶかの選択肢を表示しているか。
+    private(set) var isRecordingSourceSelectionPresented = false
+    private(set) var isFileImporterPresented = false
+    /// ファイルアプリで選んだ音声ファイル。録音画面で録音の代わりに取り込む。
+    private(set) var importedFileURL: URL?
     private(set) var isPreparedForRecording = false
     private(set) var isVoiceEnrollmentPresented = false
     /// 直近の新規登録で保存したプロフィール。一覧からその詳細を表示する。
@@ -81,6 +91,22 @@ final class RootViewModel {
             prepareForRecording()
         case .recordButtonTapped:
             guard availability?.isAvailable == true, isPreparedForRecording, !isRequestingPermission else { return }
+            isRecordingSourceSelectionPresented = true
+        case let .recordingSourceSelectionChanged(isPresented):
+            isRecordingSourceSelectionPresented = isPresented
+        case .chooseAudioFileTapped:
+            isRecordingSourceSelectionPresented = false
+            isFileImporterPresented = true
+        case let .fileImporterPresentedChanged(isPresented):
+            isFileImporterPresented = isPresented
+        case let .audioFileSelected(url):
+            isFileImporterPresented = false
+            importedFileURL = url
+            isRecordingPresented = true
+        case .recordFromMicrophoneTapped:
+            isRecordingSourceSelectionPresented = false
+            guard availability?.isAvailable == true, isPreparedForRecording, !isRequestingPermission else { return }
+            importedFileURL = nil
             isRequestingPermission = true
             Task {
                 let permission = await requestRecordingPermissionUseCase.execute()
@@ -99,6 +125,7 @@ final class RootViewModel {
             alert = nil
         case let .recordingFinished(profileID):
             isRecordingPresented = false
+            importedFileURL = nil
             if let profileID { registeredProfileID = profileID }
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
