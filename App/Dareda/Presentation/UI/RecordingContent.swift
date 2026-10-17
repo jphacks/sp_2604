@@ -11,6 +11,10 @@ struct RecordingContent: View {
     let selectedMode: RecordingViewModel.Mode?
     let errorMessage: LocalizedStringResource?
     let isDiscardConfirmationPresented: Bool
+    var analysisStage: ConversationAnalysisStage?
+    var isAnalysisCompleted = false
+    var isAnalysisSuspended = false
+    var analysisErrorMessage: LocalizedStringResource?
     let send: (RecordingViewModel.Action) -> Void
 
     var body: some View {
@@ -29,6 +33,10 @@ struct RecordingContent: View {
                             .accessibilityIdentifier("recording.stopButton")
                     } else if hasRecording {
                         RecordingChoiceContent(selectedMode: selectedMode, send: send)
+                        RecordingAnalysisContent(
+                            stage: analysisStage, isCompleted: isAnalysisCompleted,
+                            isSuspended: isAnalysisSuspended, errorMessage: analysisErrorMessage
+                        )
                     }
                     if let errorMessage {
                         Text(errorMessage)
@@ -155,6 +163,38 @@ private struct RecordingChoiceContent: View {
             }
         }
     }
+}
+
+/// 解析の処理状況。詳細な表示と再試行 UI は #29 で作る。
+private struct RecordingAnalysisContent: View {
+    let stage: ConversationAnalysisStage?
+    let isCompleted: Bool
+    let isSuspended: Bool
+    let errorMessage: LocalizedStringResource?
+
+    var body: some View {
+        if let stage {
+            ProgressView(stage.label)
+                .accessibilityIdentifier("recording.analysisStage")
+        } else if isCompleted {
+            Text("解析が完了しました")
+                .accessibilityIdentifier("recording.analysisCompleted")
+        } else if isSuspended {
+            Text("解析が中断されました。アプリに戻ると続きから再開します。")
+                .accessibilityIdentifier("recording.analysisSuspended")
+        } else if let errorMessage {
+            Text(errorMessage)
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("recording.analysisError")
+        }
+    }
+}
+
+#Preview("解析中") {
+    RecordingContent(isRecording: false, isStarting: false, hasRecording: true,
+        elapsedTime: 120, wasInterrupted: false, reachedLimit: false,
+        selectedMode: .search, errorMessage: nil, isDiscardConfirmationPresented: false,
+        analysisStage: .identifyingSpeakers, send: { _ in })
 }
 
 #Preview("録音中") {

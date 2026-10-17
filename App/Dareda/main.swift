@@ -20,6 +20,18 @@ prepareDependencies {
         $0.fileSystemClient = .inMemory()
         $0.speakerEmbeddingModelClient = .stub()
         switch scenario {
+        case "analysisSuspended":
+            // 話者分離中にバックグラウンドへ移行して打ち切られる。文字起こしは 2 回目以降失敗するので、
+            // 復帰後の再試行で完了すれば、完了済みの文字起こしを再実行していないことになる。
+            $0.backgroundTaskClient = .inMemory(expiresOnEnteringBackground: true)
+            $0.speechClient = .inMemory(succeedsOnce: true)
+            $0.fluidAudioClient = .twoSpeakers(delay: .seconds(3))
+        default:
+            $0.backgroundTaskClient = .inMemory()
+            $0.speechClient = .inMemory()
+            $0.fluidAudioClient = .twoSpeakers()
+        }
+        switch scenario {
         case "voiceEnrollmentShort", "voiceReregistrationShort":
             $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
         // 登録に必要な有効発話時間 (ProvisionalParameters) の境界を検証する

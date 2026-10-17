@@ -6,6 +6,7 @@ import Foundation
 ///
 /// 成功した処理の結果はセッションに保存し、同じセッションで再度呼ばれたときは再実行しない。
 /// 失敗・中断後に同じセッションで呼び直すと、未完了の処理だけを実行する。時間を理由に打ち切らない。
+/// バックグラウンドに移行しても処理を続け、OS に打ち切られたら `ConversationAnalysisError.suspended` で終了する。
 @DependencyClient
 nonisolated struct ConversationAnalysisService: Sendable {
     /// 第 1 段階の話者識別までを行う。処理状況を流し、最後に `.completed` で結果を流して終了する。
@@ -48,6 +49,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     @Dependency(\.audioFileGateway) private var audioFileGateway
     @Dependency(\.conversationSummaryService) private var conversationSummaryService
     @Dependency(\.vectorMatchingService) private var vectorMatchingService
+    @Dependency(\.backgroundExecutionGateway) private var backgroundExecutionGateway
     @Dependency(\.metricsGateway) private var metricsGateway
     @Dependency(\.date) private var date
 
@@ -176,6 +178,11 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<Value>, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
+                // バックグラウンドに移行しても続ける。OS に打ち切られたら中断として終了し、
+                // ストリームの終了で処理もキャンセルする。完了済みの処理の結果はセッションに残る。
+                let execution = await backgroundExecutionGateway.begin {
+                    continuation.finish(throwing: ConversationAnalysisError.suspended)
+                }
                 do {
                     let value = try await body(continuation)
                     continuation.yield(.completed(value))
@@ -183,6 +190,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+                await backgroundExecutionGateway.end(execution)
             }
             continuation.onTermination = { _ in task.cancel() }
         }
