@@ -30,6 +30,7 @@ final class ProfileListScreenTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["profileList.row.山田 太郎"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["profileList.row.佐藤 花子"].exists)
+        XCTAssertTrue(app.buttons["profileList.row.鈴木 一郎"].exists)
         XCTAssertFalse(app.staticTexts["profileList.emptyLabel"].exists)
     }
 
@@ -47,6 +48,21 @@ final class ProfileListScreenTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["profileDetail.summary"].label, "新規事業について話した")
         XCTAssertTrue(app.staticTexts["profileDetail.metAt"].exists)
         XCTAssertEqual(app.staticTexts["profileDetail.place"].label, "渋谷駅")
+    }
+
+    @MainActor
+    func test出会いが未登録でもプロフィールの基本情報を表示する() {
+        let app = launchProfileList(scenario: "profiles")
+        let profileRow = app.buttons["profileList.row.鈴木 一郎"]
+        XCTAssertTrue(profileRow.waitForExistence(timeout: 5))
+        profileRow.tap()
+
+        XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["profileDetail.name"].label, "鈴木 一郎")
+        XCTAssertEqual(app.staticTexts["profileDetail.affiliation"].label, "サンプル大学")
+        XCTAssertFalse(app.staticTexts["profileDetail.metAt"].exists)
+        XCTAssertFalse(app.staticTexts["profileDetail.summary"].exists)
+        XCTAssertFalse(app.staticTexts["profileDetail.place"].exists)
     }
 
     @MainActor

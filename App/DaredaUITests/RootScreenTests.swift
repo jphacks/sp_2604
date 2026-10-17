@@ -60,6 +60,41 @@ final class RootScreenTests: XCTestCase {
     }
 
     @MainActor
+    func testAppleIntelligenceが無効なら録音できずプロフィール一覧を開ける() {
+        let app = launch(scenario: "appleIntelligenceDisabled")
+
+        XCTAssertTrue(app.otherElements["root.availabilityNotice.temporarilyUnavailable"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
+        XCTAssertTrue(app.staticTexts["root.availabilityMessage"].exists)
+        app.buttons["root.profilesButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func test非対応でもプロフィール一覧を開ける() {
+        let app = launch(scenario: "unsupported")
+
+        XCTAssertTrue(app.otherElements["root.availabilityNotice.unsupported"].waitForExistence(timeout: 5))
+        app.buttons["root.profilesButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func test再判定後も準備中なら案内と録音無効を維持する() {
+        let app = launch(scenario: "modelNotReady")
+        let recheckButton = app.buttons["root.recheckButton"]
+        XCTAssertTrue(recheckButton.waitForExistence(timeout: 5))
+        recheckButton.tap()
+
+        XCTAssertTrue(app.otherElements["root.availabilityNotice.temporarilyUnavailable"].waitForExistence(timeout: 5))
+        XCTAssertTrue(recheckButton.exists)
+        XCTAssertFalse(app.buttons["root.recordButton"].isEnabled)
+        XCTAssertFalse(app.staticTexts["root.microphoneGrantedNotice"].exists)
+    }
+
+    @MainActor
     func test再判定で利用可になると案内が消えて録音が有効になる() {
         let app = launch(scenario: "recovering")
 

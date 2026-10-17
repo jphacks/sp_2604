@@ -10,6 +10,7 @@ nonisolated func seedProfilesScenario(_ database: any DatabaseWriter) throws {
         try ProfileRecord.insert {
             ProfileRecord(id: full, name: "山田 太郎", affiliation: "株式会社サンプル", vector: Data())
             ProfileRecord(id: minimal, name: "佐藤 花子", affiliation: "", vector: Data())
+            ProfileRecord(id: UUID(), name: "鈴木 一郎", affiliation: "サンプル大学", vector: Data())
         }.execute(db)
         try EncounterRecord.insert {
             EncounterRecord(
