@@ -77,6 +77,10 @@ private nonisolated struct FluidAudioClientImpl: Sendable {
         let manager = OfflineDiarizerManager(config: config)
         try await manager.prepareModels()
         let samples = try AudioConverter().resampleAudioFile(audioURL)
-        return try await manager.process(audio: samples)
+        do {
+            return try await manager.process(audio: samples)
+        } catch OfflineDiarizationError.noSpeechDetected {
+            return DiarizationResult(segments: [])
+        }
     }
 }
