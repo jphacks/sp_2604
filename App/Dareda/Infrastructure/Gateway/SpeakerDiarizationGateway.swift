@@ -24,11 +24,16 @@ nonisolated extension DependencyValues {
     }
 }
 
+extension SpeakerDiarizationGateway {
+    /// 推定する話者数の下限。
+    nonisolated static let minimumSpeakers = ProvisionalParameters.diarizationMinimumSpeakers
+}
+
 private nonisolated struct SpeakerDiarizationGatewayImpl: Sendable {
     @Dependency(\.fluidAudioClient) private var fluidAudioClient
 
     func diarize(audioURL: URL) async throws -> [SpeakerSegment] {
-        let result = try await fluidAudioClient.diarize(audioURL)
+        let result = try await fluidAudioClient.diarize(audioURL, SpeakerDiarizationGateway.minimumSpeakers)
         return result.segments
             .map {
                 SpeakerSegment(

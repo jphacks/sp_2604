@@ -6,14 +6,15 @@ import Synchronization
 
 @DependencyClient
 nonisolated struct FluidAudioClient: Sendable {
-    var diarize: @Sendable (_ audioURL: URL) async throws -> DiarizationResult
+    /// `minSpeakers` は推定する話者数の下限 (`nil` なら自動推定)。
+    var diarize: @Sendable (_ audioURL: URL, _ minSpeakers: Int?) async throws -> DiarizationResult
 }
 
 nonisolated extension FluidAudioClient: DependencyKey {
     static let liveValue: FluidAudioClient = {
         let impl = FluidAudioClientImpl()
         return FluidAudioClient(
-            diarize: impl.diarize(audioURL:)
+            diarize: impl.diarize(audioURL:minSpeakers:)
         )
     }()
 
@@ -24,7 +25,7 @@ nonisolated extension FluidAudioClient: DependencyKey {
 nonisolated extension FluidAudioClient {
     /// 固定の結果を返すテストダブル。
     static func inMemory(result: DiarizationResult = DiarizationResult(segments: [])) -> FluidAudioClient {
-        FluidAudioClient(diarize: { _ in result })
+        FluidAudioClient(diarize: { _, _ in result })
     }
 
     /// 2 人の話者 (0〜15 秒と 15〜30 秒) に分けるテストダブル。`delay` だけ待ってから返す。
@@ -36,7 +37,7 @@ nonisolated extension FluidAudioClient {
             TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 15, qualityScore: 1),
             TimedSpeakerSegment(speakerId: "S2", embedding: [], startTimeSeconds: 15, endTimeSeconds: partnerEnd, qualityScore: 1),
         ])
-        return FluidAudioClient(diarize: { _ in
+        return FluidAudioClient(diarize: { _, _ in
             try await Task.sleep(for: delay)
             let count = callCount.withLock { value in
                 value += 1
@@ -52,12 +53,12 @@ nonisolated extension FluidAudioClient {
         let result = DiarizationResult(segments: [
             TimedSpeakerSegment(speakerId: "S1", embedding: [], startTimeSeconds: 0, endTimeSeconds: 30, qualityScore: 1),
         ])
-        return FluidAudioClient(diarize: { _ in result })
+        return FluidAudioClient(diarize: { _, _ in result })
     }
 
     /// 失敗するテストダブル。
     static func failing() -> FluidAudioClient {
-        FluidAudioClient(diarize: { _ in throw CocoaError(.fileReadUnknown) })
+        FluidAudioClient(diarize: { _, _ in throw CocoaError(.fileReadUnknown) })
     }
 }
 
@@ -69,8 +70,10 @@ nonisolated extension DependencyValues {
 }
 
 private nonisolated struct FluidAudioClientImpl: Sendable {
-    func diarize(audioURL: URL) async throws -> DiarizationResult {
-        let manager = OfflineDiarizerManager()
+    func diarize(audioURL: URL, minSpeakers: Int?) async throws -> DiarizationResult {
+        var config = OfflineDiarizerConfig.default
+        config.clustering.minSpeakers = minSpeakers
+        let manager = OfflineDiarizerManager(config: config)
         try await manager.prepareModels()
         let samples = try AudioConverter().resampleAudioFile(audioURL)
         return try await manager.process(audio: samples)
