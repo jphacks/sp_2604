@@ -6,9 +6,9 @@ import Observation
 final class RootViewModel {
     enum Action {
         case onAppear
-        case recheckButtonTapped
         case recordButtonTapped
         case settingsButtonTapped
+        case alertDismissed
         case settingsMenuButtonTapped
         case settingsPresentedChanged(Bool)
         /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
@@ -18,15 +18,18 @@ final class RootViewModel {
         case personSearchNotificationTapped
     }
 
-    private(set) var recordingPermission: RecordingPermission?
+    enum Alert: Equatable {
+        case microphoneDenied
+        case preparationFailed
+    }
+
     private(set) var isRequestingPermission = false
-    private(set) var settingsErrorMessage: String?
+    private(set) var alert: Alert?
 
     private(set) var availability: DeviceAvailability?
     private(set) var isSettingsPresented = false
     private(set) var isRecordingPresented = false
     private(set) var isPreparedForRecording = false
-    private(set) var preparationErrorMessage: LocalizedStringResource?
     private(set) var isVoiceEnrollmentPresented = false
     /// 直近の新規登録で保存したプロフィール。一覧からその詳細を表示する。
     private(set) var registeredProfileID: Profile.ID?
@@ -51,13 +54,12 @@ final class RootViewModel {
     private func prepareForRecording() {
         guard !isPreparing, !isPreparedForRecording else { return }
         isPreparing = true
-        preparationErrorMessage = nil
         Task {
             do {
                 try await cleanUpTemporaryDataUseCase.execute()
                 isPreparedForRecording = true
             } catch {
-                preparationErrorMessage = "前回の録音を整理できませんでした。再試行してください。"
+                alert = .preparationFailed
             }
             isPreparing = false
         }
@@ -75,27 +77,26 @@ final class RootViewModel {
             Task { await presentVoiceEnrollmentIfNeeded() }
             observePersonSearchNotificationTaps()
         case .preparationRetryButtonTapped:
+            alert = nil
             prepareForRecording()
-        case .recheckButtonTapped:
-            availability = checkDeviceAvailabilityUseCase.execute()
         case .recordButtonTapped:
             guard availability?.isAvailable == true, isPreparedForRecording, !isRequestingPermission else { return }
             isRequestingPermission = true
-            settingsErrorMessage = nil
             Task {
-                recordingPermission = await requestRecordingPermissionUseCase.execute()
+                let permission = await requestRecordingPermissionUseCase.execute()
                 isRequestingPermission = false
-                isRecordingPresented = recordingPermission == .granted
-            }
-        case .settingsButtonTapped:
-            Task {
-                do {
-                    try await openAppSettingsUseCase.execute()
-                    settingsErrorMessage = nil
-                } catch {
-                    settingsErrorMessage = "設定アプリを開けませんでした。設定アプリからDaredaのマイクを許可してください。"
+                if permission == .granted {
+                    isRecordingPresented = true
+                } else {
+                    alert = .microphoneDenied
                 }
             }
+        case .settingsButtonTapped:
+            alert = nil
+            // 開けなくてもユーザーは設定アプリから手動で許可できるため、失敗は無視する
+            Task { try? await openAppSettingsUseCase.execute() }
+        case .alertDismissed:
+            alert = nil
         case let .recordingFinished(profileID):
             isRecordingPresented = false
             if let profileID { registeredProfileID = profileID }

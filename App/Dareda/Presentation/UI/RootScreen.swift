@@ -5,15 +5,13 @@ struct RootScreen: View {
 
     var body: some View {
         RootContent(
-            recordingPermission: viewModel.recordingPermission,
             isRequestingPermission: viewModel.isRequestingPermission,
-            settingsErrorMessage: viewModel.settingsErrorMessage,
+            alert: viewModel.alert,
             availability: viewModel.availability,
             isSettingsPresented: viewModel.isSettingsPresented,
             isRecordingPresented: viewModel.isRecordingPresented,
             isVoiceEnrollmentPresented: viewModel.isVoiceEnrollmentPresented,
             isPreparedForRecording: viewModel.isPreparedForRecording,
-            preparationErrorMessage: viewModel.preparationErrorMessage,
             registeredProfileID: viewModel.registeredProfileID,
             send: viewModel.send
         )

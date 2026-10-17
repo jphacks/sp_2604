@@ -4,10 +4,12 @@ nonisolated extension UserNotificationClient {
     /// 通知を配信しないテストダブル。`tappedUserInfo` を渡すと、`tapDelay` 後にその通知がタップされたことにする。
     static func inMemory(
         isAuthorized: Bool = true,
+        authorizationStatus: AuthorizationStatus = .authorized,
         tappedUserInfo: [String: String]? = nil,
         tapDelay: Duration = .seconds(1)
     ) -> UserNotificationClient {
         UserNotificationClient(
+            authorizationStatus: { authorizationStatus },
             requestAuthorization: { isAuthorized },
             add: { _, _, _, _ in },
             responses: {

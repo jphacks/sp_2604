@@ -115,15 +115,12 @@ prepareDependencies {
             $0.audioRecorderClient = .inMemory(permissions: [.undetermined])
         case "microphoneUndeterminedDenied":
             $0.audioRecorderClient = .inMemory(permissions: [.undetermined], permissionAfterRequest: false)
-        case "microphoneDenied", "settingsFailure":
+        case "microphoneDenied", "settingsPermissions":
             $0.audioRecorderClient = .inMemory(permissions: [.denied])
         case "microphoneSettingsGranted":
             $0.audioRecorderClient = .inMemory(permissions: [.denied, .granted], permissionAfterRequest: false)
         default:
             break
-        }
-        if scenario == "settingsFailure" {
-            $0.appSettingsClient = .inMemory { throw CocoaError(.featureUnsupported) }
         }
         switch scenario {
         case "unsupported":
@@ -132,9 +129,6 @@ prepareDependencies {
             $0.foundationModelsClient = .inMemory(availability: [.unavailable(.appleIntelligenceNotEnabled)])
         case "modelNotReady":
             $0.foundationModelsClient = .inMemory(availability: [.unavailable(.modelNotReady)])
-        case "recovering":
-            // 1 回目は準備中、再判定で利用可になる
-            $0.foundationModelsClient = .inMemory(availability: [.unavailable(.modelNotReady), .available])
         default:
             $0.foundationModelsClient = .inMemory()
         }
