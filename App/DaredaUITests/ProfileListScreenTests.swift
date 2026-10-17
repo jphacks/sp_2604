@@ -6,19 +6,27 @@ final class ProfileListScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test未登録のときは空の案内が表示される() {
+    private func launchProfileList(scenario: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchEnvironment["UI_TEST_SCENARIO"] = "default"
+        app.launchEnvironment["UI_TEST_SCENARIO"] = scenario
         app.launch()
+
+        let profilesButton = app.buttons["root.profilesButton"]
+        XCTAssertTrue(profilesButton.waitForExistence(timeout: 5))
+        profilesButton.tap()
+        return app
+    }
+
+    @MainActor
+    func test未登録のときは空の案内が表示される() {
+        let app = launchProfileList(scenario: "default")
 
         XCTAssertTrue(app.staticTexts["profileList.emptyLabel"].waitForExistence(timeout: 5))
     }
 
     @MainActor
     func test保存済みプロフィールが一覧に表示される() {
-        let app = XCUIApplication()
-        app.launchEnvironment["UI_TEST_SCENARIO"] = "profiles"
-        app.launch()
+        let app = launchProfileList(scenario: "profiles")
 
         XCTAssertTrue(app.buttons["profileList.row.山田 太郎"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["profileList.row.佐藤 花子"].exists)
@@ -27,11 +35,11 @@ final class ProfileListScreenTests: XCTestCase {
 
     @MainActor
     func test一覧から詳細を開くと全ての情報が表示される() {
-        let app = XCUIApplication()
-        app.launchEnvironment["UI_TEST_SCENARIO"] = "profiles"
-        app.launch()
+        let app = launchProfileList(scenario: "profiles")
 
-        app.buttons["profileList.row.山田 太郎"].tap()
+        let profileRow = app.buttons["profileList.row.山田 太郎"]
+        XCTAssertTrue(profileRow.waitForExistence(timeout: 5))
+        profileRow.tap()
 
         XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["profileDetail.name"].label, "山田 太郎")
@@ -43,11 +51,11 @@ final class ProfileListScreenTests: XCTestCase {
 
     @MainActor
     func test未登録の情報は詳細に表示されない() {
-        let app = XCUIApplication()
-        app.launchEnvironment["UI_TEST_SCENARIO"] = "profiles"
-        app.launch()
+        let app = launchProfileList(scenario: "profiles")
 
-        app.buttons["profileList.row.佐藤 花子"].tap()
+        let profileRow = app.buttons["profileList.row.佐藤 花子"]
+        XCTAssertTrue(profileRow.waitForExistence(timeout: 5))
+        profileRow.tap()
 
         XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["profileDetail.metAt"].exists)
