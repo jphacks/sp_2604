@@ -64,7 +64,9 @@ private nonisolated struct AudioRecordingGatewayImpl: Sendable {
 
     func stop(_ recording: Recording) -> Recording {
         var recording = recording
-        recording.duration = audioRecorderClient.stop()
+        let elapsed = audioRecorderClient.stop()
+        // 入力が途絶えても録音時間は進むため、ファイルに実際に書き込まれた長さを優先する
+        recording.duration = (try? audioFileClient.duration(recording.fileURL)) ?? elapsed
         return recording
     }
 
