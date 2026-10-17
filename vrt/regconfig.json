@@ -14,7 +14,6 @@
       "bucketName": "$VRT_BUCKET_NAME"
     },
     "reg-notify-github-with-api-plugin": {
-      "githubUrl": "https://api.github.com",
       "owner": "jphacks",
       "repository": "sp_2604",
       "privateToken": "$GITHUB_TOKEN"
