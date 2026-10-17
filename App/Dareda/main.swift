@@ -83,6 +83,7 @@ prepareDependencies {
             break
         }
         $0.mapKitClient = .inMemory()
+        $0.liveActivityClient = .inMemory()
         $0.appSettingsClient = .inMemory()
         $0.bundleClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
