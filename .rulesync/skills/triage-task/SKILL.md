@@ -32,9 +32,11 @@ description: GitHub Project の Issue から取り組むタスクを決めて実
 1. ベースブランチを決める。
    - 依存先の Issue が無い、または全て Close 済みなら `main`。
    - Open の依存先がある場合は、その依存先を実装したブランチ (依存先 Issue に紐づく PR の head branch。`gh pr list --search "<依存先番号> in:body" --json number,headRefName,state` や `gh issue view <依存先番号> --json closedByPullRequestsReferences` で特定) をベースにする。Open の依存先が複数あり、それらが同じスタック上に無い場合は、ユーザーにどれをベースにするか確認する。
-2. ベースブランチを最新化し、そこから `feature/<番号>-<短い英語の説明>` ブランチを作る。
-   - ベースが `main`: `git switch main && git pull` → `git switch -c feature/<番号>-<説明>`
-   - ベースが依存先ブランチ: `gh extension install github/gh-stack` (未導入時) の後、`git switch <依存先ブランチ> && git pull`。依存先ブランチがまだスタック管理されていなければ `gh stack init <依存先ブランチ>` (依存先がさらに別ブランチに積まれているなら下から順に列挙) で取り込み、`gh stack add feature/<番号>-<説明>` で上に積む。
+2. **作業開始前に必ずワークツリーを作成する。** 元の作業ディレクトリで直接ブランチを切って作業しない。ベースブランチを最新化し (`git fetch origin <ベースブランチ>`)、そこから `feature/<番号>-<短い英語の説明>` ブランチのワークツリーを作る。
+   - **Orca を使用している場合**: **`orca-cli` スキル** に従い、Orca でワークツリーを作成する (raw の `git worktree` は使わない)。
+   - Orca を使用していない場合: `git worktree add -b feature/<番号>-<説明> ../<リポジトリ名>-<番号> origin/<ベースブランチ>`
+   - 以降の作業 (実装・ビルド・テスト・コミット・PR 作成) はすべて作成したワークツリー内で行う。
+   - ベースが依存先ブランチの場合: `gh extension install github/gh-stack` (未導入時) の後、ワークツリー内で、依存先ブランチがまだスタック管理されていなければ `gh stack init <依存先ブランチ>` (依存先がさらに別ブランチに積まれているなら下から順に列挙) で取り込み、`feature/<番号>-<説明>` をその上に積む。
    - 決めたベースブランチは手順 5 の PR 作成時に `pr` スキルへ渡す。
 3. Issue を自分にアサインし、Project の Status を In Progress 相当に更新する (`gh issue edit <番号> --add-assignee @me`、`gh project item-edit`)。
 
