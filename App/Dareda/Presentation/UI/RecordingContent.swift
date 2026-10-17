@@ -73,7 +73,7 @@ private struct RecordingDiscardConfirmationContent: View {
             Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("recording.confirmDiscardButton")
-            Button("録音を続ける", role: .cancel) { send(.discardConfirmationChanged(false)) }
+            Button("破棄しない", role: .cancel) { send(.discardConfirmationChanged(false)) }
                 .accessibilityIdentifier("recording.cancelDiscardButton")
         }
         .padding()
