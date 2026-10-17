@@ -51,19 +51,32 @@ struct RecordingContent: View {
                         .accessibilityIdentifier("recording.discardButton")
                 }
             }
-            .confirmationDialog("録音を破棄しますか？", isPresented: Binding(
+            .sheet(isPresented: Binding(
                 get: { isDiscardConfirmationPresented },
                 set: { send(.discardConfirmationChanged($0)) }
-            ), titleVisibility: .visible) {
-                Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
-                    .accessibilityIdentifier("recording.confirmDiscardButton")
-                Button("録音を続ける", role: .cancel) { send(.discardConfirmationChanged(false)) }
-                    .accessibilityIdentifier("recording.cancelDiscardButton")
-            } message: {
-                Text("この録音は削除されます。")
+            )) {
+                RecordingDiscardConfirmationContent(send: send)
+                    .presentationDetents([.medium])
             }
         }
         .interactiveDismissDisabled()
+    }
+}
+
+private struct RecordingDiscardConfirmationContent: View {
+    let send: (RecordingViewModel.Action) -> Void
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("録音を破棄しますか？").font(.title2.bold())
+            Text("この録音は削除されます。")
+            Button("録音を破棄", role: .destructive) { send(.discardConfirmed) }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("recording.confirmDiscardButton")
+            Button("録音を続ける", role: .cancel) { send(.discardConfirmationChanged(false)) }
+                .accessibilityIdentifier("recording.cancelDiscardButton")
+        }
+        .padding()
     }
 }
 
