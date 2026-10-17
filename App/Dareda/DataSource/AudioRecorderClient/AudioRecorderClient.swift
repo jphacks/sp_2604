@@ -78,9 +78,9 @@ private nonisolated struct AudioRecorderClientImpl: Sendable {
             url: url,
             settings: [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: 16_000,
+                AVSampleRateKey: 48_000,
                 AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+                AVEncoderAudioQualityKey: AVAudioQuality.max.rawValue,
             ]
         )
         guard recorder.record() else {
