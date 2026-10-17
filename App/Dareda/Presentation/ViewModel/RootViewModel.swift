@@ -9,8 +9,6 @@ final class RootViewModel {
         case recheckButtonTapped
         case recordButtonTapped
         case settingsButtonTapped
-        case privateCloudComputeSettingsButtonTapped
-        case privateCloudComputeSettingsPresentedChanged(Bool)
         case settingsMenuButtonTapped
         case settingsPresentedChanged(Bool)
         /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
@@ -25,7 +23,6 @@ final class RootViewModel {
     private(set) var settingsErrorMessage: String?
 
     private(set) var availability: DeviceAvailability?
-    private(set) var isPrivateCloudComputeSettingsPresented = false
     private(set) var isSettingsPresented = false
     private(set) var isRecordingPresented = false
     private(set) var isPreparedForRecording = false
@@ -104,10 +101,6 @@ final class RootViewModel {
             if let profileID { registeredProfileID = profileID }
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
-        case .privateCloudComputeSettingsButtonTapped:
-            isPrivateCloudComputeSettingsPresented = true
-        case let .privateCloudComputeSettingsPresentedChanged(isPresented):
-            isPrivateCloudComputeSettingsPresented = isPresented
         case .settingsMenuButtonTapped:
             isSettingsPresented = true
         case let .settingsPresentedChanged(isPresented):
@@ -115,7 +108,6 @@ final class RootViewModel {
         case .personSearchNotificationTapped:
             // 候補一覧は録音画面の上の処理状況画面に表示されている。上に重なったシートを閉じてそれを見せる。
             // 録音画面を閉じた後のタップでは、ルートのプロフィール一覧に戻る
-            isPrivateCloudComputeSettingsPresented = false
             isSettingsPresented = false
         }
     }

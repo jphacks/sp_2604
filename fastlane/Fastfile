@@ -1,3 +1,7 @@
+require "cgi"
+require "json"
+require "net/http"
+
 default_platform(:ios)
 
 platform :ios do
@@ -73,5 +77,49 @@ platform :ios do
       groups: "developers",
       release_notes: ENV.fetch("RELEASE_NOTES", ""),
     )
+
+    notify_slack(
+      release: lane_context[SharedValues::FIREBASE_APP_DISTRO_RELEASE],
+      build_number: build_number,
+    )
+  end
+
+  # 配信結果を Slack の Incoming Webhook に Block Kit で送信する
+  private_lane :notify_slack do |options|
+    release = options.fetch(:release) || {}
+    install_url = release["testingUri"]
+    sha = ENV.fetch("GITHUB_SHA")
+    commit_url = "#{ENV.fetch("GITHUB_SERVER_URL")}/#{ENV.fetch("GITHUB_REPOSITORY")}/commit/#{sha}"
+    message = sh("git log -1 --pretty=%B #{sha}", log: false).strip
+    escape = ->(text) { text.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;") }
+
+    blocks = [
+      { type: "header", text: { type: "plain_text", text: "Dareda を配信しました" } },
+      {
+        type: "section",
+        fields: [
+          { type: "mrkdwn", text: "*バージョン*\n#{release["displayVersion"] || get_version_number(xcodeproj: "App/Dareda.xcodeproj", target: "Dareda")}" },
+          { type: "mrkdwn", text: "*ビルド番号*\n#{release["buildVersion"] || options.fetch(:build_number)}" },
+          { type: "mrkdwn", text: "*コミット*\n<#{commit_url}|`#{sha[0, 7]}`>" },
+        ],
+      },
+      { type: "section", text: { type: "mrkdwn", text: "*コミットメッセージ*\n#{escape.call(message)[0, 2800]}" } },
+    ]
+
+    if install_url
+      blocks << {
+        type: "section",
+        text: { type: "mrkdwn", text: "<#{install_url}|インストールはこちら>" },
+        accessory: {
+          type: "image",
+          image_url: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=#{CGI.escape(install_url)}",
+          alt_text: "インストールリンクの QR コード",
+        },
+      }
+    end
+
+    uri = URI(ENV.fetch("SLACK_WEBHOOK_URL"))
+    response = Net::HTTP.post(uri, { blocks: blocks, text: "Dareda を配信しました" }.to_json, "Content-Type" => "application/json")
+    UI.user_error!("Slack への送信に失敗しました: #{response.code} #{response.body}") unless response.is_a?(Net::HTTPSuccess)
   end
 end
