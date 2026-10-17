@@ -15,7 +15,7 @@ Dareda (iOS / SwiftUI) のコードを追加・変更するときに従うルー
 - UI: SwiftUI + Observation (`@Observable`)
 - DI: [swift-dependencies](https://github.com/pointfreeco/swift-dependencies)
 - ローカル DB: [SQLiteData](https://github.com/pointfreeco/sqlite-data)
-- テスト: XCUITest による UI テストのみ
+- テスト: XCUITest による UI テストのみ (例外として #Preview のスナップショット撮影のみ [Prefire](https://github.com/BarredEwe/Prefire) で行う)
 
 ## 基本方針
 
@@ -410,7 +410,7 @@ private nonisolated struct UserDefaultsClientImpl: Sendable {
 
 ## テスト
 
-- **ユニットテストは書かない。UI テスト (`DaredaUITests`) のみ実装する。**
+- **ユニットテストは書かない。UI テスト (`DaredaUITests`) のみ実装する。** ただし [スナップショットテスト](#スナップショットテスト) は例外とする。
 - 画面単位で `<Screen Name>ScreenTests.swift` を作る。
 - 古典学派に従い、Presentation 〜 Infrastructure は本物の実装を動かす。テストダブルに差し替えるのは DataSource のみ。
 - UI テストはアプリと別プロセスで動くため、`launchEnvironment` でシナリオを渡し、アプリ側の `main.swift` で DataSource を差し替える。
@@ -455,3 +455,12 @@ final class ProfileScreenTests: XCTestCase {
 - テストダブルはアプリターゲットに含まれるが、`UI_TEST_SCENARIO` 指定時以外は使わない。
 - 要素の検索は `accessibilityIdentifier` で行い、表示文言に依存しない。
 - 非同期な表示の待機は `waitForExistence(timeout:)` を使い、`sleep` は使わない。
+
+### スナップショットテスト
+
+UI テストのルールの例外として、`DaredaSnapshotTests` で #Preview の画像を撮り、reg-suit で VRT (Visual Regression Test) を行う。
+
+- テストコードは手で書かない。Prefire が `App/DaredaSnapshotTests/PreviewTests.stencil` から #Preview ごとのテストを生成する。
+- 生成されるテストはアサーションせず、画像を `XCTAttachment` として残すだけにする。期待値との比較は CI の reg-suit で行い、期待値画像はリポジトリにコミットしない。
+- 撮影対象を増やしたいときは、Content / Component に #Preview を追加する。
+- #Preview では `.now` や `UUID()` の表示など実行ごとに変わる値を表示しない。固定の日時 (`Date(timeIntervalSince1970:)`) などを使い、差分が出ないようにする。
