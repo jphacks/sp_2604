@@ -21,6 +21,17 @@ final class RootScreenTests: XCTestCase {
     }
 
     @MainActor
+    func testプロフィールボタンでプロフィール一覧が表示される() {
+        let app = launch(scenario: "profiles")
+
+        let profilesButton = app.buttons["root.profilesButton"]
+        XCTAssertTrue(profilesButton.waitForExistence(timeout: 5))
+        profilesButton.tap()
+
+        XCTAssertTrue(app.buttons["profileList.row.山田 太郎"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func test利用可の場合は案内が出ず録音を開始できる() {
         let app = launch(scenario: "default")
 

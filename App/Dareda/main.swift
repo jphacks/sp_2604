@@ -7,7 +7,11 @@ let scenario = ProcessInfo.processInfo.environment["UI_TEST_SCENARIO"]
 
 prepareDependencies {
     if let scenario {
-        $0.defaultDatabase = try! appDatabase(inMemory: true)
+        let database = try! appDatabase(inMemory: true)
+        if scenario == "profiles" {
+            try! seedProfilesScenario(database)
+        }
+        $0.defaultDatabase = database
         switch scenario {
         case "unsupported":
             $0.foundationModelsClient = .inMemory(availability: [.unavailable(.deviceNotEligible)])

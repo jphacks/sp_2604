@@ -6,9 +6,12 @@ final class RootViewModel {
     enum Action {
         case onAppear
         case recheckButtonTapped
+        case profilesButtonTapped
+        case profileListPresentedChanged(Bool)
     }
 
     private(set) var availability: DeviceAvailability?
+    private(set) var isProfileListPresented = false
 
     @ObservationIgnored
     @Dependency(\.cleanUpTemporaryDataUseCase) private var cleanUpTemporaryDataUseCase
@@ -29,6 +32,10 @@ final class RootViewModel {
             Task { try? await cleanUpTemporaryDataUseCase.execute() }
         case .recheckButtonTapped:
             availability = checkDeviceAvailabilityUseCase.execute()
+        case .profilesButtonTapped:
+            isProfileListPresented = true
+        case let .profileListPresentedChanged(isPresented):
+            isProfileListPresented = isPresented
         }
     }
 }

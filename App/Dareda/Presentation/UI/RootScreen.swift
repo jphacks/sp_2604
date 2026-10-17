@@ -6,6 +6,7 @@ struct RootScreen: View {
     var body: some View {
         RootContent(
             availability: viewModel.availability,
+            isProfileListPresented: viewModel.isProfileListPresented,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }
