@@ -4,6 +4,7 @@ struct VoiceEnrollmentContent: View {
     let isRecording: Bool
     let isProcessing: Bool
     let failure: VoiceEnrollmentViewModel.Failure?
+    var isCancellable = false
     let send: (VoiceEnrollmentViewModel.Action) -> Void
 
     private static let sampleText = """
@@ -17,6 +18,21 @@ struct VoiceEnrollmentContent: View {
         """
 
     var body: some View {
+        NavigationStack {
+            content
+                .toolbar {
+                    if isCancellable {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("キャンセル") { send(.cancelButtonTapped) }
+                                .disabled(isProcessing)
+                                .accessibilityIdentifier("voiceEnrollment.cancelButton")
+                        }
+                    }
+                }
+        }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -91,6 +107,10 @@ struct VoiceEnrollmentContent: View {
 
 #Preview("録音中") {
     VoiceEnrollmentContent(isRecording: true, isProcessing: false, failure: nil, send: { _ in })
+}
+
+#Preview("再登録") {
+    VoiceEnrollmentContent(isRecording: false, isProcessing: false, failure: nil, isCancellable: true, send: { _ in })
 }
 
 #Preview("発話不足") {

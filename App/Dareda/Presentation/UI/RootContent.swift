@@ -7,6 +7,7 @@ struct RootContent: View {
     let availability: DeviceAvailability?
     let isProfileListPresented: Bool
     let isPrivateCloudComputeSettingsPresented: Bool
+    let isSettingsPresented: Bool
     let isRecordingPresented: Bool
     let isVoiceEnrollmentPresented: Bool
     let isPreparedForRecording: Bool
@@ -63,6 +64,11 @@ struct RootContent: View {
                 Button("要約の設定") { send(.privateCloudComputeSettingsButtonTapped) }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("root.privateCloudComputeSettingsButton")
+
+                // 本人の声の再登録は利用可否にかかわらず可能にする。
+                Button("設定") { send(.settingsMenuButtonTapped) }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("root.settingsButton")
             }
         }
         .padding()
@@ -92,6 +98,14 @@ struct RootContent: View {
         ) {
             PrivateCloudComputeSettingsScreen()
         }
+        .sheet(
+            isPresented: Binding(
+                get: { isSettingsPresented },
+                set: { send(.settingsPresentedChanged($0)) }
+            )
+        ) {
+            SettingsScreen()
+        }
     }
 }
 
@@ -103,6 +117,7 @@ struct RootContent: View {
         availability: .available,
         isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
+        isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
@@ -119,6 +134,7 @@ struct RootContent: View {
         availability: .unsupported,
         isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
+        isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
@@ -135,6 +151,7 @@ struct RootContent: View {
         availability: .temporarilyUnavailable(.modelNotReady),
         isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
+        isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
@@ -151,6 +168,7 @@ struct RootContent: View {
         availability: .available,
         isProfileListPresented: false,
         isPrivateCloudComputeSettingsPresented: false,
+        isSettingsPresented: false,
         isRecordingPresented: false,
         isVoiceEnrollmentPresented: false,
         isPreparedForRecording: true,
