@@ -6,6 +6,11 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A30000000000000000000011 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000021 /* Dependencies */; };
+		A30000000000000000000012 /* DependenciesMacros in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000022 /* DependenciesMacros */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F157C6843082907700C4613A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -51,6 +56,8 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				A30000000000000000000011 /* Dependencies in Frameworks */,
+				A30000000000000000000012 /* DependenciesMacros in Frameworks */,
 			);
 		};
 		F157C67D3082907700C4613A /* Frameworks */ = {
@@ -96,6 +103,10 @@
 				000000000000000000000010 /* Dareda */,
 			);
 			name = Dareda;
+			packageProductDependencies = (
+				A30000000000000000000021 /* Dependencies */,
+				A30000000000000000000022 /* DependenciesMacros */,
+			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Dareda.app */;
 			productType = "com.apple.product-type.application";
@@ -148,6 +159,9 @@
 				Base,
 			);
 			mainGroup = 000000000000000000000001;
+			packageReferences = (
+				A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+			);
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -172,6 +186,7 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
+
 
 /* Begin PBXSourcesBuildPhase section */
 		000000000000000120000000 /* Sources */ = {
@@ -500,6 +515,29 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A30000000000000000000021 /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = Dependencies;
+		};
+		A30000000000000000000022 /* DependenciesMacros */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A30000000000000000000031 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = DependenciesMacros;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }
