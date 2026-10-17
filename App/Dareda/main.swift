@@ -20,7 +20,7 @@ prepareDependencies {
         $0.fileSystemClient = .inMemory()
         $0.speakerEmbeddingModelClient = .stub()
         switch scenario {
-        case "voiceEnrollmentShort":
+        case "voiceEnrollmentShort", "voiceReregistrationShort":
             $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
         // 登録に必要な有効発話時間 (ProvisionalParameters) の境界を検証する
         case "voiceEnrollmentJustBelowRequired":
