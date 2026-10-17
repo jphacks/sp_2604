@@ -28,7 +28,7 @@ private nonisolated struct SpeakerDiarizationGatewayImpl: Sendable {
     @Dependency(\.fluidAudioClient) private var fluidAudioClient
 
     func diarize(audioURL: URL) async throws -> [SpeakerSegment] {
-        let result = try await fluidAudioClient.diarize(audioURL)
+        let result = try await fluidAudioClient.diarize(audioURL, ProvisionalParameters.diarizationMinSpeakerCount)
         return result.segments
             .map {
                 SpeakerSegment(

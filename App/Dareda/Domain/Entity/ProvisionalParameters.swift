@@ -12,6 +12,11 @@ nonisolated enum ProvisionalParameters {
     static let recordingWarningRemaining: TimeInterval = 60
     /// 本人識別 (第 1 段階) のコサイン類似度しきい値。これを超える話者がちょうど 1 人なら本人とする。
     static let selfIdentificationThreshold: Float = 0.5
+    /// 話者分離で分ける話者数の下限。2 人の会話が前提なので、声の小さい相手が本人にまとめられないよう 2 人以上に分ける。
+    static let diarizationMinSpeakerCount = 2
+    /// 本人の声とのコサイン類似度がこれを超える話者が複数いれば、話者分離で本人が分かれたものとみなして 1 人にまとめる。
+    /// 本人だけの録音を 2 人に分けたときに、本人の声の一部を相手として扱わないようにする。
+    static let selfMergeThreshold: Float = 0.7
     /// 人物検索で提示する候補の上限。
     static let personSearchCandidateLimit = 5
     /// 話者ベクトルを生成できる音声の最短長 (秒)。
