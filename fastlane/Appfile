@@ -1,4 +1,5 @@
-app_identifier("com.kantacky.Dareda")
+# アプリ本体と Widget Extension (Live Activity・コントロール)
+app_identifier(["com.kantacky.Dareda", "com.kantacky.Dareda.Widget"])
 apple_id("iam@kantacky.com")
 apple_dev_portal_id("iam@kantacky.com")
 itunes_connect_id("iam@kantacky.com")
