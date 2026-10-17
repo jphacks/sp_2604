@@ -48,11 +48,13 @@ run = "bundle exec fastlane ios add_device"
 description = "iPhone 18 Pro シミュレーターで UI テストを実行する"
 run = """
 rm -rf TestResults.xcresult
+xcrun simctl bootstatus 'iPhone 18 Pro' -b
 xcodebuild test \
   -workspace Dareda.xcworkspace \
   -scheme Dareda \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
   -only-testing:DaredaUITests \
+  -parallel-testing-enabled NO \
   -resultBundlePath TestResults.xcresult \
   -skipMacroValidation \
   -skipPackagePluginValidation \
