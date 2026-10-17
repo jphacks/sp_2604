@@ -1,6 +1,7 @@
 import Dependencies
 import DependenciesMacros
 import Foundation
+import Logging
 
 /// 録音後の共通音声処理 (文字起こし・話者分離・話者ベクトル生成・本人識別・要約)。新規登録・人物検索の両方で使う。
 ///
@@ -41,6 +42,8 @@ nonisolated extension DependencyValues {
 }
 
 private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
+    private static let logger = Logger(label: "Dareda.ConversationAnalysisService")
+
     @Dependency(\.analysisCacheRepository) private var analysisCacheRepository
     @Dependency(\.selfVoiceRepository) private var selfVoiceRepository
     @Dependency(\.transcriptionService) private var transcriptionService
@@ -56,10 +59,12 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     func analyze(
         _ recording: Recording, session: ProcessingSession
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<ConversationAnalysis>, any Error> {
-        stream { continuation in
+        stream(operation: "analysis") { continuation in
+            Self.logger.debug("Transcription stage started")
             continuation.yield(.stageChanged(.transcribing))
             let speechSegments = try await speechSegments(recording, session)
 
+            Self.logger.debug("Speaker identification stage started")
             continuation.yield(.stageChanged(.identifyingSpeakers))
             guard let selfVoice = try await selfVoiceRepository.get() else {
                 throw ConversationAnalysisError.selfVoiceNotRegistered
@@ -98,8 +103,12 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     func summarize(
         _ transcript: Transcript, session: ProcessingSession
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<ConversationSummary>, any Error> {
-        stream { continuation in
-            if let cached = try await analysisCacheRepository.getSummary(session) { return cached }
+        stream(operation: "summary") { continuation in
+            if let cached = try await analysisCacheRepository.getSummary(session) {
+                Self.logger.debug("Reusing cached summary")
+                return cached
+            }
+            Self.logger.debug("Summary generation started")
             continuation.yield(.stageChanged(.summarizing))
             let start = date.now
             let summary = try await conversationSummaryService.summarize(transcript)
@@ -111,7 +120,10 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     }
 
     private func speechSegments(_ recording: Recording, _ session: ProcessingSession) async throws -> [SpeechSegment] {
-        if let cached = try await analysisCacheRepository.getSpeechSegments(session) { return cached }
+        if let cached = try await analysisCacheRepository.getSpeechSegments(session) {
+            Self.logger.debug("Reusing cached transcription")
+            return cached
+        }
         let start = date.now
         let segments = try await transcriptionService.transcribe(recording.fileURL)
         metricsGateway.recordDuration("metrics.transcription.duration", date.now.timeIntervalSince(start))
@@ -120,7 +132,10 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     }
 
     private func speakerSegments(_ recording: Recording, _ session: ProcessingSession) async throws -> [SpeakerSegment] {
-        if let cached = try await analysisCacheRepository.getSpeakerSegments(session) { return cached }
+        if let cached = try await analysisCacheRepository.getSpeakerSegments(session) {
+            Self.logger.debug("Reusing cached speaker diarization")
+            return cached
+        }
         let start = date.now
         let segments = try await speakerDiarizationGateway.diarize(recording.fileURL)
         metricsGateway.recordDuration("metrics.diarization.duration", date.now.timeIntervalSince(start))
@@ -145,6 +160,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             do {
                 embeddings[speakerID] = try await speakerEmbeddingGateway.embedding(voiceSegments)
             } catch SpeakerEmbeddingError.insufficientSpeech {
+                Self.logger.notice("Skipping speaker embedding because speech is insufficient")
                 continue
             }
             try await analysisCacheRepository.setSpeakerEmbeddings(embeddings, session)
@@ -172,22 +188,33 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
     }
 
     private func stream<Value: Sendable & Equatable>(
+        operation: String,
         _ body: @escaping @Sendable (
             AsyncThrowingStream<ConversationAnalysisEvent<Value>, any Error>.Continuation
         ) async throws -> Value
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<Value>, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
+                var logger = Self.logger
+                logger[metadataKey: "operation"] = .string(operation)
+                logger.info("Processing started")
                 // バックグラウンドに移行しても続ける。OS に打ち切られたら中断として終了し、
                 // ストリームの終了で処理もキャンセルする。完了済みの処理の結果はセッションに残る。
                 let execution = await backgroundExecutionGateway.begin {
+                    Self.logger.notice("Processing suspended by OS", metadata: ["operation": .string(operation)])
                     continuation.finish(throwing: ConversationAnalysisError.suspended)
                 }
                 do {
                     let value = try await body(continuation)
+                    logger.info("Processing completed")
                     continuation.yield(.completed(value))
                     continuation.finish()
                 } catch {
+                    if error is CancellationError || Task.isCancelled {
+                        logger.debug("Processing cancelled")
+                    } else {
+                        logger.error("Processing failed", metadata: ["error_type": "\(type(of: error))"])
+                    }
                     continuation.finish(throwing: error)
                 }
                 await backgroundExecutionGateway.end(execution)

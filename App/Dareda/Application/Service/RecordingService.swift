@@ -1,6 +1,7 @@
 import Dependencies
 import DependenciesMacros
 import Foundation
+import Logging
 
 @DependencyClient
 nonisolated struct RecordingService: Sendable {
@@ -46,6 +47,8 @@ private nonisolated enum RecordingConfigurationKey: DependencyKey {
 }
 
 private nonisolated struct RecordingServiceImpl: Sendable {
+    private static let logger = Logger(label: "Dareda.RecordingService")
+
     @Dependency(\.audioRecordingGateway) private var audioRecordingGateway
     @Dependency(\.recordingConfiguration) private var configuration
     @Dependency(\.continuousClock) private var clock
@@ -55,11 +58,29 @@ private nonisolated struct RecordingServiceImpl: Sendable {
         if permission == .undetermined {
             permission = await audioRecordingGateway.requestPermission()
         }
-        guard permission == .granted else { throw RecordingError.permissionDenied }
-        return try await audioRecordingGateway.start()
+        guard permission == .granted else {
+            Self.logger.notice("Recording permission denied")
+            throw RecordingError.permissionDenied
+        }
+        do {
+            let recording = try await audioRecordingGateway.start()
+            Self.logger.info("Recording started")
+            return recording
+        } catch {
+            if error is CancellationError || Task.isCancelled {
+                Self.logger.debug("Recording start cancelled")
+            } else {
+                Self.logger.error("Recording start failed", metadata: ["error_type": "\(type(of: error))"])
+            }
+            throw error
+        }
     }
 
-    func stop(_ recording: Recording) -> Recording { audioRecordingGateway.stop(recording) }
+    func stop(_ recording: Recording) -> Recording {
+        let stopped = audioRecordingGateway.stop(recording)
+        Self.logger.info("Recording stopped")
+        return stopped
+    }
     func discard(_ recording: Recording) throws { try audioRecordingGateway.discard(recording) }
     func interruptions() -> AsyncStream<Void> { audioRecordingGateway.interruptions() }
 
@@ -78,6 +99,7 @@ private nonisolated struct RecordingServiceImpl: Sendable {
                             let elapsed = gateway.elapsedTime()
                             continuation.yield(.elapsedTimeChanged(elapsed))
                             if elapsed >= configuration.maxDuration {
+                                Self.logger.notice("Recording reached duration limit")
                                 return .limitReached(gateway.stop(recording))
                             }
                             if !hasWarned, elapsed >= max(configuration.maxDuration - configuration.warningRemaining, 0) {
@@ -93,6 +115,7 @@ private nonisolated struct RecordingServiceImpl: Sendable {
                     group.addTask {
                         for await _ in interruptions {
                             guard !Task.isCancelled else { return nil }
+                            Self.logger.notice("Recording interrupted")
                             return .interrupted(gateway.stop(recording))
                         }
                         return nil

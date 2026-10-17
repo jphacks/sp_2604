@@ -1,6 +1,7 @@
 import Dependencies
 import DependenciesMacros
 import Foundation
+import Logging
 
 /// 人物検索 (第 2 段階の話者識別)。相手の声を保存済みプロフィールと照合し、候補を類似度の高い順に返す。
 ///
@@ -60,6 +61,8 @@ nonisolated extension DependencyValues {
 }
 
 private nonisolated struct SearchPersonUseCaseImpl: Sendable {
+    private static let logger = Logger(label: "Dareda.SearchPersonUseCase")
+
     @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
     @Dependency(\.speechQualityService) private var speechQualityService
     @Dependency(\.vectorMatchingService) private var vectorMatchingService
@@ -73,11 +76,19 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<PersonSearchResult>, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
+                Self.logger.info("Person search started", metadata: ["recording_count": "\(recordings.count)"])
                 do {
                     let result = try await search(recordings, continuation)
                     continuation.yield(.completed(result))
                     continuation.finish()
                 } catch {
+                    if error is CancellationError || Task.isCancelled {
+                        Self.logger.debug("Person search cancelled")
+                    } else if error is PersonSearchError {
+                        Self.logger.notice("Person search requires user input", metadata: ["error_type": "\(type(of: error))"])
+                    } else {
+                        Self.logger.error("Person search failed", metadata: ["error_type": "\(type(of: error))"])
+                    }
                     continuation.finish(throwing: error)
                 }
             }
@@ -112,6 +123,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
         let partnerSpeechDuration = speechQualityService.analyze(partnerAudio, .default).effectiveSpeechDuration
         metricsGateway.recordValue("metrics.personSearch.partnerSpeechDuration", partnerSpeechDuration)
         guard partnerSpeechDuration >= SearchPersonUseCase.minimumPartnerSpeechDuration else {
+            Self.logger.notice("Person search requires additional recording")
             return .needsAdditionalRecording(partnerSpeechDuration: partnerSpeechDuration)
         }
 
@@ -130,6 +142,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
         for (rank, candidate) in candidates.enumerated() {
             metricsGateway.recordValue("metrics.personSearch.similarity.rank\(rank + 1)", Double(candidate.similarity))
         }
+        Self.logger.info("Person search completed", metadata: ["candidate_count": "\(candidates.count)"])
         return .candidates(candidates)
     }
 
