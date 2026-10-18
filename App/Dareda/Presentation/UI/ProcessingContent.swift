@@ -12,6 +12,11 @@ struct ProcessingContent: View {
     var searchCandidates: [ProfileDetailServiceModel]?
     var insufficientPartnerSpeechDuration: TimeInterval?
     var isConfirming = false
+    var canOverwrite = false
+    var isSummarizing = false
+    var latestMetAt: Date?
+    var latestSummary: String?
+    var isOverwriteConfirmationPresented = false
     var isManualSelectionPresented = false
     var manualSelectionProfiles: [Profile] = []
     var isAdditionalRecordingPresented = false
@@ -54,6 +59,11 @@ struct ProcessingContent: View {
                                 candidates: searchCandidates,
                                 insufficientPartnerSpeechDuration: insufficientPartnerSpeechDuration,
                                 isConfirming: isConfirming,
+                                canOverwrite: canOverwrite,
+                                isSummarizing: isSummarizing,
+                                latestMetAt: latestMetAt,
+                                latestSummary: latestSummary,
+                                isOverwriteConfirmationPresented: isOverwriteConfirmationPresented,
                                 send: send
                             )
                         }

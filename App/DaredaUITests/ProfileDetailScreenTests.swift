@@ -51,4 +51,56 @@ final class ProfileDetailScreenTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["profileDetail.summary"].exists)
         XCTAssertFalse(app.staticTexts["profileDetail.place"].exists)
     }
+
+    @MainActor
+    func test名前と所属を編集すると詳細に反映される() {
+        let app = launchProfileDetail(name: "山田 太郎")
+
+        let editButton = app.buttons["profileDetail.editButton"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5))
+        editButton.tap()
+
+        let nameField = app.textFields["profileEdit.nameTextField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.press(forDuration: 1)
+        app.menuItems["Select All"].tap()
+        nameField.typeText("山田 次郎")
+        app.buttons["profileEdit.saveButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["profileDetail.name"].label, "山田 次郎")
+    }
+
+    @MainActor
+    func test前回の会話の要約を編集すると詳細に反映される() {
+        let app = launchProfileDetail(name: "山田 太郎")
+
+        let editButton = app.buttons["profileDetail.editButton"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5))
+        editButton.tap()
+
+        let summaryField = app.textViews["profileEdit.summaryTextField"].exists
+            ? app.textViews["profileEdit.summaryTextField"]
+            : app.textFields["profileEdit.summaryTextField"]
+        XCTAssertTrue(summaryField.waitForExistence(timeout: 5))
+        summaryField.tap()
+        summaryField.typeText("追記")
+        app.buttons["profileEdit.saveButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["profileDetail.summary"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["profileDetail.summary"].label.contains("追記"))
+    }
+
+    @MainActor
+    func test削除すると一覧から消える() {
+        let app = launchProfileDetail(name: "山田 太郎")
+
+        let deleteButton = app.buttons["profileDetail.deleteButton"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 5))
+        deleteButton.tap()
+        app.buttons["profileDetail.deleteConfirmButton"].tap()
+
+        XCTAssertTrue(app.buttons["profileList.row.佐藤 花子"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["profileList.row.山田 太郎"].exists)
+    }
 }

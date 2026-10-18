@@ -7,6 +7,8 @@ final class ProfileListViewModel {
         case onAppear
         case pathChanged([Profile.ID])
         case profileRegistered(Profile.ID)
+        case profileUpdated
+        case profileDeleted
     }
 
     private(set) var profiles: [Profile] = []
@@ -23,6 +25,11 @@ final class ProfileListViewModel {
             self.path = path
         case let .profileRegistered(id):
             path = [id]
+            Task { await fetch() }
+        case .profileUpdated:
+            Task { await fetch() }
+        case .profileDeleted:
+            path = []
             Task { await fetch() }
         }
     }

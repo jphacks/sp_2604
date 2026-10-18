@@ -13,7 +13,7 @@ struct ProfileDetailContent: View {
                 }
             }
             if profile.summary != nil || profile.metAt != nil {
-                Section("初回の出会い") {
+                Section("前回の会話") {
                     if let summary = profile.summary, !summary.isEmpty {
                         Text(summary)
                     }

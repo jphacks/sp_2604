@@ -165,6 +165,21 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
+    func test最新の会話で上書きすると人物の詳細に前回の会話が置き換わって表示される() {
+        let app = start(scenario: "personSearch")
+        let overwrite = app.buttons["personSearch.overwriteButton"]
+        XCTAssertTrue(overwrite.waitForExistence(timeout: 30))
+        overwrite.tap()
+        app.buttons["personSearch.overwriteConfirmButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 30))
+        XCTAssertEqual(app.staticTexts["profileDetail.name"].label, "山田 太郎")
+        // 場所は上書きで未設定に戻り、前回の要約は今回の要約に置き換わる
+        XCTAssertFalse(app.staticTexts["profileDetail.place"].exists)
+        XCTAssertNotEqual(app.staticTexts["profileDetail.summary"].label, "新規事業について話した")
+    }
+
+    @MainActor
     func test着信で結果を読み上げている間も候補を表示する() {
         // 読み上げが 120 秒続く。通話の終了を待たずに候補を表示する
         let app = start(scenario: "personSearchLongCall")

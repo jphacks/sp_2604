@@ -7,6 +7,13 @@ struct PersonSearchResultContent: View {
     let candidates: [ProfileDetailServiceModel]?
     let insufficientPartnerSpeechDuration: TimeInterval?
     let isConfirming: Bool
+    var canOverwrite = false
+    /// 候補の提示後に今回の会話の要約を作成中。
+    var isSummarizing = false
+    /// 今回の会話の日時と要約。要約は作成が済むまで `nil`。
+    var latestMetAt: Date?
+    var latestSummary: String?
+    var isOverwriteConfirmationPresented = false
     let send: (ProcessingViewModel.Action) -> Void
 
     var body: some View {
@@ -56,10 +63,69 @@ struct PersonSearchResultContent: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("personSearch.candidate")
             }
+            if isSummarizing {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("今回の会話の要約を作成しています")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("personSearch.summarizingNotice")
+            }
+            if canOverwrite, let latestSummary, let candidate = candidates.first {
+                Text("前回の会話を今回の内容で更新しますか？").font(.headline)
+                LatestConversationCard(metAt: latestMetAt, summary: latestSummary)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("personSearch.latestConversation")
+                Button("今回の内容で上書き", systemImage: "arrow.triangle.2.circlepath") {
+                    send(.overwriteButtonTapped(candidate.profile.id))
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("personSearch.overwriteButton")
+                .confirmationDialog(
+                    "前回の会話を上書きしますか？",
+                    isPresented: Binding(
+                        get: { isOverwriteConfirmationPresented },
+                        set: { send(.overwriteConfirmationPresentedChanged($0)) }
+                    ),
+                    titleVisibility: .visible
+                ) {
+                    Button("上書きする", role: .destructive) { send(.overwriteConfirmed(candidate.profile.id)) }
+                        .accessibilityIdentifier("personSearch.overwriteConfirmButton")
+                } message: {
+                    Text("前回の日時・要約を今回の会話で置き換えます。場所は未設定になり、元に戻せません。")
+                }
+            }
             Button("該当なし・新規登録", systemImage: "person.badge.plus") { send(.newRegistrationButtonTapped) }
                 .buttonStyle(.bordered)
+                .disabled(isSummarizing)
                 .accessibilityIdentifier("personSearch.newRegistrationButton")
         }
+    }
+}
+
+/// 今回の会話の日時と要約。上書きの提案に表示する。
+private struct LatestConversationCard: View {
+    let metAt: Date?
+    let summary: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("今回の会話").font(.subheadline.bold())
+            if let metAt {
+                Text(metAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.footnote)
+            }
+            if !summary.isEmpty {
+                Text(summary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(.fill.tertiary, in: .rect(cornerRadius: 12))
     }
 }
 
@@ -131,7 +197,8 @@ struct PersonSearchManualSelectionContent: View {
                 ProfileDetailServiceModel(
                     profile: profile,
                     encounter: Encounter(
-                        id: UUID(), profileID: profile.id, summary: "新規事業について話した", metAt: .now,
+                        id: UUID(), profileID: profile.id, summary: "新規事業について話した",
+                        metAt: Date(timeIntervalSince1970: 1_700_000_000),
                         place: Place(name: "渋谷駅", latitude: 35.658, longitude: 139.701)
                     )
                 ),
@@ -141,6 +208,34 @@ struct PersonSearchManualSelectionContent: View {
             ],
             insufficientPartnerSpeechDuration: nil, isConfirming: false, send: { _ in }
         )
+        .padding(24)
+    }
+}
+
+#Preview("要約作成中・上書きの提案") {
+    let profile = Profile(id: UUID(), name: "山田 太郎", affiliation: "株式会社サンプル", vector: [])
+    let candidates = [
+        ProfileDetailServiceModel(
+            profile: profile,
+            encounter: Encounter(
+                id: UUID(), profileID: profile.id, summary: "新規事業について話した",
+                metAt: Date(timeIntervalSince1970: 1_700_000_000),
+                place: Place(name: "渋谷駅", latitude: 35.658, longitude: 139.701)
+            )
+        )
+    ]
+    ScrollView {
+        VStack(spacing: 32) {
+            PersonSearchResultContent(
+                candidates: candidates, insufficientPartnerSpeechDuration: nil, isConfirming: false,
+                isSummarizing: true, latestMetAt: Date(timeIntervalSince1970: 1_700_100_000), send: { _ in }
+            )
+            PersonSearchResultContent(
+                candidates: candidates, insufficientPartnerSpeechDuration: nil, isConfirming: false,
+                canOverwrite: true, latestMetAt: Date(timeIntervalSince1970: 1_700_100_000),
+                latestSummary: "来月の打ち合わせ日程を決めた", send: { _ in }
+            )
+        }
         .padding(24)
     }
 }

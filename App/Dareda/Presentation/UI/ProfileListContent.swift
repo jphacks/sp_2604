@@ -28,7 +28,11 @@ struct ProfileListContent<Actions: View>: View {
                 ToolbarItemGroup(placement: .topBarTrailing) { actions() }
             }
             .navigationDestination(for: Profile.ID.self) { id in
-                ProfileDetailScreen(profileID: id)
+                ProfileDetailScreen(
+                    profileID: id,
+                    onUpdated: { send(.profileUpdated) },
+                    onDeleted: { send(.profileDeleted) }
+                )
             }
         }
     }

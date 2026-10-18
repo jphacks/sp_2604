@@ -18,6 +18,9 @@ final class ProcessingViewModel {
         case manualSelectionButtonTapped
         case manualSelectionPresentedChanged(Bool)
         case newRegistrationButtonTapped
+        case overwriteButtonTapped(Profile.ID)
+        case overwriteConfirmationPresentedChanged(Bool)
+        case overwriteConfirmed(Profile.ID)
         case additionalRecordingButtonTapped
         case additionalRecordingPresentedChanged(Bool)
         case additionalRecordingAdded(Recording)
@@ -51,6 +54,14 @@ final class ProcessingViewModel {
     private(set) var manualSelectionProfiles: [Profile] = []
     /// 人物の確定 (一時データの削除) 中。
     private(set) var isConfirming = false
+    /// 最新の会話で前回の会話を上書きできるか。要約まで済んでいる (`pendingRegistration` がある) ときだけ上書きできる。
+    private(set) var canOverwrite = false
+    /// 候補を提示した後で、今回の会話の要約を作成中。
+    private(set) var isSummarizing = false
+    /// 今回の会話の日時と要約。要約の作成が済むまで要約は `nil`。上書きの提案に表示する。
+    var latestMetAt: Date { recording.startedAt }
+    var latestSummary: String? { canOverwrite ? pendingRegistration?.summary : nil }
+    private(set) var isOverwriteConfirmationPresented = false
 
     @ObservationIgnored @Dependency(\.processingSessionService) private var processingSessionService
     @ObservationIgnored @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
@@ -62,6 +73,7 @@ final class ProcessingViewModel {
     @ObservationIgnored @Dependency(\.fetchProfilesUseCase) private var fetchProfilesUseCase
     @ObservationIgnored @Dependency(\.watchSyncService) private var watchSyncService
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
+    @ObservationIgnored @Dependency(\.overwriteEncounterUseCase) private var overwriteEncounterUseCase
     @ObservationIgnored @Dependency(\.registerProfileUseCase) private var registerProfileUseCase
     @ObservationIgnored @Dependency(\.searchPlacesUseCase) private var searchPlacesUseCase
     /// Apple Watch で入力した場所の検索結果。
@@ -148,7 +160,8 @@ final class ProcessingViewModel {
         case let .manualSelectionPresentedChanged(isPresented):
             isManualSelectionPresented = isPresented
         case .newRegistrationButtonTapped:
-            guard !isRegisteringFromSearch else { return }
+            // 要約の作成中は、完了を待って新規登録の初期値に使う
+            guard !isRegisteringFromSearch, !isSummarizing else { return }
             isRegisteringFromSearch = true
             // 新規登録には最初の録音だけを使うため、追加録音の一時データは先に削除する
             let additional = additionalRecordings
@@ -166,6 +179,13 @@ final class ProcessingViewModel {
                     process()
                 }
             }
+        case .overwriteButtonTapped:
+            isOverwriteConfirmationPresented = true
+        case let .overwriteConfirmationPresentedChanged(isPresented):
+            isOverwriteConfirmationPresented = isPresented
+        case let .overwriteConfirmed(profileID):
+            isOverwriteConfirmationPresented = false
+            overwrite(profileID)
         case .additionalRecordingButtonTapped:
             isAdditionalRecordingPresented = true
         case let .additionalRecordingPresentedChanged(isPresented):
@@ -314,6 +334,28 @@ final class ProcessingViewModel {
         }
     }
 
+    /// 人物検索で見つかった人物の前回の会話を、この録音の日時と要約で上書きして確定する。
+    private func overwrite(_ profileID: Profile.ID) {
+        guard !isConfirming, let pendingRegistration else { return }
+        isConfirming = true
+        errorMessage = nil
+        Task {
+            defer { isConfirming = false }
+            do {
+                try await overwriteEncounterUseCase.execute(
+                    profileID, pendingRegistration.recording.startedAt, pendingRegistration.summary
+                )
+            } catch {
+                errorMessage = "上書きできませんでした。もう一度お試しください。"
+                return
+            }
+            // 上書きは済んでいるため、一時データの削除に失敗しても確定扱いにして二重に上書きさせない
+            try? await completePersonSearchUseCase.execute(try await searchRecordings())
+            registeredProfileID = profileID
+            isFinished = true
+        }
+    }
+
     /// 処理を止め、録音と処理セッションの一時データを削除する。
     private func discard(onSuccess: @escaping () -> Void, onFailure: @escaping () -> Void) {
         processingTask?.cancel()
@@ -436,10 +478,10 @@ final class ProcessingViewModel {
                         if let first = details.first { .candidate(first.profile, first.encounter) } else { .noCandidate }
                     isActivityResultShown = true
                     updateActivity { await $0.update(activity) }
-                    // 候補を提示する前に、新規登録の初期値にする要約まで済ませる
-                    try await prepareRegistration(session)
+                    // 要約より先に候補を提示し、要約は新規登録の初期値と上書きの提案のために続けて作成する
                     notifyResult(result)
                     searchCandidates = details
+                    try await prepareRegistration(session)
                     complete()
                 }
             }
@@ -455,6 +497,9 @@ final class ProcessingViewModel {
     /// 最初の録音から相手を検出できなかった場合 (追加録音でのみ検出) は何も保持しない。
     private func prepareRegistration(_ session: ProcessingSession) async throws {
         pendingRegistration = nil
+        canOverwrite = false
+        isSummarizing = true
+        defer { isSummarizing = false }
         var analysis: ConversationAnalysis?
         for try await event in conversationAnalysisService.analyze(recording, session) {
             if case let .completed(value) = event { analysis = value }
@@ -473,6 +518,7 @@ final class ProcessingViewModel {
                     summary: summary.text,
                     partnerVector: partnerVector
                 )
+                canOverwrite = true
             }
         }
     }
