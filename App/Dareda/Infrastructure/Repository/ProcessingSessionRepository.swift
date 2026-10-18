@@ -51,7 +51,7 @@ private nonisolated struct ProcessingSessionRepositoryImpl: Sendable {
     func deleteAll() async throws {
         guard fileSystemClient.fileExists(rootURL) else { return }
         // 1 件の削除失敗で残りを止めないよう、最後にまとめてエラーを返す。
-        var firstError: Error?
+        var firstError: any Error?
         for url in try fileSystemClient.contentsOfDirectory(rootURL) {
             do {
                 try fileSystemClient.removeItem(url)
