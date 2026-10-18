@@ -1,5 +1,5 @@
-# アプリ本体と Widget Extension (Live Activity・コントロール)
-app_identifier(["com.kantacky.Dareda", "com.kantacky.Dareda.Widget"])
+# iPhone アプリと、それに同梱する Apple Watch アプリ・Widget Extension (Live Activity・コントロール)
+app_identifier(["com.kantacky.Dareda", "com.kantacky.Dareda.watchkitapp", "com.kantacky.Dareda.Widget"])
 apple_id("iam@kantacky.com")
 apple_dev_portal_id("iam@kantacky.com")
 itunes_connect_id("iam@kantacky.com")
