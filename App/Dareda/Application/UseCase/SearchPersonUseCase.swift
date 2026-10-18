@@ -116,6 +116,19 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
         for (rank, candidate) in candidates.enumerated() {
             metricsGateway.recordValue("metrics.personSearch.similarity.rank\(rank + 1)", Double(candidate.similarity))
         }
+        #if DEBUG
+        // デバッグ時のみ、氏名と類似度の組み合わせを出力する
+        let names = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.name) })
+        let pairs = candidates
+            .map { "\(names[$0.profileID] ?? "?")=\(String(format: "%.4f", $0.similarity))" }
+            .joined(separator: ", ")
+        Self.logger.debug("Person search similarities", metadata: ["similarities": "\(pairs)"])
+        #else
+        let pairs = candidates.enumerated()
+            .map { "rank\($0.offset + 1)=\(String(format: "%.4f", $0.element.similarity))" }
+            .joined(separator: ", ")
+        Self.logger.info("Person search similarities", metadata: ["similarities": "\(pairs)"])
+        #endif
         Self.logger.info("Person search completed", metadata: ["candidate_count": "\(candidates.count)"])
         return candidates
     }

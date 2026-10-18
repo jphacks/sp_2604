@@ -165,11 +165,25 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
 
     /// 本人識別の検証用に、各話者と本人の声の類似度を記録する。
     private func recordSelfSimilarities(_ candidates: [AnalyzedSpeaker], _ selfVoice: SelfVoice) throws {
+        var similarities: [(speakerID: AnalyzedSpeaker.ID, similarity: Float)] = []
         for candidate in candidates {
             guard let embedding = candidate.embedding else { continue }
             let similarity = try vectorMatchingService.cosineSimilarity(embedding.values, selfVoice.vector)
             metricsGateway.recordValue("metrics.selfIdentification.similarity", Double(similarity))
+            similarities.append((candidate.id, similarity))
         }
+        #if DEBUG
+        // デバッグ時のみ、話者 ID と類似度の組み合わせを出力する
+        let pairs = similarities
+            .map { "\($0.speakerID)=\(String(format: "%.4f", $0.similarity))" }
+            .joined(separator: ", ")
+        Self.logger.debug("Speaker similarities", metadata: ["similarities": "\(pairs)"])
+        #else
+        let pairs = similarities.enumerated()
+            .map { "speaker\($0.offset + 1)=\(String(format: "%.4f", $0.element.similarity))" }
+            .joined(separator: ", ")
+        Self.logger.info("Speaker similarities", metadata: ["similarities": "\(pairs)"])
+        #endif
     }
 
     /// 文字起こしの区間に話者を対応付ける。
