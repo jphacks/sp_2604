@@ -26,6 +26,13 @@
 			remoteGlobalIDString = 000000000000000100000000;
 			remoteInfo = Dareda;
 		};
+		C00000000000000000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C00000000000000000000001;
+			remoteInfo = DaredaWatch;
+		};
 		C10000000000000000000003 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 000000000000000000000000 /* Project object */;
@@ -40,20 +47,13 @@
 			remoteGlobalIDString = 000000000000000100000000;
 			remoteInfo = Dareda;
 		};
-		C00000000000000000000008 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 000000000000000000000000 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C00000000000000000000001;
-			remoteInfo = DaredaWatch;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		C00000000000000000000005 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 				C00000000000000000000006 /* DaredaWatch.app in Embed Watch Content */,
 			);
@@ -62,7 +62,7 @@
 		C10000000000000000000004 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstSubfolder = PlugIns;
 			files = (
 				C10000000000000000000001 /* DaredaWidget.appex in Embed Foundation Extensions */,
 			);
@@ -73,9 +73,9 @@
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Dareda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dareda.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000001 /* DaredaSnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaredaSnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C00000000000000000000000 /* DaredaWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DaredaWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C10000000000000000000002 /* DaredaWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DaredaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F157C6803082907700C4613A /* DaredaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaredaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		C00000000000000000000000 /* DaredaWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DaredaWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -116,6 +116,19 @@
 			path = DaredaSnapshotTests;
 			sourceTree = "<group>";
 		};
+		C00000000000000000000010 /* DaredaWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C00000000000000000000011 /* Exceptions for "DaredaWatch" folder in "DaredaWatch" target */,
+			);
+			path = DaredaWatch;
+			sourceTree = "<group>";
+		};
+		C00000000000000000000020 /* DaredaWatchShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DaredaWatchShared;
+			sourceTree = "<group>";
+		};
 		C10000000000000000000006 /* DaredaWidgetShared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = DaredaWidgetShared;
@@ -132,19 +145,6 @@
 		F157C6813082907700C4613A /* DaredaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = DaredaUITests;
-			sourceTree = "<group>";
-		};
-		C00000000000000000000010 /* DaredaWatch */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				C00000000000000000000011 /* Exceptions for "DaredaWatch" folder in "DaredaWatch" target */,
-			);
-			path = DaredaWatch;
-			sourceTree = "<group>";
-		};
-		C00000000000000000000020 /* DaredaWatchShared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DaredaWatchShared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -167,17 +167,17 @@
 				B1000000000000000000000C /* SnapshotTesting in Frameworks */,
 			);
 		};
+		C00000000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 		C10000000000000000000008 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
 		};
 		F157C67D3082907700C4613A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
-		C00000000000000000000003 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -273,6 +273,25 @@
 			productReference = B10000000000000000000001 /* DaredaSnapshotTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		C00000000000000000000001 /* DaredaWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C00000000000000000000009 /* Build configuration list for PBXNativeTarget "DaredaWatch" */;
+			buildPhases = (
+				C00000000000000000000002 /* Sources */,
+				C00000000000000000000003 /* Frameworks */,
+				C00000000000000000000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				C00000000000000000000010 /* DaredaWatch */,
+				C00000000000000000000020 /* DaredaWatchShared */,
+			);
+			name = DaredaWatch;
+			productName = DaredaWatch;
+			productReference = C00000000000000000000000 /* DaredaWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 		C10000000000000000000010 /* DaredaWidget */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C10000000000000000000011 /* Build configuration list for PBXNativeTarget "DaredaWidget" */;
@@ -312,25 +331,6 @@
 			productName = DaredaUITests;
 			productReference = F157C6803082907700C4613A /* DaredaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
-		};
-		C00000000000000000000001 /* DaredaWatch */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = C00000000000000000000009 /* Build configuration list for PBXNativeTarget "DaredaWatch" */;
-			buildPhases = (
-				C00000000000000000000002 /* Sources */,
-				C00000000000000000000003 /* Frameworks */,
-				C00000000000000000000004 /* Resources */,
-			);
-			buildRules = (
-			);
-			fileSystemSynchronizedGroups = (
-				C00000000000000000000010 /* DaredaWatch */,
-				C00000000000000000000020 /* DaredaWatchShared */,
-			);
-			name = DaredaWatch;
-			productName = DaredaWatch;
-			productReference = C00000000000000000000000 /* DaredaWatch.app */;
-			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
@@ -403,17 +403,17 @@
 			files = (
 			);
 		};
+		C00000000000000000000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 		C10000000000000000000015 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
 		};
 		F157C67E3082907700C4613A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
-		C00000000000000000000004 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -431,17 +431,17 @@
 			files = (
 			);
 		};
+		C00000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		C10000000000000000000014 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
 		};
 		F157C67C3082907700C4613A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
-		C00000000000000000000002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -458,6 +458,11 @@
 			isa = PBXTargetDependency;
 			productRef = B10000000000000000000023 /* PrefireTestsPlugin */;
 		};
+		C00000000000000000000007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C00000000000000000000001 /* DaredaWatch */;
+			targetProxy = C00000000000000000000008 /* PBXContainerItemProxy */;
+		};
 		C10000000000000000000009 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C10000000000000000000010 /* DaredaWidget */;
@@ -467,11 +472,6 @@
 			isa = PBXTargetDependency;
 			target = 000000000000000100000000 /* Dareda */;
 			targetProxy = F157C6843082907700C4613A /* PBXContainerItemProxy */;
-		};
-		C00000000000000000000007 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C00000000000000000000001 /* DaredaWatch */;
-			targetProxy = C00000000000000000000008 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -761,6 +761,77 @@
 			};
 			name = Release;
 		};
+		C0000000000000000000000A /* Debug configuration for PBXNativeTarget "DaredaWatch" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=watchos*]" = 4YP7SQBLYV;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DaredaWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dareda;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、iPhone で相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.kantacky.Dareda;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.Dareda.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=watchos*]" = "match Development com.kantacky.Dareda.watchkitapp";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		C0000000000000000000000B /* Release configuration for PBXNativeTarget "DaredaWatch" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=watchos*]" = 4YP7SQBLYV;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DaredaWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dareda;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、iPhone で相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.kantacky.Dareda;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.Dareda.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=watchos*]" = "match Development com.kantacky.Dareda.watchkitapp";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
 		C10000000000000000000012 /* Debug configuration for PBXNativeTarget "DaredaWidget" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -873,77 +944,6 @@
 			};
 			name = Release;
 		};
-		C0000000000000000000000A /* Debug configuration for PBXNativeTarget "DaredaWatch" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=watchos*]" = 4YP7SQBLYV;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = DaredaWatch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Dareda;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、iPhone で相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.kantacky.Dareda;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.Dareda.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=watchos*]" = "match Development com.kantacky.Dareda.watchkitapp";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
-			};
-			name = Debug;
-		};
-		C0000000000000000000000B /* Release configuration for PBXNativeTarget "DaredaWatch" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=watchos*]" = 4YP7SQBLYV;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = DaredaWatch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Dareda;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "会話を録音し、iPhone で相手の声の特徴から人物を登録・検索するためにマイクを使用します。";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.kantacky.Dareda;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kantacky.Dareda.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=watchos*]" = "match Development com.kantacky.Dareda.watchkitapp";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -971,6 +971,14 @@
 			);
 			defaultConfigurationName = Release;
 		};
+		C00000000000000000000009 /* Build configuration list for PBXNativeTarget "DaredaWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0000000000000000000000A /* Debug configuration for PBXNativeTarget "DaredaWatch" */,
+				C0000000000000000000000B /* Release configuration for PBXNativeTarget "DaredaWatch" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		C10000000000000000000011 /* Build configuration list for PBXNativeTarget "DaredaWidget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -984,14 +992,6 @@
 			buildConfigurations = (
 				F157C6873082907700C4613A /* Debug configuration for PBXNativeTarget "DaredaUITests" */,
 				F157C6883082907700C4613A /* Release configuration for PBXNativeTarget "DaredaUITests" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		C00000000000000000000009 /* Build configuration list for PBXNativeTarget "DaredaWatch" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				C0000000000000000000000A /* Debug configuration for PBXNativeTarget "DaredaWatch" */,
-				C0000000000000000000000B /* Release configuration for PBXNativeTarget "DaredaWatch" */,
 			);
 			defaultConfigurationName = Release;
 		};
