@@ -1,6 +1,7 @@
 # Dareda
 
 [![CI](https://github.com/jphacks/sp_2604/actions/workflows/ci.yml/badge.svg)](https://github.com/jphacks/sp_2604/actions/workflows/ci.yml)
+[![100% AI](https://img.shields.io/badge/AI-100%25-brightgreen)](#ai-エージェントを活用した開発フロー)
 
 [![Dareda](assets/main-banner.png)](https://drive.google.com/file/d/1GNp6YJ_4w0l8VMu3yBd_hzAsZILUIQUd/view?usp=sharing)
 
