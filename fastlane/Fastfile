@@ -82,6 +82,9 @@ platform :ios do
       project = project.gsub("\"match Development #{identifier}\"", "\"#{profile_name}\"")
       [identifier, profile_name]
     end
+    # xcargs で CODE_SIGN_IDENTITY を渡すと SwiftPM パッケージのターゲットにも適用され、
+    # Team 未設定のため署名エラーになる。手動署名のアプリターゲットにだけ設定する
+    project = project.gsub(/^(\s*)"CODE_SIGN_STYLE": "Manual",$/) { "#{$&}\n#{$1}\"CODE_SIGN_IDENTITY\": \"Apple Distribution\"," }
     File.write(project_path, project)
 
     build_number = ENV.fetch("GITHUB_RUN_NUMBER")
@@ -93,7 +96,7 @@ platform :ios do
       export_options: {
         provisioningProfiles: profile_names,
       },
-      xcargs: "CURRENT_PROJECT_VERSION=#{build_number} CODE_SIGN_IDENTITY='Apple Distribution' -skipMacroValidation -skipPackagePluginValidation",
+      xcargs: "CURRENT_PROJECT_VERSION=#{build_number} -skipMacroValidation -skipPackagePluginValidation",
       output_directory: "build",
       output_name: "Dareda.ipa",
     )
