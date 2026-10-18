@@ -19,7 +19,7 @@ struct Options {
         .deletingLastPathComponent()
         .appendingPathComponent("App/Dareda/Resources/ECAPATDNN.mlpackage")
     /// アプリの `ProvisionalParameters.selfIdentificationThreshold` と同じ既定値
-    var selfThreshold: Float = 0.5
+    var selfThreshold: Float = 0.7
     var outputDirectory: URL?
     var collar = 0.25
     var transcribe = false
@@ -37,7 +37,7 @@ struct Options {
         本人識別 (アプリと同じロジックで本人と相手を判定する):
           --self <音声ファイル>            本人の声の登録用録音
           --ecapa <.mlpackage>             ECAPA-TDNN モデル (既定 App/Dareda/Resources/ECAPATDNN.mlpackage)
-          --self-threshold <値>            本人識別のしきい値 (既定 0.5)
+          --self-threshold <値>            本人識別のしきい値 (既定 0.7)
 
         文字起こし (アプリと同じ SpeechTranscriber、ja_JP):
           --transcribe                     発言ごとに話者を割り当てて表示する。アプリと同じ区間単位の割り当てと、単語単位の割り当てを比べる

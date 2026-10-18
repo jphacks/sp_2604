@@ -42,7 +42,7 @@ mise run eval:diarization -- Tools/diarization-eval/data \
 | `--min-speakers` / `--max-speakers` / `--num-speakers` | 話者数のヒント |
 | `--min-segment-duration` | 埋め込みに使う区間の最短長 (秒、既定 1.0) |
 | `--self` | 本人の声の登録用録音。指定すると本人・相手の判定も行う |
-| `--self-threshold` | 本人識別のしきい値 (既定 0.5) |
+| `--self-threshold` | 本人識別のしきい値 (既定 0.7) |
 | `--ecapa` | ECAPA-TDNN モデルのパス |
 | `--out` | 設定ごとの分離結果を `<out>/<設定>/<録音名>.rttm` に書き出す |
 | `--collar` | DER の算出で無視する境界の幅 (秒、既定 0.25) |
