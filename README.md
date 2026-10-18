@@ -145,7 +145,7 @@ flowchart LR
 
 - iPhone (Apple Intelligence 対応機種)
 - Apple Watch (録音・通知・Live Activity)
-- AirPods やサードパーティー製の Bluetooth イヤホン (着信の読み上げ)
+- AirPods やサードパーティー製の Bluetooth イヤホン (通知・着信への応答)
 
 専用のハードウェアは作らず、多くの人がすでに持っている iPhone・Apple Watch・AirPods やサードパーティー製の Bluetooth イヤホンだけで動くようにした。新しい機器を買ったり身に着けたりする必要がなく、アプリを入れればその日から使える。Apple Watch とイヤホンは任意で、iPhone だけでもすべての機能を使える。
 
