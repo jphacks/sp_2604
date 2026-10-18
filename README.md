@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/jphacks/sp_2604/actions/workflows/ci.yml/badge.svg)](https://github.com/jphacks/sp_2604/actions/workflows/ci.yml)
 
-![Dareda](https://jphacks.com/wp-content/uploads/2026/07/IMG_5316.png)
+[![Dareda](assets/main-banner.png)](https://drive.google.com/file/d/1GNp6YJ_4w0l8VMu3yBd_hzAsZILUIQUd/view?usp=sharing)
+
+[プロモーション動画](https://drive.google.com/file/d/1GNp6YJ_4w0l8VMu3yBd_hzAsZILUIQUd/view?usp=sharing)
 
 ## 製品概要
 
