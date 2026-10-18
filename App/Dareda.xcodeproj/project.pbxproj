@@ -116,9 +116,9 @@
 			path = DaredaSnapshotTests;
 			sourceTree = "<group>";
 		};
-		C10000000000000000000006 /* DaredaShared */ = {
+		C10000000000000000000006 /* DaredaWidgetShared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DaredaShared;
+			path = DaredaWidgetShared;
 			sourceTree = "<group>";
 		};
 		C10000000000000000000007 /* DaredaWidget */ = {
@@ -142,9 +142,9 @@
 			path = DaredaWatch;
 			sourceTree = "<group>";
 		};
-		C00000000000000000000020 /* Shared */ = {
+		C00000000000000000000020 /* DaredaWatchShared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Shared;
+			path = DaredaWatchShared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -190,8 +190,8 @@
 			children = (
 				000000000000000000000010 /* Dareda */,
 				C00000000000000000000010 /* DaredaWatch */,
-				C00000000000000000000020 /* Shared */,
-				C10000000000000000000006 /* DaredaShared */,
+				C00000000000000000000020 /* DaredaWatchShared */,
+				C10000000000000000000006 /* DaredaWidgetShared */,
 				C10000000000000000000007 /* DaredaWidget */,
 				F157C6813082907700C4613A /* DaredaUITests */,
 				B10000000000000000000002 /* DaredaSnapshotTests */,
@@ -232,8 +232,8 @@
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* Dareda */,
-				C00000000000000000000020 /* Shared */,
-				C10000000000000000000006 /* DaredaShared */,
+				C00000000000000000000020 /* DaredaWatchShared */,
+				C10000000000000000000006 /* DaredaWidgetShared */,
 			);
 			name = Dareda;
 			packageProductDependencies = (
@@ -284,7 +284,7 @@
 			buildRules = (
 			);
 			fileSystemSynchronizedGroups = (
-				C10000000000000000000006 /* DaredaShared */,
+				C10000000000000000000006 /* DaredaWidgetShared */,
 				C10000000000000000000007 /* DaredaWidget */,
 			);
 			name = DaredaWidget;
@@ -325,7 +325,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				C00000000000000000000010 /* DaredaWatch */,
-				C00000000000000000000020 /* Shared */,
+				C00000000000000000000020 /* DaredaWatchShared */,
 			);
 			name = DaredaWatch;
 			productName = DaredaWatch;
