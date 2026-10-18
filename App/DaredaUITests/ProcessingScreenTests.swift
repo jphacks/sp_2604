@@ -170,7 +170,7 @@ final class ProcessingScreenTests: XCTestCase {
         let overwrite = app.buttons["personSearch.overwriteButton"]
         XCTAssertTrue(overwrite.waitForExistence(timeout: 30))
         overwrite.tap()
-        app.buttons["personSearch.overwriteConfirmButton"].tap()
+        app.buttons["personSearch.overwriteConfirmButton"].firstMatch.tap()
 
         XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 30))
         XCTAssertEqual(app.staticTexts["profileDetail.name"].label, "山田 太郎")

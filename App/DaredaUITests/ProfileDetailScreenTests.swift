@@ -62,8 +62,10 @@ final class ProfileDetailScreenTests: XCTestCase {
 
         let nameField = app.textFields["profileEdit.nameTextField"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5))
-        nameField.press(forDuration: 1)
-        app.menuItems["Select All"].tap()
+        nameField.tap()
+        // 編集メニューの表示は OS によって変わるため、削除キーで既存の値を消す
+        let currentName = nameField.value as? String ?? ""
+        nameField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: currentName.count))
         nameField.typeText("山田 次郎")
         app.buttons["profileEdit.saveButton"].tap()
 
@@ -98,7 +100,7 @@ final class ProfileDetailScreenTests: XCTestCase {
         let deleteButton = app.buttons["profileDetail.deleteButton"]
         XCTAssertTrue(deleteButton.waitForExistence(timeout: 5))
         deleteButton.tap()
-        app.buttons["profileDetail.deleteConfirmButton"].tap()
+        app.buttons["profileDetail.deleteConfirmButton"].firstMatch.tap()
 
         XCTAssertTrue(app.buttons["profileList.row.佐藤 花子"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["profileList.row.山田 太郎"].exists)
