@@ -35,19 +35,6 @@ struct ProcessingSection: View {
             } header: {
                 Text("この人ですか?")
             }
-        case let .selectSelf(speakers):
-            Section {
-                ForEach(speakers) { speaker in
-                    Button { send(.selectSelf(speaker.id)) } label: {
-                        Text(speaker.speeches.prefix(2).joined(separator: "\n"))
-                            .lineLimit(4)
-                    }
-                    .accessibilityIdentifier("watch.speaker")
-                }
-                cancelButton
-            } header: {
-                Text("あなたの発言はどれですか?")
-            }
         case let .registration(draft):
             Section {
                 NavigationLink {

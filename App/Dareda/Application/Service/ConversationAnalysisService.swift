@@ -83,7 +83,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
                 candidates.compactMap { $0.embedding?.values },
                 selfVoice.vector
             )
-            let selfSpeakerID: AnalyzedSpeaker.ID? = candidates[selfIndex].id
+            let selfSpeakerID = candidates[selfIndex].id
             metricsGateway.recordValue("metrics.analysis.speakerCount", Double(speakers.count))
             metricsGateway.recordMemoryFootprint("metrics.analysis.memory")
 

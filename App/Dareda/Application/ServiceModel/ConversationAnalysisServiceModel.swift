@@ -50,8 +50,8 @@ nonisolated struct ConversationAnalysis: Sendable, Equatable {
     /// 話者を対応付けた文字起こし (発話順)。手動選択 UI ではこれを話者別に表示する。
     var speeches: [AttributedSpeech]
     var speakers: [AnalyzedSpeaker]
-    /// 本人と自動判定した話者の ID (本人の声との類似度が最も高い話者)。`nil` なら手動選択が必要。
-    var selfSpeakerID: AnalyzedSpeaker.ID?
+    /// 本人と判定した話者の ID (本人の声との類似度が最も高い話者)。
+    var selfSpeakerID: AnalyzedSpeaker.ID
 
     /// 指定した話者の発言 (発話順)。
     func speeches(of speakerID: AnalyzedSpeaker.ID) -> [SpeechSegment] {

@@ -50,9 +50,8 @@ nonisolated func seedPersonSearchScenario(_ database: any DatabaseWriter) throws
 
 /// UI テスト用に本人の声を登録済みにする。
 /// ベクトルは `SpeakerEmbeddingModelClient.stub()` が無音・正弦波から生成するベクトルと同じ向きにする。
-/// `matchesStub` が `false` なら符号を交互に反転し、どの話者も本人と判定されないようにする。
-nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter, matchesStub: Bool = true) throws {
-    let vector = (0..<192).map { Float($0 + 1) * (matchesStub || $0.isMultiple(of: 2) ? 1 : -1) }
+nonisolated func seedSelfVoiceScenario(_ database: any DatabaseWriter) throws {
+    let vector = (0..<192).map { Float($0 + 1) }
     try database.write { db in
         try SelfVoiceRecord.insert {
             SelfVoiceRecord(

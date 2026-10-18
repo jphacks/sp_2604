@@ -7,8 +7,6 @@ nonisolated enum RecordingActivity: Sendable, Equatable {
     case analyzing(stage: String)
     /// 人物検索で最も声が近い 1 人。
     case candidate(Profile, Encounter?)
-    /// 本人を自動判定できず、アプリで選ぶ必要がある。
-    case needsSelfSelection
     /// 登録済みの人物がいない。
     case noCandidate
     /// 解析に失敗した。アプリで再試行できる。

@@ -51,12 +51,6 @@ nonisolated enum WatchSelfVoiceEnrollmentState: Codable, Sendable, Equatable {
     case failed(message: String)
 }
 
-nonisolated struct WatchSpeaker: Codable, Sendable, Equatable, Identifiable {
-    var id: String
-    /// この話者の発言 (発話順)。本人かどうかを見分けるために表示する。
-    var speeches: [String]
-}
-
 nonisolated struct WatchPlace: Codable, Sendable, Hashable {
     var name: String
     var latitude: Double
@@ -87,8 +81,6 @@ nonisolated enum WatchProcessingState: Codable, Sendable, Equatable {
     case processing(WatchProcessingStage)
     /// 人物検索の候補 (類似度の高い順)。Apple Watch からも確定できる。
     case candidates([WatchProfile])
-    /// 本人を自動判定できなかった。話者ごとの発言から本人を選ぶ。
-    case selectSelf([WatchSpeaker])
     /// 新規登録の入力待ち。
     case registration(WatchRegistrationDraft)
     /// バックグラウンドで打ち切られた処理の再開など、iPhone での操作が必要。
@@ -112,8 +104,6 @@ nonisolated enum WatchCommand: Codable, Sendable, Equatable {
     case cancelProcessing
     /// 失敗した処理を再試行する。
     case retryProcessing
-    /// 本人の話者を選ぶ。
-    case selectSelf(String)
     /// 人物検索で「該当なし」を選び、新規登録に進む。
     case startNewRegistration
     /// 新規登録の場所を検索する。

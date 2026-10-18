@@ -59,8 +59,6 @@ private nonisolated struct RecordingActivityGatewayImpl: Sendable {
                     placeName: encounter?.place?.name,
                     summary: encounter?.summary
                 ))
-            case .needsSelfSelection:
-                .message("あなたの声を判定できませんでした。アプリで選んでください。")
             case .noCandidate:
                 .message("登録済みの人物が見つかりませんでした。")
             case .failed:

@@ -87,40 +87,6 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test本人を判別できない場合は話者別の発言から自分を選ぶと要約を経て候補を提示する() {
-        let app = start(scenario: "processingSelfUnknown")
-        XCTAssertTrue(app.descendants(matching: .any)["processing.selfSelectionNotice"].waitForExistence(timeout: 30))
-        XCTAssertEqual(stageValue(app, "identifyingSpeakers"), "完了")
-        XCTAssertEqual(stageValue(app, "summarizing"), "待機中")
-        // 2 人の話者それぞれの発言を表示する
-        XCTAssertTrue(app.staticTexts["はじめまして、田中です。"].exists)
-        XCTAssertTrue(app.staticTexts["よろしくお願いします。"].exists)
-        XCTAssertTrue(app.buttons["processing.selfCandidate.1"].exists)
-        attach(app, name: "processing-self-selection")
-
-        app.buttons["processing.selfCandidate.0"].tap()
-        // 選んだ本人で照合と要約まで済むと候補を提示し、新規登録に進める
-        XCTAssertTrue(app.staticTexts["personSearch.noProfilesNotice"].waitForExistence(timeout: 30))
-        XCTAssertFalse(app.descendants(matching: .any)["processing.selfSelectionNotice"].exists)
-        XCTAssertFalse(app.staticTexts["processing.errorNotice"].exists)
-        app.buttons["personSearch.newRegistrationButton"].tap()
-        XCTAssertTrue(app.textFields["registration.nameTextField"].waitForExistence(timeout: 30))
-    }
-
-    @MainActor
-    func test自分を判断できないときは録音し直せる() {
-        let app = start(scenario: "processingSelfUnknown")
-        let rerecord = app.buttons["processing.rerecordButton"]
-        XCTAssertTrue(rerecord.waitForExistence(timeout: 30))
-        rerecord.tap()
-        // 録音画面に戻り、新しい録音が始まる
-        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["processing.cancelButton"].exists)
-        app.buttons["recording.stopButton"].tap()
-        XCTAssertTrue(app.buttons["processing.cancelButton"].waitForExistence(timeout: 5))
-    }
-
-    @MainActor
     func testキャンセルを取り消すと処理画面に留まる() {
         let app = start(scenario: "processingFailure")
         XCTAssertTrue(app.buttons["processing.retryButton"].waitForExistence(timeout: 30))

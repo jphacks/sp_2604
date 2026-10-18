@@ -23,7 +23,6 @@ struct ProcessingScreen: View {
             canRetry: viewModel.failedStage != nil,
             isCompleted: viewModel.isCompleted,
             isSuspended: viewModel.isSuspended,
-            selfSelectionAnalysis: viewModel.selfSelectionAnalysis,
             isCancelConfirmationPresented: viewModel.isCancelConfirmationPresented,
             registrationSource: viewModel.registrationSource,
             searchCandidates: viewModel.searchCandidates,

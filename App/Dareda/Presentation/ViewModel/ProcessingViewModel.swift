@@ -12,8 +12,6 @@ final class ProcessingViewModel {
         case cancelConfirmed
         case sceneBecameActive
         case registrationSaved(Profile.ID)
-        case selfSpeakerSelected(AnalyzedSpeaker.ID)
-        case rerecordButtonTapped
         case newRegistrationButtonTapped
         case overwriteButtonTapped(Profile.ID)
         case overwriteConfirmationPresentedChanged(Bool)
@@ -29,8 +27,6 @@ final class ProcessingViewModel {
     private(set) var errorMessage: LocalizedStringResource?
     private(set) var isCompleted = false
     private(set) var isSuspended = false
-    /// 本人を自動判定できず、手動選択が必要なときの解析結果。
-    private(set) var selfSelectionAnalysis: ConversationAnalysis?
     private(set) var isRerecordRequested = false
     private(set) var isCancelConfirmationPresented = false
     private(set) var isFinished = false
@@ -70,8 +66,6 @@ final class ProcessingViewModel {
     @ObservationIgnored @Dependency(\.recordingActivityService) private var recordingActivityService
     @ObservationIgnored private let recording: Recording
     @ObservationIgnored private var session: ProcessingSession?
-    /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
-    @ObservationIgnored private var selfSpeakerID: AnalyzedSpeaker.ID?
     /// 人物検索から新規登録へ進んだか。
     @ObservationIgnored private var isRegisteringFromSearch = false
     /// 人物検索と同時に済ませた要約。新規登録に進むときに入力の初期値として渡す。
@@ -123,11 +117,6 @@ final class ProcessingViewModel {
             } onFailure: {
                 self.errorMessage = "キャンセルできませんでした。もう一度お試しください。"
             }
-        case let .selfSpeakerSelected(speakerID):
-            guard selfSelectionAnalysis?.speakers.contains(where: { $0.id == speakerID }) == true else { return }
-            selfSpeakerID = speakerID
-            selfSelectionAnalysis = nil
-            process()
         case .newRegistrationButtonTapped:
             // 要約の作成中は、完了を待って新規登録の初期値に使う
             guard !isRegisteringFromSearch, !isSummarizing else { return }
@@ -148,12 +137,6 @@ final class ProcessingViewModel {
         case let .overwriteConfirmed(profileID):
             isOverwriteConfirmationPresented = false
             overwrite(profileID)
-        case .rerecordButtonTapped:
-            discard {
-                self.isRerecordRequested = true
-            } onFailure: {
-                self.errorMessage = "録音を削除できませんでした。もう一度お試しください。"
-            }
         }
     }
 
@@ -164,7 +147,11 @@ final class ProcessingViewModel {
             for await request in requests where request == .startRecording {
                 guard let self else { return }
                 guard !self.isFinished, !self.isRerecordRequested else { continue }
-                self.send(.rerecordButtonTapped)
+                self.discard {
+                    self.isRerecordRequested = true
+                } onFailure: {
+                    self.errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+                }
             }
         }
     }
@@ -177,11 +164,6 @@ final class ProcessingViewModel {
             return .completed(profile)
         }
         if let errorMessage { return .failed(message: String(localized: errorMessage)) }
-        if let selfSelectionAnalysis {
-            return .selectSelf(selfSelectionAnalysis.speakers.map { speaker in
-                WatchSpeaker(id: speaker.id, speeches: selfSelectionAnalysis.speeches(of: speaker.id).map(\.text))
-            })
-        }
         if let registrationSource {
             return .registration(WatchRegistrationDraft(
                 summary: registrationSource.summary,
@@ -217,8 +199,6 @@ final class ProcessingViewModel {
                     self.send(.cancelConfirmed)
                 case .retryProcessing:
                     self.send(.retryButtonTapped)
-                case let .selectSelf(speakerID):
-                    self.send(.selfSpeakerSelected(speakerID))
                 case .startNewRegistration:
                     guard self.searchCandidates != nil else { continue }
                     self.send(.newRegistrationButtonTapped)
@@ -328,10 +308,6 @@ final class ProcessingViewModel {
                 return
             } catch ConversationAnalysisError.suspended {
                 isSuspended = true
-            } catch let PersonSearchError.selfNotIdentified(analysis, _) {
-                completeCurrentStage()
-                selfSelectionAnalysis = analysis
-                updateActivity { await $0.update(.needsSelfSelection) }
             } catch {
                 guard !Task.isCancelled else { return }
                 failedStage = currentStage ?? stages.first
@@ -357,12 +333,7 @@ final class ProcessingViewModel {
             }
         }
         guard let analysis else { throw CancellationError() }
-        guard let selfSpeakerID = selfSpeakerID ?? analysis.selfSpeakerID else {
-            completeCurrentStage()
-            selfSelectionAnalysis = analysis
-            updateActivity { await $0.update(.needsSelfSelection) }
-            return
-        }
+        let selfSpeakerID = analysis.selfSpeakerID
         guard let partnerVector = analysis.partner(selfSpeakerID: selfSpeakerID)?.embedding?.values else {
             // 再試行しても結果は変わらないため、録音し直してもらう
             completeCurrentStage()
@@ -386,7 +357,7 @@ final class ProcessingViewModel {
     }
 
     private func searchRecordings() async throws -> [PersonSearchRecording] {
-        [PersonSearchRecording(recording: recording, session: try await currentSession(), selfSpeakerID: selfSpeakerID)]
+        [PersonSearchRecording(recording: recording, session: try await currentSession())]
     }
 
     private func search(_ session: ProcessingSession) async throws {
@@ -430,10 +401,9 @@ final class ProcessingViewModel {
             if case let .completed(value) = event { analysis = value }
         }
         guard let analysis,
-              let selfSpeakerID = selfSpeakerID ?? analysis.selfSpeakerID,
-              let partnerVector = analysis.partner(selfSpeakerID: selfSpeakerID)?.embedding?.values
+              let partnerVector = analysis.partner(selfSpeakerID: analysis.selfSpeakerID)?.embedding?.values
         else { return }
-        for try await event in conversationAnalysisService.summarize(analysis.transcript(selfSpeakerID: selfSpeakerID), session) {
+        for try await event in conversationAnalysisService.summarize(analysis.transcript(selfSpeakerID: analysis.selfSpeakerID), session) {
             switch event {
             case let .stageChanged(stage): stageChanged(stage)
             case let .completed(summary):

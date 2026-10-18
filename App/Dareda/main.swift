@@ -27,21 +27,13 @@ prepareDependencies {
         }
         // 本人の声の登録画面を検証するシナリオ以外は、登録済みの状態から始める
         if !scenario.hasPrefix("voiceEnrollment") {
-            try! seedSelfVoiceScenario(database, matchesStub: scenario != "processingSelfUnknown")
+            try! seedSelfVoiceScenario(database)
         }
         $0.defaultDatabase = database
         $0.audioRecorderClient = .inMemory()
         $0.fileSystemClient = .inMemory()
         $0.speakerEmbeddingModelClient = .stub()
         switch scenario {
-        case "processingSelfUnknown":
-            // 本人 (0〜15 秒) と相手 (15〜30 秒) のそれぞれに発言を割り当てる
-            $0.backgroundTaskClient = .inMemory()
-            $0.speechClient = .inMemory(segments: [
-                (text: "はじめまして、田中です。", start: 0, end: 2.5),
-                (text: "よろしくお願いします。", start: 16, end: 18),
-            ])
-            $0.fluidAudioClient = .twoSpeakers()
         case "processingFailure":
             // 話者分離は 1 回目だけ失敗し、文字起こしは 2 回目以降失敗する。再試行で完了すれば、
             // 完了済みの文字起こしを再実行していないことになる。
