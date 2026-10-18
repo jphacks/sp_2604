@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// 人物検索の結果。最も声が近い 1 人を表示し、該当なしなら新規登録に進ませる。
+/// 人物検索の結果。声が近い候補を類似度の高い順に表示し、該当なしなら新規登録に進ませる。
+/// 前回の会話の上書きは、最も声が近い候補に対してだけ提案する。
 struct PersonSearchResultContent: View {
     /// 類似度の高い順の候補。照合が済むまでは `nil`。
     let candidates: [ProfileDetailServiceModel]?
@@ -36,10 +37,10 @@ struct PersonSearchResultContent: View {
     private func candidateList(_ candidates: [ProfileDetailServiceModel]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("この人ではありませんか？").font(.headline)
-            if let candidate = candidates.first {
+            ForEach(Array(candidates.enumerated()), id: \.element.profile.id) { index, candidate in
                 PersonSearchCandidateRow(candidate: candidate)
                     .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("personSearch.candidate")
+                    .accessibilityIdentifier(index == 0 ? "personSearch.candidate" : "personSearch.candidate.\(index)")
             }
             if isSummarizing {
                 HStack(spacing: 8) {
@@ -52,7 +53,7 @@ struct PersonSearchResultContent: View {
                 .accessibilityIdentifier("personSearch.summarizingNotice")
             }
             if canOverwrite, let latestSummary, let candidate = candidates.first {
-                Text("前回の会話を今回の内容で更新しますか？").font(.headline)
+                Text("\(candidate.profile.name)との前回の会話を今回の内容で更新しますか？").font(.headline)
                 LatestConversationCard(metAt: latestMetAt, summary: latestSummary)
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("personSearch.latestConversation")
