@@ -5,6 +5,12 @@ require "net/http"
 default_platform(:ios)
 
 platform :ios do
+  # 署名するターゲットと Bundle ID の対応
+  SIGNING_TARGETS = {
+    "Dareda" => "com.kantacky.Dareda",
+    "DaredaWidget" => "com.kantacky.Dareda.Widget",
+  }.freeze
+
   # readonly の match は Git リポジトリから取得するだけなので API Key は不要。
   # 書き込みを伴うレーンでだけ API Key を読み込む。
   private_lane :load_api_key do
@@ -23,9 +29,24 @@ platform :ios do
     end
   end
 
-  desc "証明書とプロファイルを作成・更新して保存する"
+  # Developer Portal に未登録の Bundle ID (新しく追加したターゲットなど) を登録する
+  private_lane :register_bundle_ids do
+    SIGNING_TARGETS.each do |target, identifier|
+      next if Spaceship::ConnectAPI::BundleId.find(identifier)
+
+      UI.message("Bundle ID #{identifier} を登録します")
+      Spaceship::ConnectAPI::BundleId.create(
+        name: target,
+        identifier: identifier,
+        platform: Spaceship::ConnectAPI::BundleIdPlatform::IOS,
+      )
+    end
+  end
+
+  desc "Bundle ID を登録し、証明書とプロファイルを作成・更新して保存する"
   lane :renew_certificates do
     load_api_key
+    register_bundle_ids
     %w[development adhoc appstore].each do |type|
       match(type: type, readonly: false)
     end
@@ -47,15 +68,18 @@ platform :ios do
     ENV["MATCH_GIT_BASIC_AUTHORIZATION"] = Base64.strict_encode64("x-access-token:#{ENV.fetch("MATCH_GIT_BASIC_AUTHORIZATION")}")
     match(type: "adhoc", readonly: true)
 
-    profile_name = ENV.fetch("sigh_com.kantacky.Dareda_adhoc_profile-name")
-    update_code_signing_settings(
-      use_automatic_signing: false,
-      path: "App/Dareda.xcodeproj",
-      targets: ["Dareda"],
-      team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
-      code_sign_identity: "Apple Distribution",
-      profile_name: profile_name,
-    )
+    profile_names = SIGNING_TARGETS.to_h do |target, identifier|
+      profile_name = ENV.fetch("sigh_#{identifier}_adhoc_profile-name")
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "App/Dareda.xcodeproj",
+        targets: [target],
+        team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
+        code_sign_identity: "Apple Distribution",
+        profile_name: profile_name,
+      )
+      [identifier, profile_name]
+    end
 
     build_number = ENV.fetch("GITHUB_RUN_NUMBER")
     build_app(
@@ -64,7 +88,7 @@ platform :ios do
       configuration: "Release",
       export_method: "ad-hoc",
       export_options: {
-        provisioningProfiles: { "com.kantacky.Dareda" => profile_name },
+        provisioningProfiles: profile_names,
       },
       xcargs: "CURRENT_PROJECT_VERSION=#{build_number} -skipMacroValidation -skipPackagePluginValidation",
       output_directory: "build",

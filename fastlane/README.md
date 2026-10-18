@@ -29,7 +29,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane ios renew_certificates
 ```
 
-証明書とプロファイルを作成・更新して保存する
+Bundle ID を登録し、証明書とプロファイルを作成・更新して保存する
 
 ### ios add_device
 
