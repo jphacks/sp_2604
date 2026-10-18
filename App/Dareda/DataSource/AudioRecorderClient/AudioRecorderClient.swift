@@ -74,7 +74,8 @@ private nonisolated struct AudioRecorderClientImpl: Sendable {
         )
 
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .default)
+        // .voiceChat でシステムのノイズ抑制・AGC を有効にする。mode を効かせるため .playAndRecord にする
+        try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker])
         try audioSession.setActive(true)
 
         let recorder = try AVAudioRecorder(
