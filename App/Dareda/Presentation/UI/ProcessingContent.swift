@@ -10,16 +10,12 @@ struct ProcessingContent: View {
     let isCancelConfirmationPresented: Bool
     var registrationSource: RegistrationViewModel.Source?
     var searchCandidates: [ProfileDetailServiceModel]?
-    var insufficientPartnerSpeechDuration: TimeInterval?
     var isConfirming = false
     var canOverwrite = false
     var isSummarizing = false
     var latestMetAt: Date?
     var latestSummary: String?
     var isOverwriteConfirmationPresented = false
-    var isManualSelectionPresented = false
-    var manualSelectionProfiles: [Profile] = []
-    var isAdditionalRecordingPresented = false
     let send: (ProcessingViewModel.Action) -> Void
 
     var body: some View {
@@ -54,10 +50,9 @@ struct ProcessingContent: View {
                         if let selfSelectionAnalysis {
                             SelfSpeakerSelectionContent(analysis: selfSelectionAnalysis, send: send)
                         }
-                        if searchCandidates != nil || insufficientPartnerSpeechDuration != nil {
+                        if searchCandidates != nil {
                             PersonSearchResultContent(
                                 candidates: searchCandidates,
-                                insufficientPartnerSpeechDuration: insufficientPartnerSpeechDuration,
                                 isConfirming: isConfirming,
                                 canOverwrite: canOverwrite,
                                 isSummarizing: isSummarizing,
@@ -95,23 +90,6 @@ struct ProcessingContent: View {
                         Text("録音と処理中のデータは削除され、元に戻せません。")
                     }
             }
-        }
-        .sheet(isPresented: Binding(
-            get: { isManualSelectionPresented },
-            set: { send(.manualSelectionPresentedChanged($0)) }
-        )) {
-            PersonSearchManualSelectionContent(profiles: manualSelectionProfiles, send: send)
-        }
-        .fullScreenCover(isPresented: Binding(
-            get: { isAdditionalRecordingPresented },
-            set: { send(.additionalRecordingPresentedChanged($0)) }
-        )) {
-            // 追加録音は録音画面を再利用する。破棄して閉じた場合は発話不足の案内に戻る
-            RecordingScreen(
-                isAdditional: true,
-                onFinished: { _ in send(.additionalRecordingPresentedChanged(false)) },
-                onAdded: { send(.additionalRecordingAdded($0)) }
-            )
         }
     }
 }

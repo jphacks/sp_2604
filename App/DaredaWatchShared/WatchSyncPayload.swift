@@ -20,8 +20,6 @@ nonisolated enum WatchSyncKey {
 nonisolated enum WatchRecordingKind: String, Codable, Sendable {
     /// 会話の録音。人物検索から始める。
     case conversation
-    /// 人物検索で相手の発話が足りないときの追加録音。
-    case additional
     /// 本人の声の登録・再登録。
     case selfVoice
 }
@@ -89,8 +87,6 @@ nonisolated enum WatchProcessingState: Codable, Sendable, Equatable {
     case processing(WatchProcessingStage)
     /// 人物検索の候補 (類似度の高い順)。Apple Watch からも確定できる。
     case candidates([WatchProfile])
-    /// 相手の発話が足りないため、追加録音が必要。
-    case needsAdditionalRecording
     /// 本人を自動判定できなかった。話者ごとの発言から本人を選ぶ。
     case selectSelf([WatchSpeaker])
     /// 新規登録の入力待ち。

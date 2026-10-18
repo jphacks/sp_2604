@@ -16,7 +16,6 @@ struct HomeScreen: View {
                 processingSection: { state in
                     ProcessingSection(
                         state: state,
-                        additionalRecordTapped: { startRecording(.additional) },
                         send: phoneSession.send
                     )
                 }
@@ -147,7 +146,7 @@ extension WatchProfile: Hashable {
             pendingTransferCount: 0,
             recordTapped: {},
             selfVoiceRecordTapped: {},
-            processingSection: { ProcessingSection(state: $0, additionalRecordTapped: {}, send: { _ in }) }
+            processingSection: { ProcessingSection(state: $0, send: { _ in }) }
         )
     }
 }
@@ -163,7 +162,7 @@ extension WatchProfile: Hashable {
             pendingTransferCount: 0,
             recordTapped: {},
             selfVoiceRecordTapped: {},
-            processingSection: { ProcessingSection(state: $0, additionalRecordTapped: {}, send: { _ in }) }
+            processingSection: { ProcessingSection(state: $0, send: { _ in }) }
         )
     }
 }

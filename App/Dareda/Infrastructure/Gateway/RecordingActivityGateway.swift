@@ -59,8 +59,6 @@ private nonisolated struct RecordingActivityGatewayImpl: Sendable {
                     placeName: encounter?.place?.name,
                     summary: encounter?.summary
                 ))
-            case .needsAdditionalRecording:
-                .message("相手の声が足りません。アプリで追加録音してください。")
             case .needsSelfSelection:
                 .message("あなたの声を判定できませんでした。アプリで選んでください。")
             case .noCandidate:

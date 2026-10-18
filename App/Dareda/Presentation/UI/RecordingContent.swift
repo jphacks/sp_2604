@@ -11,7 +11,6 @@ struct RecordingContent: View {
     let isProcessing: Bool
     let errorMessage: LocalizedStringResource?
     let isDiscardConfirmationPresented: Bool
-    var isAdditional = false
     var isImported = false
     let send: (RecordingViewModel.Action) -> Void
 
@@ -32,10 +31,6 @@ struct RecordingContent: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                             .accessibilityIdentifier("recording.stopButton")
-                    } else if hasRecording, isAdditional {
-                        Button("この録音を追加", systemImage: "plus") { send(.addButtonTapped) }
-                            .buttonStyle(.borderedProminent)
-                            .accessibilityIdentifier("recording.addButton")
                     }
                     if let errorMessage {
                         Text(errorMessage)
@@ -50,7 +45,7 @@ struct RecordingContent: View {
                 .frame(maxWidth: .infinity)
                 .padding(24)
             }
-            .navigationTitle(isAdditional ? "追加録音" : "会話の録音")
+            .navigationTitle("会話の録音")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .cancel) { send(.discardButtonTapped) }

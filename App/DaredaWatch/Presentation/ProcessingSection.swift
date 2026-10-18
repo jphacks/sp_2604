@@ -3,7 +3,6 @@ import SwiftUI
 /// iPhone で処理中の録音の状況。候補の確定・本人の選択・新規登録もここから行える。
 struct ProcessingSection: View {
     let state: WatchProcessingState
-    let additionalRecordTapped: () -> Void
     let send: (WatchCommand) -> Void
 
     var body: some View {
@@ -35,14 +34,6 @@ struct ProcessingSection: View {
                 cancelButton
             } header: {
                 Text("この人ですか?")
-            }
-        case .needsAdditionalRecording:
-            Section {
-                Text("相手の声が足りません。もう少し会話を録音してください。")
-                Button(action: additionalRecordTapped) {
-                    Label("追加で録音", systemImage: "mic.badge.plus")
-                }
-                cancelButton
             }
         case let .selectSelf(speakers):
             Section {

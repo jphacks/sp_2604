@@ -27,16 +27,12 @@ struct ProcessingScreen: View {
             isCancelConfirmationPresented: viewModel.isCancelConfirmationPresented,
             registrationSource: viewModel.registrationSource,
             searchCandidates: viewModel.searchCandidates,
-            insufficientPartnerSpeechDuration: viewModel.insufficientPartnerSpeechDuration,
             isConfirming: viewModel.isConfirming,
             canOverwrite: viewModel.canOverwrite,
             isSummarizing: viewModel.isSummarizing,
             latestMetAt: viewModel.latestMetAt,
             latestSummary: viewModel.latestSummary,
             isOverwriteConfirmationPresented: viewModel.isOverwriteConfirmationPresented,
-            isManualSelectionPresented: viewModel.isManualSelectionPresented,
-            manualSelectionProfiles: viewModel.manualSelectionProfiles,
-            isAdditionalRecordingPresented: viewModel.isAdditionalRecordingPresented,
             send: viewModel.send
         )
         .onAppear { viewModel.send(.onAppear) }

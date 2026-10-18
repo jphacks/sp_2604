@@ -5,13 +5,13 @@ import Logging
 
 /// 人物検索 (第 2 段階の話者識別)。相手の声を保存済みプロフィールと照合し、候補を類似度の高い順に返す。
 ///
-/// 追加録音がある場合は、全ての録音を `recordings` に渡すと、各録音の相手の発話区間を結合して照合する。
+/// 複数の録音を `recordings` に渡すと、各録音の相手の発話区間を結合して照合する。
 /// しきい値は設けず、自動で確定もしない。
 @DependencyClient
 nonisolated struct SearchPersonUseCase: Sendable {
     var search: @Sendable (
         _ recordings: [PersonSearchRecording]
-    ) -> AsyncThrowingStream<ConversationAnalysisEvent<PersonSearchResult>, any Error> = { _ in
+    ) -> AsyncThrowingStream<ConversationAnalysisEvent<[ProfileMatch]>, any Error> = { _ in
         AsyncThrowingStream { $0.finish() }
     }
 }
@@ -22,13 +22,6 @@ nonisolated struct PersonSearchRecording: Sendable, Equatable {
     var session: ProcessingSession
     /// 本人を自動判定できず、手動で選んだ本人の話者。指定すると自動判定の結果より優先する。
     var selfSpeakerID: AnalyzedSpeaker.ID?
-}
-
-nonisolated enum PersonSearchResult: Sendable, Equatable {
-    /// 相手の有効発話が足りない。追加録音を促す。引数はこれまでの録音を合わせた相手の有効発話時間 (秒)。
-    case needsAdditionalRecording(partnerSpeechDuration: TimeInterval)
-    /// 類似度の高い順の候補。上位 5 件 (保存済みが 5 人未満なら全件)。
-    case candidates([ProfileMatch])
 }
 
 nonisolated enum PersonSearchError: Error, Equatable {
@@ -66,7 +59,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
 
     func search(
         _ recordings: [PersonSearchRecording]
-    ) -> AsyncThrowingStream<ConversationAnalysisEvent<PersonSearchResult>, any Error> {
+    ) -> AsyncThrowingStream<ConversationAnalysisEvent<[ProfileMatch]>, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 Self.logger.info("Person search started", metadata: ["recording_count": "\(recordings.count)"])
@@ -91,8 +84,8 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
 
     private func search(
         _ recordings: [PersonSearchRecording],
-        _ continuation: AsyncThrowingStream<ConversationAnalysisEvent<PersonSearchResult>, any Error>.Continuation
-    ) async throws -> PersonSearchResult {
+        _ continuation: AsyncThrowingStream<ConversationAnalysisEvent<[ProfileMatch]>, any Error>.Continuation
+    ) async throws -> [ProfileMatch] {
         var partnerSegments: [VoiceSegment] = []
         var partnerEmbedding: VoiceEmbedding?
         for target in recordings {
@@ -108,7 +101,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
         }
         guard !partnerSegments.isEmpty else { throw PersonSearchError.partnerNotDetected }
 
-        // 追加録音がある場合は、全ての録音の相手の発話区間を結合してベクトルを生成し直す
+        // 複数の録音がある場合は、全ての録音の相手の発話区間を結合してベクトルを生成し直す
         let query =
             if recordings.count == 1, let partnerEmbedding {
                 partnerEmbedding
@@ -124,12 +117,12 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
             metricsGateway.recordValue("metrics.personSearch.similarity.rank\(rank + 1)", Double(candidate.similarity))
         }
         Self.logger.info("Person search completed", metadata: ["candidate_count": "\(candidates.count)"])
-        return .candidates(candidates)
+        return candidates
     }
 
     private func analyze(
         _ target: PersonSearchRecording,
-        _ continuation: AsyncThrowingStream<ConversationAnalysisEvent<PersonSearchResult>, any Error>.Continuation
+        _ continuation: AsyncThrowingStream<ConversationAnalysisEvent<[ProfileMatch]>, any Error>.Continuation
     ) async throws -> ConversationAnalysis {
         for try await event in conversationAnalysisService.analyze(target.recording, target.session) {
             switch event {

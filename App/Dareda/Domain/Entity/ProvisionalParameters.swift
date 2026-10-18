@@ -2,8 +2,6 @@ import Foundation
 
 /// 実機検証 (#27) で確定する暫定値・しきい値。値の調整はこのファイルだけで行う。
 nonisolated enum ProvisionalParameters {
-    /// 人物検索の照合に必要な相手の有効発話時間 (秒)。
-    static let partnerMinimumSpeechDuration: TimeInterval = 10
     /// 1 回の録音の上限 (秒)。
     static let recordingMaxDuration: TimeInterval = 10 * 60
     /// 上限のどれだけ前に残り時間を案内するか (秒)。

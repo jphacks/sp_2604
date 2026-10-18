@@ -13,8 +13,6 @@ nonisolated struct VoiceCallGateway: Sendable {
     ) async throws -> Bool
     /// 人物検索の照合先 (保存済みのプロフィール) がいないことを読み上げる。
     var announcePersonSearchNoProfiles: @Sendable () async throws -> Bool
-    /// 人物検索に追加の録音が必要なことを読み上げる。
-    var announcePersonSearchNeedsAdditionalRecording: @Sendable () async throws -> Bool
 }
 
 nonisolated extension VoiceCallGateway: DependencyKey {
@@ -22,8 +20,7 @@ nonisolated extension VoiceCallGateway: DependencyKey {
         let impl = VoiceCallGatewayImpl()
         return VoiceCallGateway(
             announcePersonSearchCandidate: impl.announcePersonSearchCandidate(name:affiliation:placeName:summary:),
-            announcePersonSearchNoProfiles: impl.announcePersonSearchNoProfiles,
-            announcePersonSearchNeedsAdditionalRecording: impl.announcePersonSearchNeedsAdditionalRecording
+            announcePersonSearchNoProfiles: impl.announcePersonSearchNoProfiles
         )
     }()
 }
@@ -64,10 +61,6 @@ private nonisolated struct VoiceCallGatewayImpl: Sendable {
 
     func announcePersonSearchNoProfiles() async throws -> Bool {
         try await call(speaking: "該当する人が見つかりませんでした。")
-    }
-
-    func announcePersonSearchNeedsAdditionalRecording() async throws -> Bool {
-        try await call(speaking: "相手の声が足りません。もう少し録音してください。")
     }
 
     private func call(speaking message: String) async throws -> Bool {

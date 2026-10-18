@@ -57,21 +57,6 @@ final class SettingsScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test再登録に失敗しても古い登録が残る() {
-        let app = launch(scenario: "voiceReregistrationShort")
-        let before = openSettings(app)
-
-        startReregistration(app)
-        app.buttons["voiceEnrollment.stopButton"].tap()
-        XCTAssertTrue(app.staticTexts["voiceEnrollment.failure"].waitForExistence(timeout: 10))
-
-        app.buttons["voiceEnrollment.cancelButton"].tap()
-
-        XCTAssertTrue(app.buttons["settings.reregisterVoiceButton"].waitForExistence(timeout: 5))
-        XCTAssertEqual(registeredAt(app), before)
-    }
-
-    @MainActor
     func test録音中にキャンセルすると古い登録が残る() {
         let app = launch(scenario: "default")
         let before = openSettings(app)

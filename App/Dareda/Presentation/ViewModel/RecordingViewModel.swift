@@ -14,11 +14,8 @@ final class RecordingViewModel {
         /// 新規登録で保存した場合はそのプロフィールの ID を持つ。
         case processingFinished(Profile.ID?)
         case rerecordRequested
-        case addButtonTapped
     }
 
-    /// 人物検索で相手の発話が足りないときの追加録音か。追加録音では操作を選ばせず、録音を処理状況画面へ返す。
-    let isAdditional: Bool
     /// ファイルアプリで選んだ音声ファイル。指定されていれば録音せずにこのファイルを取り込む。
     let importedFileURL: URL?
 
@@ -36,8 +33,6 @@ final class RecordingViewModel {
     private(set) var isFinished = false
     /// 新規登録で保存したプロフィール。閉じた後に詳細を表示するために使う。
     private(set) var registeredProfileID: Profile.ID?
-    /// 追加録音で「追加する」を選んだ録音。
-    private(set) var addedRecording: Recording?
 
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
@@ -55,8 +50,7 @@ final class RecordingViewModel {
     @ObservationIgnored private var hasAppeared = false
     @ObservationIgnored private var interruptedWhileStarting = false
 
-    init(isAdditional: Bool = false, importedFileURL: URL? = nil) {
-        self.isAdditional = isAdditional
+    init(importedFileURL: URL? = nil) {
         self.importedFileURL = importedFileURL
     }
 
@@ -73,10 +67,6 @@ final class RecordingViewModel {
             startOrImport()
         case .stopButtonTapped:
             stop()
-        case .addButtonTapped:
-            guard isAdditional, let recording, !isRecording else { return }
-            addedRecording = recording
-            isFinished = true
         case let .processingFinished(profileID):
             registeredProfileID = profileID
             isFinished = true
@@ -97,7 +87,7 @@ final class RecordingViewModel {
                 do {
                     try await cancelProcessingUseCase.execute(recording, nil)
                     recording = nil
-                    if !isAdditional { endActivity() }
+                    endActivity()
                     isFinished = true
                 } catch {
                     errorMessage = !isProcessing
@@ -130,7 +120,7 @@ final class RecordingViewModel {
     }
 
     private func restart() {
-        guard !isAdditional, !isProcessing, !isStarting, !isFinished else { return }
+        guard !isProcessing, !isStarting, !isFinished else { return }
         guard isRecording, let recording else {
             // 録音を開始できていない状態からは、そのまま録音し直す
             if self.recording == nil { start() }
@@ -199,12 +189,10 @@ final class RecordingViewModel {
                 let events = recordingService.events(recording)
                 interruptionTask?.cancel()
                 isStarting = false
-                if !isAdditional {
-                    let startedAt = Date.now.addingTimeInterval(-elapsedTime)
-                    // App Intent から始めたときは Intent の実行中に Live Activity を表示済み。
-                    // バックグラウンドでは新しく表示できないため、閉じて作り直さず更新する
-                    updateActivity { await $0.update(.recording(startedAt: startedAt)) }
-                }
+                let startedAt = Date.now.addingTimeInterval(-elapsedTime)
+                // App Intent から始めたときは Intent の実行中に Live Activity を表示済み。
+                // バックグラウンドでは新しく表示できないため、閉じて作り直さず更新する
+                updateActivity { await $0.update(.recording(startedAt: startedAt)) }
                 observeStopRequests()
                 elapsedTask = Task { [weak self] in
                     for await event in events {
@@ -241,9 +229,9 @@ final class RecordingViewModel {
         startProcessing()
     }
 
-    /// 録音の終了・ファイルの取り込み後すぐに音声処理を始める。追加録音は処理状況画面へ返すため始めない。
+    /// 録音の終了・ファイルの取り込み後すぐに音声処理を始める。
     private func startProcessing() {
-        guard !isAdditional, !isProcessing else { return }
+        guard !isProcessing else { return }
         isProcessing = true
         updateActivity { await $0.update(.analyzing(stage: ConversationAnalysisStage.transcribing.label)) }
         // 結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で処理は続けられる

@@ -14,16 +14,10 @@ final class ProcessingViewModel {
         case registrationSaved(Profile.ID)
         case selfSpeakerSelected(AnalyzedSpeaker.ID)
         case rerecordButtonTapped
-        case candidateSelected(Profile.ID)
-        case manualSelectionButtonTapped
-        case manualSelectionPresentedChanged(Bool)
         case newRegistrationButtonTapped
         case overwriteButtonTapped(Profile.ID)
         case overwriteConfirmationPresentedChanged(Bool)
         case overwriteConfirmed(Profile.ID)
-        case additionalRecordingButtonTapped
-        case additionalRecordingPresentedChanged(Bool)
-        case additionalRecordingAdded(Recording)
     }
 
     enum StageStatus { case waiting, processing, completed, failed }
@@ -46,12 +40,6 @@ final class ProcessingViewModel {
     private(set) var registeredProfileID: Profile.ID?
     /// 人物検索の候補 (類似度の高い順)。照合が済むまでは `nil`、登録済みの人物がいなければ空。
     private(set) var searchCandidates: [ProfileDetailServiceModel]?
-    /// 相手の有効発話が足りず、追加録音を促すときの、これまでの相手の有効発話時間 (秒)。
-    private(set) var insufficientPartnerSpeechDuration: TimeInterval?
-    private(set) var isAdditionalRecordingPresented = false
-    private(set) var isManualSelectionPresented = false
-    /// 手動選択で選べる保存済みのプロフィール。
-    private(set) var manualSelectionProfiles: [Profile] = []
     /// 人物の確定 (一時データの削除) 中。
     private(set) var isConfirming = false
     /// 最新の会話で前回の会話を上書きできるか。要約まで済んでいる (`pendingRegistration` がある) ときだけ上書きできる。
@@ -70,9 +58,7 @@ final class ProcessingViewModel {
     @ObservationIgnored @Dependency(\.completePersonSearchUseCase) private var completePersonSearchUseCase
     @ObservationIgnored @Dependency(\.notifyPersonSearchResultUseCase) private var notifyPersonSearchResultUseCase
     @ObservationIgnored @Dependency(\.fetchProfileDetailUseCase) private var fetchProfileDetailUseCase
-    @ObservationIgnored @Dependency(\.fetchProfilesUseCase) private var fetchProfilesUseCase
     @ObservationIgnored @Dependency(\.watchSyncService) private var watchSyncService
-    @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.overwriteEncounterUseCase) private var overwriteEncounterUseCase
     @ObservationIgnored @Dependency(\.registerProfileUseCase) private var registerProfileUseCase
     @ObservationIgnored @Dependency(\.searchPlacesUseCase) private var searchPlacesUseCase
@@ -86,14 +72,10 @@ final class ProcessingViewModel {
     @ObservationIgnored private var session: ProcessingSession?
     /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
     @ObservationIgnored private var selfSpeakerID: AnalyzedSpeaker.ID?
-    /// 人物検索の追加録音。最初の録音とあわせて照合する。
-    @ObservationIgnored private var additionalRecordings: [PersonSearchRecording] = []
     /// 人物検索から新規登録へ進んだか。
     @ObservationIgnored private var isRegisteringFromSearch = false
     /// 人物検索と同時に済ませた要約。新規登録に進むときに入力の初期値として渡す。
     @ObservationIgnored private var pendingRegistration: RegistrationViewModel.Source?
-    /// 本人を手動選択している録音。
-    @ObservationIgnored private var selfSelectionRecordingID: Recording.ID?
     @ObservationIgnored private var processingTask: Task<Void, Never>?
     /// Live Activity の更新を順番に反映するため、直前の更新を待ってから次を反映する。
     @ObservationIgnored private var activityTask: Task<Void, Never>?
@@ -143,43 +125,21 @@ final class ProcessingViewModel {
             }
         case let .selfSpeakerSelected(speakerID):
             guard selfSelectionAnalysis?.speakers.contains(where: { $0.id == speakerID }) == true else { return }
-            if let index = additionalRecordings.firstIndex(where: { $0.recording.id == selfSelectionRecordingID }) {
-                additionalRecordings[index].selfSpeakerID = speakerID
-            } else {
-                selfSpeakerID = speakerID
-            }
-            selfSelectionRecordingID = nil
+            selfSpeakerID = speakerID
             selfSelectionAnalysis = nil
             process()
-        case let .candidateSelected(profileID):
-            confirm(profileID)
-        case .manualSelectionButtonTapped:
-            isManualSelectionPresented = true
-            Task {
-                // 読み込めなくても一覧が空になるだけで、他の選択肢は選べる
-                manualSelectionProfiles = (try? await fetchProfilesUseCase.execute()) ?? []
-            }
-        case let .manualSelectionPresentedChanged(isPresented):
-            isManualSelectionPresented = isPresented
         case .newRegistrationButtonTapped:
             // 要約の作成中は、完了を待って新規登録の初期値に使う
             guard !isRegisteringFromSearch, !isSummarizing else { return }
             isRegisteringFromSearch = true
-            // 新規登録には最初の録音だけを使うため、追加録音の一時データは先に削除する
-            let additional = additionalRecordings
-            additionalRecordings = []
-            Task {
-                try? await completePersonSearchUseCase.execute(additional)
-                if let pendingRegistration {
-                    registrationSource = pendingRegistration
-                } else {
-                    // 発話不足などで要約が済んでいないため、ここで要約まで行う
-                    searchCandidates = nil
-                    insufficientPartnerSpeechDuration = nil
-                    isCompleted = false
-                    completedStages = [.transcribing, .identifyingSpeakers]
-                    process()
-                }
+            if let pendingRegistration {
+                registrationSource = pendingRegistration
+            } else {
+                // 要約が済んでいないため、ここで要約まで行う
+                searchCandidates = nil
+                isCompleted = false
+                completedStages = [.transcribing, .identifyingSpeakers]
+                process()
             }
         case .overwriteButtonTapped:
             isOverwriteConfirmationPresented = true
@@ -188,27 +148,6 @@ final class ProcessingViewModel {
         case let .overwriteConfirmed(profileID):
             isOverwriteConfirmationPresented = false
             overwrite(profileID)
-        case .additionalRecordingButtonTapped:
-            isAdditionalRecordingPresented = true
-        case let .additionalRecordingPresentedChanged(isPresented):
-            isAdditionalRecordingPresented = isPresented
-        case let .additionalRecordingAdded(added):
-            isAdditionalRecordingPresented = false
-            Task {
-                do {
-                    let session = try await processingSessionService.start()
-                    additionalRecordings.append(PersonSearchRecording(recording: added, session: session, selfSpeakerID: nil))
-                    isActivityResultShown = false
-                    insufficientPartnerSpeechDuration = nil
-                    isCompleted = false
-                    completedStages = []
-                    process()
-                } catch {
-                    // 追加録音の案内は残したまま、もう一度録音できるようにする
-                    try? await cancelProcessingUseCase.execute(added, nil)
-                    errorMessage = "追加録音を処理できませんでした。もう一度お試しください。"
-                }
-            }
         case .rerecordButtonTapped:
             discard {
                 self.isRerecordRequested = true
@@ -251,8 +190,7 @@ final class ProcessingViewModel {
                 errorMessage: watchRegistrationErrorMessage
             ))
         }
-        if isSuspended || isManualSelectionPresented { return .needsInputOnPhone }
-        if insufficientPartnerSpeechDuration != nil { return .needsAdditionalRecording }
+        if isSuspended { return .needsInputOnPhone }
         if isCompleted, let searchCandidates { return .candidates(searchCandidates.map(WatchProfile.init)) }
         return .processing(WatchProcessingStage(currentStage ?? .transcribing))
     }
@@ -265,7 +203,7 @@ final class ProcessingViewModel {
         watchSyncService.updateProcessing(state)
     }
 
-    /// Apple Watch での候補の確定・キャンセル・追加録音を受け取る。
+    /// Apple Watch での候補の確定・キャンセルなどの操作を受け取る。
     private func observeWatchOperations() {
         let commands = watchSyncService.commands()
         Task { [weak self] in
@@ -282,7 +220,7 @@ final class ProcessingViewModel {
                 case let .selectSelf(speakerID):
                     self.send(.selfSpeakerSelected(speakerID))
                 case .startNewRegistration:
-                    guard self.searchCandidates != nil || self.insufficientPartnerSpeechDuration != nil else { continue }
+                    guard self.searchCandidates != nil else { continue }
                     self.send(.newRegistrationButtonTapped)
                 case let .searchPlaces(query):
                     // 失敗しても入力し直す以外にできることがないため、候補を空にする
@@ -294,18 +232,6 @@ final class ProcessingViewModel {
                 case .requestSnapshot:
                     self.watchSyncService.updateProcessing(self.watchState)
                 }
-            }
-        }
-        let recordings = watchSyncService.recordings()
-        Task { [weak self] in
-            for await recording in recordings where recording.kind == .additional {
-                guard let self, !self.isFinished, self.insufficientPartnerSpeechDuration != nil else { continue }
-                // ファイルアプリの音声ファイルと同じように取り込み、iPhone で追加録音したときと同様に処理する
-                guard let added = try? self.recordingService.importFile(recording.fileURL) else {
-                    self.errorMessage = "追加録音を処理できませんでした。もう一度お試しください。"
-                    continue
-                }
-                self.send(.additionalRecordingAdded(added))
             }
         }
     }
@@ -334,7 +260,6 @@ final class ProcessingViewModel {
     private func confirm(_ profileID: Profile.ID) {
         guard !isConfirming else { return }
         isConfirming = true
-        isManualSelectionPresented = false
         errorMessage = nil
         Task {
             defer { isConfirming = false }
@@ -376,8 +301,6 @@ final class ProcessingViewModel {
         Task {
             do {
                 try await cancelProcessingUseCase.execute(recording, session)
-                try await completePersonSearchUseCase.execute(additionalRecordings)
-                additionalRecordings = []
                 updateActivity { await $0.end() }
                 onSuccess()
             } catch {
@@ -405,9 +328,8 @@ final class ProcessingViewModel {
                 return
             } catch ConversationAnalysisError.suspended {
                 isSuspended = true
-            } catch let PersonSearchError.selfNotIdentified(analysis, recordingID) {
+            } catch let PersonSearchError.selfNotIdentified(analysis, _) {
                 completeCurrentStage()
-                selfSelectionRecordingID = recordingID
                 selfSelectionAnalysis = analysis
                 updateActivity { await $0.update(.needsSelfSelection) }
             } catch {
@@ -464,51 +386,40 @@ final class ProcessingViewModel {
     }
 
     private func searchRecordings() async throws -> [PersonSearchRecording] {
-        let first = PersonSearchRecording(recording: recording, session: try await currentSession(), selfSpeakerID: selfSpeakerID)
-        return [first] + additionalRecordings
+        [PersonSearchRecording(recording: recording, session: try await currentSession(), selfSpeakerID: selfSpeakerID)]
     }
 
     private func search(_ session: ProcessingSession) async throws {
         for try await event in searchPersonUseCase.search(try await searchRecordings()) {
             switch event {
             case let .stageChanged(stage): stageChanged(stage)
-            case let .completed(result):
-                switch result {
-                case let .needsAdditionalRecording(duration):
-                    notifyResult(result)
-                    isActivityResultShown = true
-                    updateActivity { await $0.update(.needsAdditionalRecording) }
-                    completeCurrentStage()
-                    completedStages = stages
-                    insufficientPartnerSpeechDuration = duration
-                case let .candidates(matches):
-                    var details: [ProfileDetailServiceModel] = []
-                    for match in matches {
-                        if let detail = try await fetchProfileDetailUseCase.execute(match.profileID) {
-                            details.append(detail)
-                        }
+            case let .completed(matches):
+                var details: [ProfileDetailServiceModel] = []
+                for match in matches {
+                    if let detail = try await fetchProfileDetailUseCase.execute(match.profileID) {
+                        details.append(detail)
                     }
-                    let activity: RecordingActivity =
-                        if let first = details.first { .candidate(first.profile, first.encounter) } else { .noCandidate }
-                    isActivityResultShown = true
-                    updateActivity { await $0.update(activity) }
-                    // 要約より先に候補を提示し、要約は新規登録の初期値と上書きの提案のために続けて作成する
-                    notifyResult(result)
-                    searchCandidates = details
-                    try await prepareRegistration(session)
-                    complete()
                 }
+                let activity: RecordingActivity =
+                    if let first = details.first { .candidate(first.profile, first.encounter) } else { .noCandidate }
+                isActivityResultShown = true
+                updateActivity { await $0.update(activity) }
+                // 要約より先に候補を提示し、要約は新規登録の初期値と上書きの提案のために続けて作成する
+                notifyResult(matches)
+                searchCandidates = details
+                try await prepareRegistration(session)
+                complete()
             }
         }
     }
 
     /// アプリ表示中は通知されない。通知できなくても結果はアプリ内で確認できる。
-    private func notifyResult(_ result: PersonSearchResult) {
-        Task { try? await notifyPersonSearchResultUseCase.execute(result) }
+    private func notifyResult(_ matches: [ProfileMatch]) {
+        Task { try? await notifyPersonSearchResultUseCase.execute(matches) }
     }
 
     /// 最初の録音の相手の声と要約を、新規登録に進めるよう保持する。解析結果は保存済みのため再実行されない。
-    /// 最初の録音から相手を検出できなかった場合 (追加録音でのみ検出) は何も保持しない。
+    /// 相手を検出できなかった場合は何も保持しない。
     private func prepareRegistration(_ session: ProcessingSession) async throws {
         pendingRegistration = nil
         canOverwrite = false

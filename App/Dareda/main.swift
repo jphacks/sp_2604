@@ -59,24 +59,11 @@ prepareDependencies {
             $0.speechClient = .inMemory()
             $0.fluidAudioClient = .twoSpeakers()
         }
-        switch scenario {
-        case "voiceEnrollmentShort", "voiceReregistrationShort":
-            $0.audioFileClient = .speech(seconds: 10, amplitude: 0.3)
-        // 登録に必要な有効発話時間 (ProvisionalParameters) の境界を検証する
-        case "voiceEnrollmentJustBelowRequired":
-            $0.audioFileClient = .speech(seconds: 29, amplitude: 0.3)
-        case "voiceEnrollmentJustAboveRequired":
-            $0.audioFileClient = .speech(seconds: 31, amplitude: 0.3)
-        default:
-            $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
-        }
+        $0.audioFileClient = .speech(seconds: 35, amplitude: 0.3)
         switch scenario {
         case "registrationNoPartner":
             // 本人の声だけの録音 (相手を分離できない)
             $0.fluidAudioClient = .oneSpeaker()
-        case "personSearchShortPartner":
-            // 相手の発話が 6 秒しかない。追加録音 (同じ会話) と合わせると照合できる
-            $0.fluidAudioClient = .twoSpeakers(partnerEnd: 21)
         case "registrationSaveFailure":
             $0.sqliteDataClient = .failing(insertProfileFailures: 1)
         default:

@@ -208,41 +208,6 @@ final class ProcessingScreenTests: XCTestCase {
     }
 
     @MainActor
-    func test相手の発話が足りないときは追加録音を促し追加すると候補を表示する() {
-        let app = start(scenario: "personSearchShortPartner")
-        let additional = app.buttons["personSearch.additionalRecordingButton"]
-        XCTAssertTrue(additional.waitForExistence(timeout: 30))
-        XCTAssertTrue(app.descendants(matching: .any)["personSearch.insufficientSpeechNotice"].exists)
-        XCTAssertFalse(app.descendants(matching: .any)["personSearch.candidate"].exists)
-        attach(app, name: "person-search-insufficient-speech")
-
-        additional.tap()
-        // 録音画面を再利用して追加録音する
-        let stop = app.buttons["recording.stopButton"]
-        XCTAssertTrue(stop.waitForExistence(timeout: 5))
-        stop.tap()
-        let add = app.buttons["recording.addButton"]
-        XCTAssertTrue(add.waitForExistence(timeout: 5))
-        add.tap()
-
-        let candidate = app.descendants(matching: .any)["personSearch.candidate"]
-        XCTAssertTrue(candidate.waitForExistence(timeout: 30))
-        XCTAssertTrue(candidate.label.contains("山田 太郎"))
-    }
-
-    @MainActor
-    func test相手の発話が足りないときは追加せずに手動で選べる() {
-        let app = start(scenario: "personSearchShortPartner")
-        let skip = app.buttons["personSearch.skipAdditionalRecordingButton"]
-        XCTAssertTrue(skip.waitForExistence(timeout: 30))
-        skip.tap()
-        let option = app.buttons["personSearch.manualSelection.0"]
-        XCTAssertTrue(option.waitForExistence(timeout: 5))
-        option.tap()
-        XCTAssertTrue(app.staticTexts["profileDetail.name"].waitForExistence(timeout: 10))
-    }
-
-    @MainActor
     private func attach(_ app: XCUIApplication, name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

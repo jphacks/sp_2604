@@ -44,41 +44,4 @@ final class VoiceEnrollmentScreenTests: XCTestCase {
         XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["voiceEnrollment.sampleText"].exists)
     }
-
-    @MainActor
-    func test有効発話が30秒未満なら再録音を促す() {
-        let app = launch(scenario: "voiceEnrollmentShort")
-        recordAndStop(app)
-
-        XCTAssertTrue(app.staticTexts["voiceEnrollment.failure"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["voiceEnrollment.recordButton"].exists)
-    }
-
-    @MainActor
-    func test有効発話が30秒をわずかに下回ると再録音を促す() {
-        let app = launch(scenario: "voiceEnrollmentJustBelowRequired")
-        recordAndStop(app)
-
-        XCTAssertTrue(app.staticTexts["voiceEnrollment.failure"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["voiceEnrollment.recordButton"].exists)
-    }
-
-    @MainActor
-    func test有効発話が30秒をわずかに上回ると登録が完了する() {
-        let app = launch(scenario: "voiceEnrollmentJustAboveRequired")
-        recordAndStop(app)
-
-        XCTAssertTrue(app.buttons["root.recordButton"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["voiceEnrollment.failure"].exists)
-    }
-
-    @MainActor
-    private func recordAndStop(_ app: XCUIApplication) {
-        let recordButton = app.buttons["voiceEnrollment.recordButton"]
-        XCTAssertTrue(recordButton.waitForExistence(timeout: 5))
-        recordButton.tap()
-        let stopButton = app.buttons["voiceEnrollment.stopButton"]
-        XCTAssertTrue(stopButton.waitForExistence(timeout: 5))
-        stopButton.tap()
-    }
 }

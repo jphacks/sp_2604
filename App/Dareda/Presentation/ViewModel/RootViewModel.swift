@@ -220,9 +220,6 @@ final class RootViewModel {
                     self.send(.watchRecordingReceived(recording.fileURL))
                 case .selfVoice:
                     await self.registerSelfVoice(recording.fileURL)
-                case .additional:
-                    // 追加録音は処理状況画面が受け取る
-                    break
                 }
             }
         }
