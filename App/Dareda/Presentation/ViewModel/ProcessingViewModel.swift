@@ -69,6 +69,7 @@ final class ProcessingViewModel {
     /// Apple Watch からの新規登録の保存に失敗したときのメッセージ。
     private var watchRegistrationErrorMessage: String?
     @ObservationIgnored private var isRegisteringFromWatch = false
+    @ObservationIgnored @Dependency(\.recordingActivityService) private var recordingActivityService
     @ObservationIgnored private let recording: Recording
     @ObservationIgnored private var session: ProcessingSession?
     /// 手動で選んだ本人の話者。再試行時も引き継ぐ。
@@ -82,6 +83,10 @@ final class ProcessingViewModel {
     /// 本人を手動選択している録音。
     @ObservationIgnored private var selfSelectionRecordingID: Recording.ID?
     @ObservationIgnored private var processingTask: Task<Void, Never>?
+    /// Live Activity の更新を順番に反映するため、直前の更新を待ってから次を反映する。
+    @ObservationIgnored private var activityTask: Task<Void, Never>?
+    /// 人物検索の結果を Live Activity に表示したか。表示後の要約の進捗では Live Activity を戻さない。
+    @ObservationIgnored private var isActivityResultShown = false
     @ObservationIgnored private var hasAppeared = false
 
     init(recording: Recording) {
@@ -171,6 +176,7 @@ final class ProcessingViewModel {
                 do {
                     let session = try await processingSessionService.start()
                     additionalRecordings.append(PersonSearchRecording(recording: added, session: session, selfSpeakerID: nil))
+                    isActivityResultShown = false
                     insufficientPartnerSpeechDuration = nil
                     isCompleted = false
                     completedStages = []
@@ -316,6 +322,7 @@ final class ProcessingViewModel {
                 try await cancelProcessingUseCase.execute(recording, session)
                 try await completePersonSearchUseCase.execute(additionalRecordings)
                 additionalRecordings = []
+                updateActivity { await $0.end() }
                 onSuccess()
             } catch {
                 onFailure()
@@ -346,10 +353,12 @@ final class ProcessingViewModel {
                 completeCurrentStage()
                 selfSelectionRecordingID = recordingID
                 selfSelectionAnalysis = analysis
+                updateActivity { await $0.update(.needsSelfSelection) }
             } catch {
                 guard !Task.isCancelled else { return }
                 failedStage = currentStage ?? stages.first
                 errorMessage = Self.message(for: error)
+                updateActivity { await $0.update(.failed) }
             }
         }
     }
@@ -373,6 +382,7 @@ final class ProcessingViewModel {
         guard let selfSpeakerID = selfSpeakerID ?? analysis.selfSpeakerID else {
             completeCurrentStage()
             selfSelectionAnalysis = analysis
+            updateActivity { await $0.update(.needsSelfSelection) }
             return
         }
         guard let partnerVector = analysis.partner(selfSpeakerID: selfSpeakerID)?.embedding?.values else {
@@ -410,6 +420,8 @@ final class ProcessingViewModel {
                 switch result {
                 case let .needsAdditionalRecording(duration):
                     notifyResult(result)
+                    isActivityResultShown = true
+                    updateActivity { await $0.update(.needsAdditionalRecording) }
                     completeCurrentStage()
                     completedStages = stages
                     insufficientPartnerSpeechDuration = duration
@@ -420,6 +432,10 @@ final class ProcessingViewModel {
                             details.append(detail)
                         }
                     }
+                    let activity: RecordingActivity =
+                        if let first = details.first { .candidate(first.profile, first.encounter) } else { .noCandidate }
+                    isActivityResultShown = true
+                    updateActivity { await $0.update(activity) }
                     // 候補を提示する前に、新規登録の初期値にする要約まで済ませる
                     try await prepareRegistration(session)
                     notifyResult(result)
@@ -466,6 +482,19 @@ final class ProcessingViewModel {
             completedStages.append(currentStage)
         }
         currentStage = stage
+        // 新規登録の要約はアプリ内で進めるため、人物検索の結果を表示した後は Live Activity を戻さない
+        if !isRegisteringFromSearch, !isActivityResultShown {
+            updateActivity { await $0.update(.analyzing(stage: stage.label)) }
+        }
+    }
+
+    private func updateActivity(_ operation: @escaping (RecordingActivityService) async -> Void) {
+        let previous = activityTask
+        let service = recordingActivityService
+        activityTask = Task {
+            await previous?.value
+            await operation(service)
+        }
     }
 
     private func completeCurrentStage() {

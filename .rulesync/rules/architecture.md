@@ -39,6 +39,8 @@ App/
 │   │   │   └── <Content Name>Content.swift
 │   │   ├── Component/
 │   │   │   └── <Component Name>.swift
+│   │   ├── Intent/
+│   │   │   └── DaredaShortcuts.swift    // App Shortcuts。App Intent 本体は DaredaShared に置く
 │   │   └── ViewModel/
 │   │       └── <Screen Name>ViewModel.swift
 │   ├── Application/
@@ -64,9 +66,13 @@ App/
 │       │   └── Migrations.swift
 │       └── <API Name>APIClient/
 │           └── <API Name>APIClient.swift
+├── DaredaShared/                        // アプリと DaredaWidget の両方でビルドする (ActivityAttributes・App Intent)
+├── DaredaWidget/                        // Widget Extension (Live Activity・コントロール)
 └── DaredaUITests/
     └── <Screen Name>ScreenTests.swift
 ```
+
+- `DaredaShared` の App Intent は `allowedExecutionTargets = .main` でアプリのプロセスで実行する。アプリの依存を使う処理は `#if !WIDGET_EXTENSION` で囲み、Widget Extension では UI だけを扱う。
 
 - Presentation は機能単位のディレクトリを作らず、`UI` / `Component` / `ViewModel` に直接置く。
 - 空のディレクトリは作らない。必要になった時点で作る。

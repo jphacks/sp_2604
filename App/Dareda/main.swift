@@ -84,6 +84,7 @@ prepareDependencies {
         }
         $0.watchConnectivityClient = .inMemory()
         $0.mapKitClient = .inMemory()
+        $0.liveActivityClient = .inMemory()
         $0.appSettingsClient = .inMemory()
         $0.bundleClient = .inMemory()
         $0.userDefaultsClient = .inMemory()
@@ -93,6 +94,10 @@ prepareDependencies {
             } else {
                 .inMemory()
             }
+        $0.callKitClient = .inMemory()
+        // 着信に応答してから読み上げが長く続く。通話中も検索結果を表示できることを検証する
+        $0.speechSynthesizerClient =
+            scenario == "personSearchLongCall" ? .inMemory(duration: .seconds(120)) : .inMemory()
         if scenario.hasPrefix("processing") || scenario.hasPrefix("personSearch") || scenario == "analysisSuspended"
             || scenario == "registration" || scenario == "registrationSaveFailure" {
             $0.audioFileClient = .conversation()

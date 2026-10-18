@@ -42,8 +42,14 @@ final class RecordingViewModel {
     @ObservationIgnored @Dependency(\.recordingService) private var recordingService
     @ObservationIgnored @Dependency(\.requestNotificationPermissionUseCase) private var requestNotificationPermissionUseCase
     @ObservationIgnored @Dependency(\.cancelProcessingUseCase) private var cancelProcessingUseCase
+    @ObservationIgnored @Dependency(\.recordingActivityService) private var recordingActivityService
+    @ObservationIgnored @Dependency(\.appIntentRequestService) private var appIntentRequestService
     @ObservationIgnored private var elapsedTask: Task<Void, Never>?
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
+    /// Live Activity・ショートカットからの録音終了の依頼の監視。
+    @ObservationIgnored private var stopRequestTask: Task<Void, Never>?
+    /// Live Activity の更新を順番に反映するため、直前の更新を待ってから次を反映する。
+    @ObservationIgnored private var activityTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
     @ObservationIgnored private var interruptedWhileStarting = false
 
@@ -94,6 +100,7 @@ final class RecordingViewModel {
                 do {
                     try await cancelProcessingUseCase.execute(recording, nil)
                     recording = nil
+                    if !isAdditional { endActivity() }
                     isFinished = true
                 } catch {
                     errorMessage = !isProcessing
@@ -154,6 +161,11 @@ final class RecordingViewModel {
                 let events = recordingService.events(recording)
                 interruptionTask?.cancel()
                 isStarting = false
+                if !isAdditional {
+                    let startedAt = Date.now.addingTimeInterval(-elapsedTime)
+                    updateActivity { await $0.start(.recording(startedAt: startedAt)) }
+                }
+                observeStopRequests()
                 elapsedTask = Task { [weak self] in
                     for await event in events {
                         guard let self, !Task.isCancelled else { return }
@@ -185,6 +197,7 @@ final class RecordingViewModel {
         isRecording = false
         elapsedTask?.cancel()
         interruptionTask?.cancel()
+        stopRequestTask?.cancel()
         startProcessing()
     }
 
@@ -192,6 +205,7 @@ final class RecordingViewModel {
     private func startProcessing() {
         guard !isAdditional, !isProcessing else { return }
         isProcessing = true
+        updateActivity { await $0.update(.analyzing(stage: ConversationAnalysisStage.transcribing.label)) }
         // 結果を背面で受け取れるよう通知の許可を求める。拒否・失敗してもアプリ内で処理は続けられる
         Task { _ = try? await requestNotificationPermissionUseCase.execute() }
     }
@@ -199,5 +213,29 @@ final class RecordingViewModel {
     private func stop() {
         guard isRecording, let recording else { return }
         finish(recordingService.stop(recording))
+    }
+
+    /// Live Activity の停止ボタンやショートカットから録音を終了できるようにする。
+    private func observeStopRequests() {
+        let requests = appIntentRequestService.requests()
+        stopRequestTask = Task { [weak self] in
+            for await request in requests where request == .stopRecording {
+                guard let self, !Task.isCancelled else { return }
+                self.send(.stopButtonTapped)
+            }
+        }
+    }
+
+    private func updateActivity(_ operation: @escaping (RecordingActivityService) async -> Void) {
+        let previous = activityTask
+        let service = recordingActivityService
+        activityTask = Task {
+            await previous?.value
+            await operation(service)
+        }
+    }
+
+    private func endActivity() {
+        updateActivity { await $0.end() }
     }
 }

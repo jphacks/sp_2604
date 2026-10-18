@@ -4,10 +4,11 @@ require "net/http"
 
 default_platform(:ios)
 
-# Xcode のターゲット名と Bundle ID。Apple Watch アプリは iPhone アプリに同梱して配布する。
+# 署名するターゲットと Bundle ID の対応。Apple Watch アプリと Widget は iPhone アプリに同梱して配布する。
 APP_TARGETS = {
   "Dareda" => "com.kantacky.Dareda",
   "DaredaWatch" => "com.kantacky.Dareda.watchkitapp",
+  "DaredaWidget" => "com.kantacky.Dareda.Widget",
 }.freeze
 
 platform :ios do
@@ -44,7 +45,7 @@ platform :ios do
     end
   end
 
-  desc "証明書とプロファイルを作成・更新して保存する"
+  desc "Bundle ID を登録し、証明書とプロファイルを作成・更新して保存する"
   lane :renew_certificates do
     load_api_key
     register_bundle_ids
