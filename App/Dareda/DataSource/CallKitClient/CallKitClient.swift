@@ -143,9 +143,13 @@ private nonisolated final class CallKitClientImpl: NSObject, CXProviderDelegate,
     }
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
-        // 通話と同じく受話口から再生するため、オーディオセッションを通話用に設定する。
+        // .voiceChat の既定の出力先は受話口なので、.defaultToSpeaker でスピーカーから再生する。
         // 有効化は CallKit が行い、完了すると provider(_:didActivate:) が呼ばれる
-        try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .voiceChat)
+        try? AVAudioSession.sharedInstance().setCategory(
+            .playAndRecord,
+            mode: .voiceChat,
+            options: [.defaultToSpeaker]
+        )
         yield(.answered, to: action.callUUID)
         action.fulfill()
     }
