@@ -45,7 +45,7 @@
 		C10000000000000000000004 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "";
-			dstSubfolder = PlugIns;
+			dstSubfolderSpec = 13;
 			files = (
 				C10000000000000000000001 /* DaredaWidget.appex in Embed Foundation Extensions */,
 			);
