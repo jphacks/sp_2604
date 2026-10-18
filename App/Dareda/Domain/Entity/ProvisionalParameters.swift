@@ -2,8 +2,6 @@ import Foundation
 
 /// 実機検証 (#27) で確定する暫定値・しきい値。値の調整はこのファイルだけで行う。
 nonisolated enum ProvisionalParameters {
-    /// 本人の声の登録に必要な有効発話時間 (秒)。
-    static let selfVoiceRequiredSpeechDuration: TimeInterval = 30
     /// 人物検索の照合に必要な相手の有効発話時間 (秒)。
     static let partnerMinimumSpeechDuration: TimeInterval = 10
     /// 1 回の録音の上限 (秒)。
@@ -22,9 +20,4 @@ nonisolated enum ProvisionalParameters {
     /// 話者分離で推定する話者数の上限。`nil` なら自動推定に任せる。
     /// 2 人で話す想定のため、同じ人が複数の話者に分かれないよう 2 人までにする。
     static let diarizationMaximumSpeakers: Int? = 2
-    /// 有効発話検出 (#7) の基準。
-    static let speechQuality = SpeechQualityThresholds(
-        frameDuration: 0.02,
-        speechThresholdDB: -40
-    )
 }

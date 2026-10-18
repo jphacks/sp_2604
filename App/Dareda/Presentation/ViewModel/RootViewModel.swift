@@ -253,9 +253,6 @@ final class RootViewModel {
             try await registerSelfVoiceUseCase.execute(.file(url))
             watchSyncService.updateSettings { $0.selfVoiceEnrollment = .completed }
             if isVoiceEnrollmentPresented { send(.voiceEnrollmentCompleted) }
-        } catch let SelfVoiceRegistrationError.insufficientSpeech(duration) {
-            let message = String(localized: "声が足りませんでした (\(Int(duration)) 秒)。もう少し長く話して録音し直してください。")
-            watchSyncService.updateSettings { $0.selfVoiceEnrollment = .failed(message: message) }
         } catch {
             watchSyncService.updateSettings { $0.selfVoiceEnrollment = .failed(message: String(localized: "登録できませんでした。もう一度お試しください。")) }
         }

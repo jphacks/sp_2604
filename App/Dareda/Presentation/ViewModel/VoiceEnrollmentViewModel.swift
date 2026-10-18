@@ -15,7 +15,6 @@ final class VoiceEnrollmentViewModel {
 
     enum Failure: Equatable {
         case permissionDenied
-        case insufficientSpeech(TimeInterval)
         case unexpected
     }
 
@@ -93,8 +92,6 @@ final class VoiceEnrollmentViewModel {
         do {
             try await registerSelfVoiceUseCase.execute(source)
             isCompleted = true
-        } catch let SelfVoiceRegistrationError.insufficientSpeech(duration) {
-            failure = .insufficientSpeech(duration)
         } catch {
             failure = .unexpected
         }

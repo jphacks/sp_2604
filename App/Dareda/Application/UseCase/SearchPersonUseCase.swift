@@ -5,8 +5,7 @@ import Logging
 
 /// 人物検索 (第 2 段階の話者識別)。相手の声を保存済みプロフィールと照合し、候補を類似度の高い順に返す。
 ///
-/// 相手の有効発話が足りない場合は `.needsAdditionalRecording` を返す。追加録音したら、
-/// 最初の録音とあわせて `recordings` に渡して呼び直すと、両方の相手の発話区間を結合して照合する。
+/// 追加録音がある場合は、全ての録音を `recordings` に渡すと、各録音の相手の発話区間を結合して照合する。
 /// しきい値は設けず、自動で確定もしない。
 @DependencyClient
 nonisolated struct SearchPersonUseCase: Sendable {
@@ -15,11 +14,6 @@ nonisolated struct SearchPersonUseCase: Sendable {
     ) -> AsyncThrowingStream<ConversationAnalysisEvent<PersonSearchResult>, any Error> = { _ in
         AsyncThrowingStream { $0.finish() }
     }
-}
-
-nonisolated extension SearchPersonUseCase {
-    /// 照合に必要な相手の有効発話時間 (秒)。
-    static let minimumPartnerSpeechDuration = ProvisionalParameters.partnerMinimumSpeechDuration
 }
 
 /// 人物検索に使う 1 回分の録音。解析結果はセッションごとに保存するため、録音ごとに別のセッションを渡す。
@@ -64,7 +58,6 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
     private static let logger = Logger(label: "Dareda.SearchPersonUseCase")
 
     @Dependency(\.conversationAnalysisService) private var conversationAnalysisService
-    @Dependency(\.speechQualityService) private var speechQualityService
     @Dependency(\.vectorMatchingService) private var vectorMatchingService
     @Dependency(\.audioFileGateway) private var audioFileGateway
     @Dependency(\.speakerEmbeddingGateway) private var speakerEmbeddingGateway
@@ -114,18 +107,6 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
             partnerEmbedding = partner.embedding
         }
         guard !partnerSegments.isEmpty else { throw PersonSearchError.partnerNotDetected }
-
-        // 無音を除いた有効発話時間で判定する
-        let partnerAudio = AudioSamples(
-            sampleRate: Double(VoiceSegment.sampleRate),
-            samples: partnerSegments.flatMap(\.samples)
-        )
-        let partnerSpeechDuration = speechQualityService.analyze(partnerAudio, .default).effectiveSpeechDuration
-        metricsGateway.recordValue("metrics.personSearch.partnerSpeechDuration", partnerSpeechDuration)
-        guard partnerSpeechDuration >= SearchPersonUseCase.minimumPartnerSpeechDuration else {
-            Self.logger.notice("Person search requires additional recording")
-            return .needsAdditionalRecording(partnerSpeechDuration: partnerSpeechDuration)
-        }
 
         // 追加録音がある場合は、全ての録音の相手の発話区間を結合してベクトルを生成し直す
         let query =

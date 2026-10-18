@@ -104,8 +104,6 @@ struct VoiceEnrollmentContent: View {
         switch failure {
         case .permissionDenied:
             "マイクの使用が許可されていません。設定アプリでマイクへのアクセスを許可してください。"
-        case let .insufficientSpeech(duration):
-            "声が十分に録音できませんでした (\(Int(duration))秒)。文章を最後まで読んで、\(Int(ProvisionalParameters.selfVoiceRequiredSpeechDuration))秒以上話してください。"
         case .unexpected:
             "登録に失敗しました。もう一度お試しください。"
         }
@@ -122,8 +120,4 @@ struct VoiceEnrollmentContent: View {
 
 #Preview("再登録") {
     VoiceEnrollmentContent(isRecording: false, isProcessing: false, failure: nil, isCancellable: true, send: { _ in })
-}
-
-#Preview("発話不足") {
-    VoiceEnrollmentContent(isRecording: false, isProcessing: false, failure: .insufficientSpeech(12), send: { _ in })
 }

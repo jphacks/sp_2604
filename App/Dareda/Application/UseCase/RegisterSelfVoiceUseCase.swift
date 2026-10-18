@@ -7,7 +7,6 @@ import Logging
 /// 録音ファイルは判定・保存の成否にかかわらず処理後に削除する。選んだ音声ファイルは削除しない。
 @DependencyClient
 nonisolated struct RegisterSelfVoiceUseCase: Sendable {
-    /// 有効発話が足りない・品質が悪い場合は `SelfVoiceRegistrationError` を投げる。
     var execute: @Sendable (_ source: SelfVoiceSource) async throws -> Void
 }
 
@@ -35,25 +34,13 @@ nonisolated enum SelfVoiceSource: Sendable, Equatable {
     case file(URL)
 }
 
-nonisolated enum SelfVoiceRegistrationError: Error, Sendable, Equatable {
-    /// 有効な発話が基準 (暫定 30 秒) に満たない。
-    case insufficientSpeech(TimeInterval)
-}
-
-extension RegisterSelfVoiceUseCase {
-    /// 登録に必要な有効発話時間 (秒)。
-    nonisolated static let requiredSpeechDuration = ProvisionalParameters.selfVoiceRequiredSpeechDuration
-}
-
 private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
     private static let logger = Logger(label: "Dareda.RegisterSelfVoiceUseCase")
 
     @Dependency(\.audioFileGateway) private var audioFileGateway
-    @Dependency(\.speechQualityService) private var speechQualityService
     @Dependency(\.speakerEmbeddingService) private var speakerEmbeddingService
     @Dependency(\.selfVoiceRepository) private var selfVoiceRepository
     @Dependency(\.date) private var date
-    @Dependency(\.metricsGateway) private var metricsGateway
 
     func execute(_ source: SelfVoiceSource) async throws {
         Self.logger.info("Self voice registration started")
@@ -92,9 +79,7 @@ private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
     }
 
     private func log(_ error: any Error) {
-        if error is SelfVoiceRegistrationError {
-            Self.logger.notice("Self voice registration rejected", metadata: ["error_type": "\(type(of: error))"])
-        } else if error is CancellationError || Task.isCancelled {
+        if error is CancellationError || Task.isCancelled {
             Self.logger.debug("Self voice registration cancelled")
         } else {
             Self.logger.error("Self voice registration failed", metadata: ["error_type": "\(type(of: error))"])
@@ -103,12 +88,6 @@ private nonisolated struct RegisterSelfVoiceUseCaseImpl: Sendable {
 
     private func register(_ url: URL) async throws {
         let audio = try await audioFileGateway.samples(url)
-        let quality = speechQualityService.analyze(audio, .default)
-        metricsGateway.recordValue("metrics.selfVoice.effectiveSpeechDuration", quality.effectiveSpeechDuration)
-        guard quality.effectiveSpeechDuration >= RegisterSelfVoiceUseCase.requiredSpeechDuration else {
-            Self.logger.notice("Enrollment speech duration is insufficient")
-            throw SelfVoiceRegistrationError.insufficientSpeech(quality.effectiveSpeechDuration)
-        }
         // 選んだファイルはサンプリングレートが異なりうるため、話者埋め込みの入力形式 (16kHz) に揃える
         let duration = TimeInterval(audio.samples.count) / audio.sampleRate
         let embedding = try await speakerEmbeddingService.embedding([audio.voiceSegment(from: 0, to: duration)])
