@@ -110,7 +110,7 @@ private nonisolated struct SearchPersonUseCaseImpl: Sendable {
             }
         let profiles = try await profileRepository.getAll()
         let candidates = try vectorMatchingService.rankProfiles(
-            query.values, profiles, VectorMatchingService.defaultMatchLimit
+            query.values, profiles, VectorMatchingService.defaultMatchMargin
         )
         // 確信度の算出方法を検討するため、候補の類似度を順位ごとに記録する
         for (rank, candidate) in candidates.enumerated() {

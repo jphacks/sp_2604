@@ -11,15 +11,15 @@ nonisolated struct VectorMatchingService: Sendable {
     var identifySelf: @Sendable (
         _ speakers: [[Float]], _ selfVector: [Float]
     ) throws -> Int
-    /// 人物検索 (第 2 段階)。しきい値なしで類似度の高い順に上位 `limit` 件を返す。
+    /// 人物検索 (第 2 段階)。トップの類似度から `margin` 以内の候補を、類似度の高い順に返す。
     var rankProfiles: @Sendable (
-        _ query: [Float], _ profiles: [Profile], _ limit: Int
+        _ query: [Float], _ profiles: [Profile], _ margin: Float
     ) throws -> [ProfileMatch]
 }
 
 nonisolated extension VectorMatchingService {
-    /// 人物検索で提示する候補の上限。
-    static let defaultMatchLimit = ProvisionalParameters.personSearchCandidateLimit
+    /// 人物検索で、トップの類似度からどこまで下回る候補を提示するか。
+    static let defaultMatchMargin = ProvisionalParameters.personSearchSimilarityMargin
 }
 
 nonisolated extension VectorMatchingService: DependencyKey {
@@ -67,11 +67,13 @@ private nonisolated struct VectorMatchingServiceImpl: Sendable {
     }
 
     func rankProfiles(
-        _ query: [Float], _ profiles: [Profile], _ limit: Int
+        _ query: [Float], _ profiles: [Profile], _ margin: Float
     ) throws -> [ProfileMatch] {
         let matches = try profiles.map {
             ProfileMatch(profileID: $0.id, similarity: try cosineSimilarity(query, $0.vector))
         }
-        return Array(matches.sorted { $0.similarity > $1.similarity }.prefix(max(limit, 0)))
+        .sorted { $0.similarity > $1.similarity }
+        guard let top = matches.first else { return [] }
+        return matches.filter { $0.similarity >= top.similarity - margin }
     }
 }

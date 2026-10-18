@@ -6,8 +6,8 @@ nonisolated enum ProvisionalParameters {
     static let recordingMaxDuration: TimeInterval = 10 * 60
     /// 上限のどれだけ前に残り時間を案内するか (秒)。
     static let recordingWarningRemaining: TimeInterval = 60
-    /// 人物検索で提示する候補の上限。
-    static let personSearchCandidateLimit = 5
+    /// 人物検索で、トップの類似度からどこまで下回る候補を提示するか。
+    static let personSearchSimilarityMargin: Float = 0.1
     /// 話者ベクトルを生成できる音声の最短長 (秒)。
     static let speakerEmbeddingMinimumDuration: TimeInterval = 0.5
     /// 話者分離で推定する話者数の下限。`nil` なら自動推定に任せる。
