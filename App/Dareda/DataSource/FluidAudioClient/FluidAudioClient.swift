@@ -1,3 +1,4 @@
+import CoreML
 import Dependencies
 import DependenciesMacros
 import FluidAudio
@@ -75,7 +76,10 @@ private nonisolated struct FluidAudioClientImpl: Sendable {
         config.clustering.minSpeakers = minSpeakers
         config.clustering.maxSpeakers = maxSpeakers
         let manager = OfflineDiarizerManager(config: config)
-        try await manager.prepareModels()
+        // バックグラウンドでは GPU に処理を投入できないため、GPU を使わない構成に固定する
+        let modelConfiguration = MLModelConfiguration()
+        modelConfiguration.computeUnits = .cpuAndNeuralEngine
+        try await manager.prepareModels(configuration: modelConfiguration)
         let samples = try AudioConverter().resampleAudioFile(audioURL)
         do {
             return try await manager.process(audio: samples)
