@@ -5,8 +5,13 @@ import Speech
 
 @DependencyClient
 nonisolated struct SpeechClient: Sendable {
-    /// 音声ファイルをオンデバイスで文字起こしし、区間ごとの (テキスト, 開始秒, 終了秒) を返す。
-    var transcribe: @Sendable (_ audioURL: URL, _ locale: Locale) async throws -> [(text: String, start: TimeInterval, end: TimeInterval)]
+    /// 認識結果の 1 区間。`runs` は区間のテキストを分割したもので、つなげると `text` になる。
+    typealias Segment = (text: String, start: TimeInterval, end: TimeInterval, runs: [Run])
+    /// 区間内のテキストの断片 (おおむね単語)。時刻が付かなかった断片は `start` / `end` が `nil`。
+    typealias Run = (text: String, start: TimeInterval?, end: TimeInterval?)
+
+    /// 音声ファイルをオンデバイスで文字起こしし、区間ごとのテキストと時刻を返す。
+    var transcribe: @Sendable (_ audioURL: URL, _ locale: Locale) async throws -> [Segment]
 }
 
 nonisolated extension SpeechClient: DependencyKey {
@@ -36,7 +41,7 @@ private nonisolated struct SpeechClientImpl: Sendable {
     func transcribe(
         audioURL: URL,
         locale: Locale
-    ) async throws -> [(text: String, start: TimeInterval, end: TimeInterval)] {
+    ) async throws -> [SpeechClient.Segment] {
         guard await SpeechTranscriber.supportedLocale(equivalentTo: locale) != nil else {
             throw Failure.unsupportedLocale
         }
@@ -44,7 +49,7 @@ private nonisolated struct SpeechClientImpl: Sendable {
             locale: locale,
             transcriptionOptions: [],
             reportingOptions: [],
-            attributeOptions: []
+            attributeOptions: [.audioTimeRange]
         )
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
             try await request.downloadAndInstall()
@@ -52,12 +57,20 @@ private nonisolated struct SpeechClientImpl: Sendable {
 
         // 結果の購読は解析と並行して始める必要がある。
         let collecting = Task {
-            var segments: [(text: String, start: TimeInterval, end: TimeInterval)] = []
+            var segments: [SpeechClient.Segment] = []
             for try await result in transcriber.results {
+                let runs = result.text.runs.map { run -> SpeechClient.Run in
+                    (
+                        text: String(result.text[run.range].characters),
+                        start: run.audioTimeRange?.start.seconds,
+                        end: run.audioTimeRange?.end.seconds
+                    )
+                }
                 segments.append((
                     text: String(result.text.characters),
                     start: result.range.start.seconds,
-                    end: result.range.end.seconds
+                    end: result.range.end.seconds,
+                    runs: runs
                 ))
             }
             return segments

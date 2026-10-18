@@ -91,9 +91,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             metricsGateway.recordMemoryFootprint("metrics.analysis.memory")
 
             return ConversationAnalysis(
-                speeches: speechSegments.map {
-                    AttributedSpeech(segment: $0, speakerID: Self.speakerID(overlapping: $0, in: speakerSegments))
-                },
+                speeches: Self.attributedSpeeches(speechSegments, speakerSegments),
                 speakers: speakers,
                 selfSpeakerID: selfSpeakerID
             )
@@ -177,14 +175,69 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
         }
     }
 
-    /// 文字起こしの区間と最も長く重なる話者の ID。
-    private static func speakerID(overlapping speech: SpeechSegment, in speakerSegments: [SpeakerSegment]) -> String? {
+    /// 文字起こしの区間に話者を対応付ける。
+    /// 文字起こしの 1 区間は 10〜20 秒と長く、話者の切り替わりをまたぐことがあるため、
+    /// 単語の時刻がある場合は単語ごとに話者を対応付け、話者が替わるところで区間を分ける。
+    private static func attributedSpeeches(
+        _ speeches: [SpeechSegment], _ speakerSegments: [SpeakerSegment]
+    ) -> [AttributedSpeech] {
+        speeches.flatMap { speech -> [AttributedSpeech] in
+            // どの話者とも重ならない区間は、これまでどおり話者なしにする
+            guard
+                let speechSpeakerID = speakerID(from: speech.startTime, to: speech.endTime, in: speakerSegments),
+                !speech.words.isEmpty
+            else {
+                return [AttributedSpeech(
+                    segment: speech, speakerID: speakerID(from: speech.startTime, to: speech.endTime, in: speakerSegments)
+                )]
+            }
+
+            var groups: [(speakerID: AnalyzedSpeaker.ID, words: [SpeechWord])] = []
+            for word in speech.words {
+                // 単語は短く、話者分離の区間の隙間に入ることがあるため、重ならなければ最も近い話者にする
+                let wordSpeakerID = speakerID(from: word.startTime, to: word.endTime, in: speakerSegments)
+                    ?? nearestSpeakerID(to: word, in: speakerSegments)
+                    ?? speechSpeakerID
+                if let last = groups.last, last.speakerID == wordSpeakerID {
+                    groups[groups.count - 1].words.append(word)
+                } else {
+                    groups.append((wordSpeakerID, [word]))
+                }
+            }
+            guard groups.count > 1 else { return [AttributedSpeech(segment: speech, speakerID: groups[0].speakerID)] }
+            return groups.map { group in
+                AttributedSpeech(
+                    segment: SpeechSegment(
+                        text: group.words.map(\.text).joined().trimmingCharacters(in: .whitespaces),
+                        startTime: group.words[0].startTime,
+                        endTime: group.words[group.words.count - 1].endTime,
+                        words: group.words
+                    ),
+                    speakerID: group.speakerID
+                )
+            }
+        }
+    }
+
+    /// 指定した区間と最も長く重なる話者の ID。どの話者とも重ならない場合は `nil`。
+    private static func speakerID(
+        from startTime: TimeInterval, to endTime: TimeInterval, in speakerSegments: [SpeakerSegment]
+    ) -> AnalyzedSpeaker.ID? {
         var overlaps: [String: TimeInterval] = [:]
         for segment in speakerSegments {
-            let overlap = min(speech.endTime, segment.endTime) - max(speech.startTime, segment.startTime)
+            let overlap = min(endTime, segment.endTime) - max(startTime, segment.startTime)
             if overlap > 0 { overlaps[segment.speakerID, default: 0] += overlap }
         }
         return overlaps.max { $0.value < $1.value }?.key
+    }
+
+    /// 単語の中心時刻に最も近い発話区間の話者の ID。
+    private static func nearestSpeakerID(to word: SpeechWord, in speakerSegments: [SpeakerSegment]) -> AnalyzedSpeaker.ID? {
+        let center = (word.startTime + word.endTime) / 2
+        func distance(_ segment: SpeakerSegment) -> TimeInterval {
+            max(segment.startTime - center, center - segment.endTime, 0)
+        }
+        return speakerSegments.min { distance($0) < distance($1) }?.speakerID
     }
 
     private func stream<Value: Sendable & Equatable>(
