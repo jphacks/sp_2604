@@ -53,7 +53,7 @@
 		C00000000000000000000005 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolder = Product;
+			dstSubfolderSpec = 16;
 			files = (
 				C00000000000000000000006 /* DaredaWatch.app in Embed Watch Content */,
 			);
@@ -62,7 +62,7 @@
 		C10000000000000000000004 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "";
-			dstSubfolder = PlugIns;
+			dstSubfolderSpec = 13;
 			files = (
 				C10000000000000000000001 /* DaredaWidget.appex in Embed Foundation Extensions */,
 			);
