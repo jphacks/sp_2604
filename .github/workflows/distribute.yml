@@ -30,10 +30,6 @@ jobs:
           mise run xcode:select
           xcodebuild -version
 
-      # 同梱する Apple Watch アプリを書き出すため、watchOS のプラットフォームを入れる
-      - name: watchOS のプラットフォームを用意
-        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
-
       - name: gem をインストール
         run: mise run bundle:install
 
