@@ -6,10 +6,11 @@ import Foundation
 nonisolated struct VectorMatchingService: Sendable {
     /// 2 つのベクトルのコサイン類似度 (-1...1) を返す。空・次元不一致・ゼロベクトルは throws。
     var cosineSimilarity: @Sendable (_ lhs: [Float], _ rhs: [Float]) throws -> Float
-    /// 本人識別 (第 1 段階)。`threshold` を超える話者がちょうど 1 人なら本人と判定する。
+    /// 本人識別 (第 1 段階)。本人の声との類似度が最も高い話者を本人と判定し、`speakers` 内のインデックスを返す。
+    /// `speakers` が空なら throws。
     var identifySelf: @Sendable (
-        _ speakers: [[Float]], _ selfVector: [Float], _ threshold: Float
-    ) throws -> SelfIdentification
+        _ speakers: [[Float]], _ selfVector: [Float]
+    ) throws -> Int
     /// 人物検索 (第 2 段階)。しきい値なしで類似度の高い順に上位 `limit` 件を返す。
     var rankProfiles: @Sendable (
         _ query: [Float], _ profiles: [Profile], _ limit: Int
@@ -17,8 +18,6 @@ nonisolated struct VectorMatchingService: Sendable {
 }
 
 nonisolated extension VectorMatchingService {
-    /// 本人識別のしきい値。
-    static let defaultSelfIdentificationThreshold = ProvisionalParameters.selfIdentificationThreshold
     /// 人物検索で提示する候補の上限。
     static let defaultMatchLimit = ProvisionalParameters.personSearchCandidateLimit
 }
@@ -28,7 +27,7 @@ nonisolated extension VectorMatchingService: DependencyKey {
         let impl = VectorMatchingServiceImpl()
         return VectorMatchingService(
             cosineSimilarity: impl.cosineSimilarity(_:_:),
-            identifySelf: impl.identifySelf(_:_:_:),
+            identifySelf: impl.identifySelf(_:_:),
             rankProfiles: impl.rankProfiles(_:_:_:)
         )
     }()
@@ -57,16 +56,14 @@ private nonisolated struct VectorMatchingServiceImpl: Sendable {
         return dot / (lhsNorm.squareRoot() * rhsNorm.squareRoot())
     }
 
-    func identifySelf(
-        _ speakers: [[Float]], _ selfVector: [Float], _ threshold: Float
-    ) throws -> SelfIdentification {
-        var passed: [Int] = []
-        for (index, speaker) in speakers.enumerated()
-        where try cosineSimilarity(speaker, selfVector) > threshold {
-            passed.append(index)
+    func identifySelf(_ speakers: [[Float]], _ selfVector: [Float]) throws -> Int {
+        var best: (index: Int, similarity: Float)?
+        for (index, speaker) in speakers.enumerated() {
+            let similarity = try cosineSimilarity(speaker, selfVector)
+            if best == nil || similarity > best!.similarity { best = (index, similarity) }
         }
-        if passed.count == 1 { return .identified(index: passed[0]) }
-        return .ambiguous(candidates: passed)
+        guard let best else { throw VectorMatchingError.emptyVector }
+        return best.index
     }
 
     func rankProfiles(

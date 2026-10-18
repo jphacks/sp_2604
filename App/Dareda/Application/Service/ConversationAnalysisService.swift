@@ -79,15 +79,12 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
             guard !candidates.isEmpty else { throw ConversationAnalysisError.noSpeakerDetected }
 
             try recordSelfSimilarities(candidates, selfVoice)
-            let identification = try vectorMatchingService.identifySelf(
+            let selfIndex = try vectorMatchingService.identifySelf(
                 candidates.compactMap { $0.embedding?.values },
-                selfVoice.vector,
-                VectorMatchingService.defaultSelfIdentificationThreshold
+                selfVoice.vector
             )
-            let selfSpeakerID: AnalyzedSpeaker.ID? =
-                if case let .identified(index) = identification { candidates[index].id } else { nil }
+            let selfSpeakerID: AnalyzedSpeaker.ID? = candidates[selfIndex].id
             metricsGateway.recordValue("metrics.analysis.speakerCount", Double(speakers.count))
-            metricsGateway.recordValue("metrics.analysis.selfIdentified", selfSpeakerID == nil ? 0 : 1)
             metricsGateway.recordMemoryFootprint("metrics.analysis.memory")
 
             return ConversationAnalysis(
@@ -166,7 +163,7 @@ private nonisolated struct ConversationAnalysisServiceImpl: Sendable {
         return embeddings
     }
 
-    /// 本人識別しきい値の検証用に、各話者と本人の声の類似度を記録する。
+    /// 本人識別の検証用に、各話者と本人の声の類似度を記録する。
     private func recordSelfSimilarities(_ candidates: [AnalyzedSpeaker], _ selfVoice: SelfVoice) throws {
         for candidate in candidates {
             guard let embedding = candidate.embedding else { continue }
