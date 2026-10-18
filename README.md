@@ -162,3 +162,13 @@ flowchart LR
 - 人物検索結果の通知 (iPhone・Apple Watch): [`NotifyPersonSearchResultUseCase.swift`](App/Dareda/Application/UseCase/NotifyPersonSearchResultUseCase.swift)
 - Live Activity による録音・処理状況の表示: [`RecordingActivityGateway.swift`](App/Dareda/Infrastructure/Gateway/RecordingActivityGateway.swift)
 - Apple Watch での録音と iPhone との同期: [`App/DaredaWatch`](App/DaredaWatch)
+
+#### AI エージェントを活用した開発フロー
+
+要件定義からタスク分割、実装、PR 作成、配布までを AI エージェントと分担し、少人数でも複数のタスクを並列に進められるようにした。
+
+1. **要件定義・仕様の作成**: 人間が考えた「やりたいこと」と思いつくユーザーフローを元に、要求仕様書と開発仕様書を Notion に書き出す。
+2. **Issue の作成**: あらかじめ用意した Issue テンプレート ([`task.md`](.github/ISSUE_TEMPLATE/task.md)) の項目 (概要・対応内容・注意点・受け入れ基準・依存するIssue・関連リンク) を満たすように、仕様から GitHub Issue を作成する。タスク間の依存関係も Issue に記述する。
+3. **タスクの選定から PR 作成まで**: [`triage-task`](.rulesync/skills/triage-task/SKILL.md) スキルで、依存関係と優先度から着手するタスクを選び、不明点の質問と仕様書・Issue への反映、ワークツリーでの実装、UI テストの追加、PR 作成までを一貫して行う。
+4. **並列での進行**: 依存関係が明確で、タスクのステータスは GitHub Projects で都度更新されるため、複数のエージェントで同時に別のタスクを進められる。
+5. **成果物の即時確認**: Xcode MCP 経由でシミュレーターで撮影したスクリーンショットを PR に添付させるほか、main にマージされると GitHub Actions ([`distribute.yml`](.github/workflows/distribute.yml)) で Firebase App Distribution にビルドがアップロードされるため、開発者はすぐに実機で成果物を確認できる。
