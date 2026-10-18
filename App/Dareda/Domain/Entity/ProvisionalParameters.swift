@@ -11,7 +11,7 @@ nonisolated enum ProvisionalParameters {
     /// 上限のどれだけ前に残り時間を案内するか (秒)。
     static let recordingWarningRemaining: TimeInterval = 60
     /// 本人識別 (第 1 段階) のコサイン類似度しきい値。これを超える話者がちょうど 1 人なら本人とする。
-    static let selfIdentificationThreshold: Float = 0.5
+    static let selfIdentificationThreshold: Float = 0.7
     /// 人物検索で提示する候補の上限。
     static let personSearchCandidateLimit = 5
     /// 話者ベクトルを生成できる音声の最短長 (秒)。
