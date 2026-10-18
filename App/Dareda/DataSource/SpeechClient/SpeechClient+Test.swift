@@ -2,7 +2,7 @@ import Foundation
 import Synchronization
 
 nonisolated extension SpeechClient {
-    /// 音声認識を使わないテストダブル。指定した区間をそのまま返す。
+    /// 音声認識を使わないテストダブル。指定した区間をそのまま返す (単語の時刻は返さない)。
     /// `succeedsOnce` を指定すると 2 回目以降の文字起こしは失敗する (再実行されないことの検証用)。
     static func inMemory(
         segments: [(text: String, start: TimeInterval, end: TimeInterval)] = [
@@ -18,7 +18,7 @@ nonisolated extension SpeechClient {
                 return count
             }
             if succeedsOnce, count > 1 { throw CocoaError(.fileReadUnknown) }
-            return segments
+            return segments.map { (text: $0.text, start: $0.start, end: $0.end, runs: []) }
         })
     }
 }
