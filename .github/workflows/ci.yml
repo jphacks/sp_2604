@@ -30,6 +30,10 @@ jobs:
           mise run xcode:select
           xcodebuild -version
 
+      # 同梱する Apple Watch アプリをシミュレーター向けにビルドするため、watchOS のランタイムを入れる
+      - name: watchOS のプラットフォームを用意
+        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
+
       - name: SwiftPM のキャッシュ
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -71,6 +75,10 @@ jobs:
         run: |
           mise run xcode:select
           xcodebuild -version
+
+      # 同梱する Apple Watch アプリをシミュレーター向けにビルドするため、watchOS のランタイムを入れる
+      - name: watchOS のプラットフォームを用意
+        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
 
       - name: SwiftPM のキャッシュ
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

@@ -4,13 +4,14 @@ require "net/http"
 
 default_platform(:ios)
 
-platform :ios do
-  # 署名するターゲットと Bundle ID の対応
-  SIGNING_TARGETS = {
-    "Dareda" => "com.kantacky.Dareda",
-    "DaredaWidget" => "com.kantacky.Dareda.Widget",
-  }.freeze
+# 署名するターゲットと Bundle ID の対応。Apple Watch アプリと Widget は iPhone アプリに同梱して配布する。
+APP_TARGETS = {
+  "Dareda" => "com.kantacky.Dareda",
+  "DaredaWatch" => "com.kantacky.Dareda.watchkitapp",
+  "DaredaWidget" => "com.kantacky.Dareda.Widget",
+}.freeze
 
+platform :ios do
   # readonly の match は Git リポジトリから取得するだけなので API Key は不要。
   # 書き込みを伴うレーンでだけ API Key を読み込む。
   private_lane :load_api_key do
@@ -22,16 +23,10 @@ platform :ios do
     )
   end
 
-  desc "証明書とプロファイルを取得する (読み取り専用)"
-  lane :certificates do
-    %w[development adhoc appstore].each do |type|
-      match(type: type, readonly: true)
-    end
-  end
-
-  # Developer Portal に未登録の Bundle ID (新しく追加したターゲットなど) を登録する
+  # match はプロファイルを作れても App ID は作らないため、未登録の Bundle ID を先に登録する
   private_lane :register_bundle_ids do
-    SIGNING_TARGETS.each do |target, identifier|
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: lane_context[SharedValues::APP_STORE_CONNECT_API_KEY])
+    APP_TARGETS.each do |target, identifier|
       next if Spaceship::ConnectAPI::BundleId.find(identifier)
 
       UI.message("Bundle ID #{identifier} を登録します")
@@ -40,6 +35,13 @@ platform :ios do
         identifier: identifier,
         platform: Spaceship::ConnectAPI::BundleIdPlatform::IOS,
       )
+    end
+  end
+
+  desc "証明書とプロファイルを取得する (読み取り専用)"
+  lane :certificates do
+    %w[development adhoc appstore].each do |type|
+      match(type: type, readonly: true)
     end
   end
 
@@ -55,6 +57,7 @@ platform :ios do
   desc "デバイスを登録して Development・Ad Hoc プロファイルを更新する (name: 名前, udid: UDID)"
   lane :add_device do |options|
     load_api_key
+    register_bundle_ids
     register_devices(devices: { options.fetch(:name) => options.fetch(:udid) })
     %w[development adhoc].each do |type|
       match(type: type, readonly: false)
@@ -68,7 +71,7 @@ platform :ios do
     ENV["MATCH_GIT_BASIC_AUTHORIZATION"] = Base64.strict_encode64("x-access-token:#{ENV.fetch("MATCH_GIT_BASIC_AUTHORIZATION")}")
     match(type: "adhoc", readonly: true)
 
-    profile_names = SIGNING_TARGETS.to_h do |target, identifier|
+    profile_names = APP_TARGETS.to_h do |target, identifier|
       profile_name = ENV.fetch("sigh_#{identifier}_adhoc_profile-name")
       update_code_signing_settings(
         use_automatic_signing: false,

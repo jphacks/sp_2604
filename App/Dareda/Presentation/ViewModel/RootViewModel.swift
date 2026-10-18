@@ -21,6 +21,8 @@ final class RootViewModel {
         case preparationRetryButtonTapped
         case voiceEnrollmentCompleted
         case personSearchNotificationTapped
+        /// Apple Watch で録音したファイルが届いた。
+        case watchRecordingReceived(URL)
         /// コントロール・ショートカットから録音の開始を依頼された。
         case startRecordingRequested
     }
@@ -59,9 +61,24 @@ final class RootViewModel {
     @ObservationIgnored
     @Dependency(\.observePersonSearchNotificationTapUseCase) private var observePersonSearchNotificationTapUseCase
     @ObservationIgnored
+    @Dependency(\.watchSyncService) private var watchSyncService
+    @ObservationIgnored
+    @Dependency(\.registerSelfVoiceUseCase) private var registerSelfVoiceUseCase
+    @ObservationIgnored
+    @Dependency(\.fetchSelfVoiceUseCase) private var fetchSelfVoiceUseCase
+    @ObservationIgnored
+    @Dependency(\.fetchPrivateCloudComputeConsentUseCase) private var fetchPrivateCloudComputeConsentUseCase
+    @ObservationIgnored
+    @Dependency(\.updatePrivateCloudComputeConsentUseCase) private var updatePrivateCloudComputeConsentUseCase
+    @ObservationIgnored
+    @Dependency(\.fetchAppVersionUseCase) private var fetchAppVersionUseCase
+    @ObservationIgnored
     @Dependency(\.appIntentRequestService) private var appIntentRequestService
     @ObservationIgnored
     private var hasAttemptedPreparation = false
+    /// 録音画面の表示中に Apple Watch から届いた録音。録音画面を閉じたら順に処理する。
+    @ObservationIgnored
+    private var pendingWatchRecordings: [URL] = []
     /// 録音の準備が済む前に届いた録音開始の依頼。準備が済んだら録音を始める。
     @ObservationIgnored
     private var isStartRecordingPending = false
@@ -75,6 +92,7 @@ final class RootViewModel {
             do {
                 try await cleanUpTemporaryDataUseCase.execute()
                 isPreparedForRecording = true
+                syncWatchRecordingAvailability()
                 if isStartRecordingPending {
                     isStartRecordingPending = false
                     send(.recordFromMicrophoneTapped)
@@ -97,6 +115,7 @@ final class RootViewModel {
             prepareForRecording()
             Task { await presentVoiceEnrollmentIfNeeded() }
             observePersonSearchNotificationTaps()
+            startWatchSync()
             observeAppIntentRequests()
         case .preparationRetryButtonTapped:
             alert = nil
@@ -139,8 +158,11 @@ final class RootViewModel {
             isRecordingPresented = false
             importedFileURL = nil
             if let profileID { registeredProfileID = profileID }
+            Task { await watchSyncService.syncProfiles() }
+            presentNextWatchRecording()
         case .voiceEnrollmentCompleted:
             isVoiceEnrollmentPresented = false
+            syncWatchRecordingAvailability()
         case .settingsMenuButtonTapped:
             isSettingsPresented = true
         case let .settingsPresentedChanged(isPresented):
@@ -149,6 +171,9 @@ final class RootViewModel {
             // 候補一覧は録音画面の上の処理状況画面に表示されている。上に重なったシートを閉じてそれを見せる。
             // 録音画面を閉じた後のタップでは、ルートのプロフィール一覧に戻る
             isSettingsPresented = false
+        case let .watchRecordingReceived(url):
+            pendingWatchRecordings.append(url)
+            presentNextWatchRecording()
         case .startRecordingRequested:
             // 録音・解析中や本人の声の登録中は、今の操作を優先する
             guard !isRecordingPresented, !isVoiceEnrollmentPresented else { return }
@@ -170,6 +195,92 @@ final class RootViewModel {
         }
     }
 
+    /// Apple Watch の録音は、ファイルアプリで選んだ音声ファイルと同じように取り込んで処理する。
+    private func presentNextWatchRecording() {
+        guard !isRecordingPresented, !isVoiceEnrollmentPresented,
+              availability?.isAvailable == true, isPreparedForRecording,
+              !pendingWatchRecordings.isEmpty
+        else { return }
+        isSettingsPresented = false
+        importedFileURL = pendingWatchRecordings.removeFirst()
+        isRecordingPresented = true
+    }
+
+    private func startWatchSync() {
+        watchSyncService.activate()
+        syncWatchRecordingAvailability()
+        Task { await watchSyncService.syncProfiles() }
+        Task { await syncWatchSettings() }
+        let recordings = watchSyncService.recordings()
+        Task { [weak self] in
+            for await recording in recordings {
+                guard let self else { return }
+                switch recording.kind {
+                case .conversation:
+                    self.send(.watchRecordingReceived(recording.fileURL))
+                case .selfVoice:
+                    await self.registerSelfVoice(recording.fileURL)
+                case .additional:
+                    // 追加録音は処理状況画面が受け取る
+                    break
+                }
+            }
+        }
+        let commands = watchSyncService.commands()
+        Task { [weak self] in
+            for await command in commands {
+                guard let self else { return }
+                switch command {
+                case .requestSnapshot:
+                    self.syncWatchRecordingAvailability()
+                    await self.watchSyncService.syncProfiles()
+                    await self.syncWatchSettings()
+                case let .setPrivateCloudComputeEnabled(isEnabled):
+                    self.updatePrivateCloudComputeConsentUseCase.execute(isEnabled ? .granted : .denied)
+                    await self.syncWatchSettings()
+                default:
+                    // 処理中の録音への操作は処理状況画面が受け取る
+                    break
+                }
+            }
+        }
+    }
+
+    /// Apple Watch で録音した本人の声を登録する。登録画面を表示していれば、完了したら閉じる。
+    private func registerSelfVoice(_ url: URL) async {
+        watchSyncService.updateSettings { $0.selfVoiceEnrollment = .processing }
+        do {
+            try await registerSelfVoiceUseCase.execute(.file(url))
+            watchSyncService.updateSettings { $0.selfVoiceEnrollment = .completed }
+            if isVoiceEnrollmentPresented { send(.voiceEnrollmentCompleted) }
+        } catch let SelfVoiceRegistrationError.insufficientSpeech(duration) {
+            let message = String(localized: "声が足りませんでした (\(Int(duration)) 秒)。もう少し長く話して録音し直してください。")
+            watchSyncService.updateSettings { $0.selfVoiceEnrollment = .failed(message: message) }
+        } catch {
+            watchSyncService.updateSettings { $0.selfVoiceEnrollment = .failed(message: String(localized: "登録できませんでした。もう一度お試しください。")) }
+        }
+        await syncWatchSettings()
+    }
+
+    private func syncWatchSettings() async {
+        // 読み込めなくても未登録として表示するだけで、Apple Watch から登録し直せる
+        let registeredAt = try? await fetchSelfVoiceUseCase.execute()?.createdAt
+        let isPrivateCloudComputeEnabled = fetchPrivateCloudComputeConsentUseCase.execute() == .granted
+        let version = fetchAppVersionUseCase.execute()
+        let appVersion = "\(version.version) (\(version.build))"
+        watchSyncService.updateSettings {
+            $0.selfVoiceRegisteredAt = registeredAt
+            $0.isPrivateCloudComputeEnabled = isPrivateCloudComputeEnabled
+            $0.appVersion = appVersion
+        }
+    }
+
+    private func syncWatchRecordingAvailability() {
+        let isAvailable = availability?.isAvailable == true && isPreparedForRecording && !isVoiceEnrollmentPresented
+        watchSyncService.updateRecordingAvailability(isAvailable)
+        presentNextWatchRecording()
+    }
+
     private func observePersonSearchNotificationTaps() {
         let taps = observePersonSearchNotificationTapUseCase.execute()
         Task { [weak self] in
@@ -184,5 +295,6 @@ final class RootViewModel {
         // 読み込みに失敗してもユーザーにできることがないため、登録画面は出さずに続行する。
         guard let isRegistered = try? await fetchSelfVoiceRegisteredUseCase.execute() else { return }
         isVoiceEnrollmentPresented = !isRegistered
+        syncWatchRecordingAvailability()
     }
 }
