@@ -2,7 +2,7 @@ import Dependencies
 import DependenciesMacros
 
 /// 人物検索で既存の人物を確認し終えたときに、録音と処理セッションの一時データを削除する。
-/// 既存のプロフィール・出会い記録・声のベクトルは変更しない。
+/// 既存のプロフィール・前回の会話の記録・声のベクトルは変更しない (上書きは `OverwriteEncounterUseCase` で行う)。
 @DependencyClient
 nonisolated struct CompletePersonSearchUseCase: Sendable {
     var execute: @Sendable (_ recordings: [PersonSearchRecording]) async throws -> Void

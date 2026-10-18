@@ -1,6 +1,6 @@
 import Foundation
 
-/// 会った相手のプロフィール。保存後は更新しない。
+/// 会った相手のプロフィール。名前と所属は編集できる。
 nonisolated struct Profile: Sendable, Equatable, Identifiable {
     var id: UUID
     var name: String

@@ -4,7 +4,7 @@ import Foundation
 
 @DependencyClient
 nonisolated struct FetchProfileDetailUseCase: Sendable {
-    /// プロフィールと初回の出会い記録を返す。プロフィールが存在しなければ `nil`。
+    /// プロフィールと前回の会話の記録を返す。プロフィールが存在しなければ `nil`。
     var execute: @Sendable (_ id: Profile.ID) async throws -> ProfileDetailServiceModel?
 }
 

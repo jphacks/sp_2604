@@ -1,6 +1,6 @@
 import Foundation
 
-/// 初回の出会い記録。プロフィールの新規登録時に 1 件だけ作られ、以後は追加・更新しない。
+/// 前回の会話の記録。プロフィールごとに 1 件だけ持ち、新規登録時に作られる。編集や人物検索の上書きで置き換える。
 nonisolated struct Encounter: Sendable, Equatable, Identifiable {
     var id: UUID
     var profileID: Profile.ID

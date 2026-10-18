@@ -13,8 +13,10 @@ nonisolated struct SQLiteDataClient: Sendable {
 
     var profiles: @Sendable () async throws -> [ProfileRecord]
     var profile: @Sendable (_ id: UUID) async throws -> ProfileRecord?
-    /// プロフィールと初回の出会い記録を 1 つのトランザクションで追加する。
+    /// プロフィールと前回の会話の記録を 1 つのトランザクションで追加する。
     var insertProfile: @Sendable (_ profile: ProfileRecord, _ encounter: EncounterRecord) async throws -> Void
+    /// 名前・所属を更新し、前回の会話の記録を置き換える。1 つのトランザクションで行う。
+    var updateProfile: @Sendable (_ id: UUID, _ name: String, _ affiliation: String, _ encounter: EncounterRecord) async throws -> Void
     var deleteProfile: @Sendable (_ id: UUID) async throws -> Void
 
     var encounter: @Sendable (_ profileID: UUID) async throws -> EncounterRecord?
@@ -30,6 +32,7 @@ nonisolated extension SQLiteDataClient: DependencyKey {
             profiles: impl.profiles,
             profile: impl.profile(id:),
             insertProfile: impl.insertProfile(_:encounter:),
+            updateProfile: impl.updateProfile(id:name:affiliation:encounter:),
             deleteProfile: impl.deleteProfile(id:),
             encounter: impl.encounter(profileID:)
         )
@@ -117,6 +120,19 @@ private nonisolated struct SQLiteDataClientImpl: Sendable {
     func insertProfile(_ profile: ProfileRecord, encounter: EncounterRecord) async throws {
         try await database.write { db in
             try ProfileRecord.insert { profile }.execute(db)
+            try EncounterRecord.insert { encounter }.execute(db)
+        }
+    }
+
+    func updateProfile(id: UUID, name: String, affiliation: String, encounter: EncounterRecord) async throws {
+        try await database.write { db in
+            try ProfileRecord.find(id)
+                .update {
+                    $0.name = name
+                    $0.affiliation = affiliation
+                }
+                .execute(db)
+            try EncounterRecord.where { $0.profileID.eq(id) }.delete().execute(db)
             try EncounterRecord.insert { encounter }.execute(db)
         }
     }

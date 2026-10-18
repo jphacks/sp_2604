@@ -3,10 +3,10 @@ import DependenciesMacros
 import Foundation
 
 /// 出会い記録の保存は `ProfileRepository.add` で行う (プロフィールと同時に保存するため)。
-/// 再会時に既存記録を追加・変更しない前提のため、ここには参照 API だけを置く。
+/// 更新は名前・所属とあわせて `ProfileRepository.update` で行うため、ここには参照 API だけを置く。
 @DependencyClient
 nonisolated struct EncounterRepository: Sendable {
-    /// プロフィールの初回の出会い記録を返す。
+    /// プロフィールの前回の会話の記録を返す。
     var get: @Sendable (_ profileID: Profile.ID) async throws -> Encounter?
 }
 
