@@ -36,6 +36,12 @@
 3. 結果が出ると電話がかかってくる。耳に当てると「この方は、〇〇さんではありませんか？△△所属です。前回は、□□で、次のような話をしました。」と読み上げる
 4. 電話に出られない場面では、Apple Watch の通知で確認する
 
+#### 画面イメージ
+
+| プロフィール一覧 | 会話の録音 | 人物を探す (処理中) | 人物を探す (結果) | 通知 |
+| --- | --- | --- | --- | --- |
+| <img src="assets/screenshot_1.png" width="180" alt="プロフィール一覧"> | <img src="assets/screenshot_2.png" width="180" alt="会話の録音"> | <img src="assets/screenshot_3.png" width="180" alt="人物を探す (処理中)"> | <img src="assets/screenshot_4.png" width="180" alt="人物を探す (結果)"> | <img src="assets/screenshot_5.png" width="180" alt="ロック画面の Live Activity と通知"> |
+
 ### 特長
 
 #### 1. 相手の前でも不自然にならない知らせ方
