@@ -64,6 +64,19 @@
 
 話者分離・文字起こし・声の照合・要約・着信の読み上げまで、すべて iPhone の中で処理する。Apple Watch で録った音声も、サーバーを通さず iPhone に直接送る。
 
+```mermaid
+flowchart LR
+    rec["録音"]
+    stt["文字起こし<br/>Speech"]
+    sum["要約<br/>Foundation Models"]
+    dia["話者分離<br/>FluidAudio"]
+    emb["ベクトル化<br/>Core ML / ECAPA-TDNN"]
+    sim["類似度算出"]
+
+    rec --> stt --> sum
+    rec --> dia --> emb --> sim
+```
+
 要約だけは、会話が長くて端末内のモデルで処理しきれない場合に、ユーザーの同意を得て Apple の Private Cloud Compute (PCC) を使う。送るのは文字起こしと指示文だけで、音声や声の特徴、プロフィールは送らない。PCC に送ったデータは処理が終わると保持されず、Apple も中身を見ることができない。モデルの学習にも使われない ([Apple の説明](https://security.apple.com/blog/private-cloud-compute/))。同意しない場合は、要約も端末内で行う。
 
 #### 3. 録音を残さず、サーバーにも送らない
