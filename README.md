@@ -134,7 +134,3 @@
 - 人物検索結果の通知 (iPhone・Apple Watch): [`NotifyPersonSearchResultUseCase.swift`](App/Dareda/Application/UseCase/NotifyPersonSearchResultUseCase.swift)
 - Live Activity による録音・処理状況の表示: [`RecordingActivityGateway.swift`](App/Dareda/Infrastructure/Gateway/RecordingActivityGateway.swift)
 - Apple Watch での録音と iPhone との同期: [`App/DaredaWatch`](App/DaredaWatch)
-
-#### 開発の規模
-
-Hack Day の 2 日間で 277 コミット、49 本の Pull Request。8 画面に 55 件の UI テストがあり、CI で毎回実行している。
