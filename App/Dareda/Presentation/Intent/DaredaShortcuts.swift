@@ -12,14 +12,5 @@ struct DaredaShortcuts: AppShortcutsProvider {
             shortTitle: "録音を開始",
             systemImageName: "mic.fill"
         )
-        AppShortcut(
-            intent: StopRecordingIntent(),
-            phrases: [
-                "\(.applicationName)の録音を終了",
-                "\(.applicationName)で録音を止めて",
-            ],
-            shortTitle: "録音を終了",
-            systemImageName: "stop.fill"
-        )
     }
 }
