@@ -11,6 +11,8 @@ APP_TARGETS = {
   "DaredaWidget" => "com.kantacky.Dareda.Widget",
 }.freeze
 
+PROJECT_FILE = "App/Dareda.xcodeproj/project.xcproj"
+
 platform :ios do
   # readonly の match は Git リポジトリから取得するだけなので API Key は不要。
   # 書き込みを伴うレーンでだけ API Key を読み込む。
@@ -71,18 +73,16 @@ platform :ios do
     ENV["MATCH_GIT_BASIC_AUTHORIZATION"] = Base64.strict_encode64("x-access-token:#{ENV.fetch("MATCH_GIT_BASIC_AUTHORIZATION")}")
     match(type: "adhoc", readonly: true)
 
-    profile_names = APP_TARGETS.to_h do |target, identifier|
+    # project.xcproj 形式は xcodeproj gem (update_code_signing_settings) で読めないため、
+    # Development プロファイルの指定を Ad Hoc のものに直接書き換える
+    project_path = File.expand_path("../#{PROJECT_FILE}", __dir__)
+    project = File.read(project_path)
+    profile_names = APP_TARGETS.values.to_h do |identifier|
       profile_name = ENV.fetch("sigh_#{identifier}_adhoc_profile-name")
-      update_code_signing_settings(
-        use_automatic_signing: false,
-        path: "App/Dareda.xcodeproj",
-        targets: [target],
-        team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
-        code_sign_identity: "Apple Distribution",
-        profile_name: profile_name,
-      )
+      project = project.gsub("\"match Development #{identifier}\"", "\"#{profile_name}\"")
       [identifier, profile_name]
     end
+    File.write(project_path, project)
 
     build_number = ENV.fetch("GITHUB_RUN_NUMBER")
     build_app(
@@ -93,7 +93,7 @@ platform :ios do
       export_options: {
         provisioningProfiles: profile_names,
       },
-      xcargs: "CURRENT_PROJECT_VERSION=#{build_number} -skipMacroValidation -skipPackagePluginValidation",
+      xcargs: "CURRENT_PROJECT_VERSION=#{build_number} CODE_SIGN_IDENTITY='Apple Distribution' -skipMacroValidation -skipPackagePluginValidation",
       output_directory: "build",
       output_name: "Dareda.ipa",
     )
@@ -125,7 +125,7 @@ platform :ios do
       {
         type: "section",
         fields: [
-          { type: "mrkdwn", text: "*バージョン*\n#{release["displayVersion"] || get_version_number(xcodeproj: "App/Dareda.xcodeproj", target: "Dareda")}" },
+          { type: "mrkdwn", text: "*バージョン*\n#{release["displayVersion"] || File.read(File.expand_path("../#{PROJECT_FILE}", __dir__))[/"MARKETING_VERSION": "([^"]+)"/, 1]}" },
           { type: "mrkdwn", text: "*ビルド番号*\n#{release["buildVersion"] || options.fetch(:build_number)}" },
           { type: "mrkdwn", text: "*コミット*\n<#{commit_url}|`#{sha[0, 7]}`>" },
         ],
