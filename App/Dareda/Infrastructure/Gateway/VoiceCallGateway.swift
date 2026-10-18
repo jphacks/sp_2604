@@ -7,9 +7,9 @@ import Foundation
 /// 各メソッドは通話が終わるまで待ち、ユーザーが応答したかを返す。着信を出せなければエラーを投げる。
 @DependencyClient
 nonisolated struct VoiceCallGateway: Sendable {
-    /// 人物検索の 1 位の候補を読み上げる。所属・会った場所は空なら読まない。
+    /// 人物検索の 1 位の候補を読み上げる。所属・会った場所・前回の話の要約は、空なら読まない。
     var announcePersonSearchCandidate: @Sendable (
-        _ name: String, _ affiliation: String, _ placeName: String?
+        _ name: String, _ affiliation: String, _ placeName: String?, _ summary: String?
     ) async throws -> Bool
     /// 人物検索の照合先 (保存済みのプロフィール) がいないことを読み上げる。
     var announcePersonSearchNoProfiles: @Sendable () async throws -> Bool
@@ -21,7 +21,7 @@ nonisolated extension VoiceCallGateway: DependencyKey {
     static let liveValue: VoiceCallGateway = {
         let impl = VoiceCallGatewayImpl()
         return VoiceCallGateway(
-            announcePersonSearchCandidate: impl.announcePersonSearchCandidate(name:affiliation:placeName:),
+            announcePersonSearchCandidate: impl.announcePersonSearchCandidate(name:affiliation:placeName:summary:),
             announcePersonSearchNoProfiles: impl.announcePersonSearchNoProfiles,
             announcePersonSearchNeedsAdditionalRecording: impl.announcePersonSearchNeedsAdditionalRecording
         )
@@ -44,13 +44,20 @@ private nonisolated struct VoiceCallGatewayImpl: Sendable {
     @Dependency(\.callKitClient) private var callKitClient
     @Dependency(\.speechSynthesizerClient) private var speechSynthesizerClient
 
-    func announcePersonSearchCandidate(name: String, affiliation: String, placeName: String?) async throws -> Bool {
-        var sentences = ["\(name)さんです。"]
+    func announcePersonSearchCandidate(
+        name: String, affiliation: String, placeName: String?, summary: String?
+    ) async throws -> Bool {
+        var sentences = ["この方は、\(name)さんではありませんか？"]
         if !affiliation.isEmpty {
-            sentences.append("所属は\(affiliation)です。")
+            sentences.append("\(affiliation)所属です。")
         }
-        if let placeName, !placeName.isEmpty {
-            sentences.append("前回は\(placeName)で会っています。")
+        if let summary, !summary.isEmpty {
+            if let placeName, !placeName.isEmpty {
+                sentences.append("前回は、\(placeName)で、次のような話をしました。")
+            } else {
+                sentences.append("前回は、次のような話をしました。")
+            }
+            sentences.append(summary)
         }
         return try await call(speaking: sentences.joined())
     }

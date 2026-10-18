@@ -1,7 +1,7 @@
 import Dependencies
 import DependenciesMacros
 
-/// 人物検索の結果を着信で知らせる。応答すると、1 位の候補の名前・所属・会った場所を読み上げる。
+/// 人物検索の結果を着信で知らせる。応答すると、1 位の候補の名前・所属・会った場所・前回の話の要約を読み上げる。
 /// 候補がいない場合・追加の録音が必要な場合も、その旨を読み上げる。
 ///
 /// 候補がいるのに着信で伝えられなかった (着信を出せない・拒否・応答なし) ときは、
@@ -48,7 +48,7 @@ private nonisolated struct NotifyPersonSearchResultUseCaseImpl: Sendable {
             let isAnswered: Bool
             do {
                 isAnswered = try await voiceCallGateway.announcePersonSearchCandidate(
-                    profile.name, profile.affiliation, encounter?.place?.name
+                    profile.name, profile.affiliation, encounter?.place?.name, encounter?.summary
                 )
             } catch {
                 // 着信を出せなくても、ローカル通知で結果を伝える
