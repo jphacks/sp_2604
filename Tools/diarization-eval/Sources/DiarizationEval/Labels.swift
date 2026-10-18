@@ -49,10 +49,17 @@ enum Labels {
             guard fields.count >= 3, let start = Double(fields[0]), let end = Double(fields[1]) else {
                 throw LabelsError.invalidLine(String(line))
             }
-            return LabeledSegment(
-                speaker: fields[2].trimmingCharacters(in: .whitespaces), start: start, end: end
-            )
+            // ラベルの最初の語を話者名とする (以降は発言などのメモとして無視する)
+            guard let speaker = fields[2].split(whereSeparator: \.isWhitespace).first else {
+                throw LabelsError.invalidLine(String(line))
+            }
+            return LabeledSegment(speaker: String(speaker), start: start, end: end)
         }
+    }
+
+    /// Audacity のラベル形式。`label` には話者名と、空白区切りでメモを書ける。
+    static func audacity(_ labels: [(start: Double, end: Double, label: String)]) -> String {
+        labels.map { String(format: "%.3f\t%.3f\t%@", $0.start, $0.end, $0.label) }.joined(separator: "\n") + "\n"
     }
 
     static func rttm(_ segments: [LabeledSegment], fileID: String) -> String {

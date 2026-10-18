@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "diarization-eval",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("26.0")],
     products: [
         .executable(name: "diarization-eval", targets: ["DiarizationEval"]),
     ],
