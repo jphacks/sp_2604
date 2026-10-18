@@ -100,6 +100,7 @@ final class ProcessingViewModel {
     /// 人物検索の結果を Live Activity に表示したか。表示後の要約の進捗では Live Activity を戻さない。
     @ObservationIgnored private var isActivityResultShown = false
     @ObservationIgnored private var hasAppeared = false
+    @ObservationIgnored @Dependency(\.appIntentRequestService) private var appIntentRequestService
 
     init(recording: Recording) {
         self.recording = recording
@@ -120,6 +121,7 @@ final class ProcessingViewModel {
             process()
             observeForWatch()
             observeWatchOperations()
+            observeStartRequests()
         case .retryButtonTapped:
             process()
         case .sceneBecameActive:
@@ -212,6 +214,18 @@ final class ProcessingViewModel {
                 self.isRerecordRequested = true
             } onFailure: {
                 self.errorMessage = "録音を削除できませんでした。もう一度お試しください。"
+            }
+        }
+    }
+
+    /// コントロール・ショートカットから録音の開始を依頼されたら、処理を破棄して録音し直す。
+    private func observeStartRequests() {
+        let requests = appIntentRequestService.requests()
+        Task { [weak self] in
+            for await request in requests where request == .startRecording {
+                guard let self else { return }
+                guard !self.isFinished, !self.isRerecordRequested else { continue }
+                self.send(.rerecordButtonTapped)
             }
         }
     }

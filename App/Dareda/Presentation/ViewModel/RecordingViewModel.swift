@@ -48,6 +48,8 @@ final class RecordingViewModel {
     @ObservationIgnored private var interruptionTask: Task<Void, Never>?
     /// Live Activity・ショートカットからの録音終了の依頼の監視。
     @ObservationIgnored private var stopRequestTask: Task<Void, Never>?
+    /// コントロール・ショートカットからの録音開始の依頼の監視。
+    @ObservationIgnored private var startRequestTask: Task<Void, Never>?
     /// Live Activity の更新を順番に反映するため、直前の更新を待ってから次を反映する。
     @ObservationIgnored private var activityTask: Task<Void, Never>?
     @ObservationIgnored private var hasAppeared = false
@@ -65,6 +67,7 @@ final class RecordingViewModel {
         case .onAppear:
             guard !hasAppeared else { return }
             hasAppeared = true
+            observeStartRequests()
             startOrImport()
         case .retryButtonTapped:
             startOrImport()
@@ -79,13 +82,7 @@ final class RecordingViewModel {
             isFinished = true
         case .rerecordRequested:
             // 前の録音と処理データは処理状況画面で削除済み。処理前の状態に戻して新しく録音する
-            recording = nil
-            isProcessing = false
-            elapsedTime = 0
-            wasInterrupted = false
-            reachedLimit = false
-            isOneMinuteRemaining = false
-            errorMessage = nil
+            resetForRerecord()
             start()
         case .discardButtonTapped:
             guard !isStarting else { return }
@@ -108,6 +105,47 @@ final class RecordingViewModel {
                         : "キャンセルできませんでした。もう一度お試しください。"
                 }
             }
+        }
+    }
+
+    private func resetForRerecord() {
+        recording = nil
+        isProcessing = false
+        elapsedTime = 0
+        wasInterrupted = false
+        reachedLimit = false
+        isOneMinuteRemaining = false
+        errorMessage = nil
+    }
+
+    /// 録音中・録音前の依頼では、録音を破棄して新しく始める。処理中の依頼は処理状況画面が受け取る。
+    private func observeStartRequests() {
+        let requests = appIntentRequestService.requests()
+        startRequestTask = Task { [weak self] in
+            for await request in requests where request == .startRecording {
+                guard let self, !Task.isCancelled else { return }
+                self.restart()
+            }
+        }
+    }
+
+    private func restart() {
+        guard !isAdditional, !isProcessing, !isStarting, !isFinished else { return }
+        guard isRecording, let recording else {
+            // 録音を開始できていない状態からは、そのまま録音し直す
+            if self.recording == nil { start() }
+            return
+        }
+        elapsedTask?.cancel()
+        interruptionTask?.cancel()
+        stopRequestTask?.cancel()
+        isRecording = false
+        let stopped = recordingService.stop(recording)
+        Task {
+            // 削除できなかった一時データは、次回の起動時の掃除で消える
+            try? await cancelProcessingUseCase.execute(stopped, nil)
+            resetForRerecord()
+            start()
         }
     }
 
@@ -163,7 +201,9 @@ final class RecordingViewModel {
                 isStarting = false
                 if !isAdditional {
                     let startedAt = Date.now.addingTimeInterval(-elapsedTime)
-                    updateActivity { await $0.start(.recording(startedAt: startedAt)) }
+                    // App Intent から始めたときは Intent の実行中に Live Activity を表示済み。
+                    // バックグラウンドでは新しく表示できないため、閉じて作り直さず更新する
+                    updateActivity { await $0.update(.recording(startedAt: startedAt)) }
                 }
                 observeStopRequests()
                 elapsedTask = Task { [weak self] in

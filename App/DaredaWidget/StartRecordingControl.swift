@@ -11,6 +11,6 @@ struct StartRecordingControl: ControlWidget {
             }
         }
         .displayName("録音を開始")
-        .description("Dareda を開いて会話の録音を始めます。")
+        .description("Dareda を開かずに会話の録音を始めます。")
     }
 }

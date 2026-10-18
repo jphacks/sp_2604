@@ -7,15 +7,20 @@ import AppIntents
 // `allowedExecutionTargets` によりアプリのプロセスで `perform()` が呼ばれる。
 // AppIntents にも `Dependency` があるため、swift-dependencies のものはモジュール名を付けて使う。
 
-/// アプリを開いてマイクから録音を始める。
-struct StartRecordingIntent: AppIntent {
+/// アプリを開かずにバックグラウンドで録音を始める。録音中は Live Activity を表示する。
+/// 録音中なら、その録音を破棄して新しく始める。
+struct StartRecordingIntent: AudioRecordingIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "録音を開始"
-    static let description = IntentDescription("Dareda を開いて会話の録音を始めます。")
-    static var supportedModes: IntentModes { .foreground(.immediate) }
+    static let description = IntentDescription("Dareda を開かずに会話の録音を始めます。")
+    static var supportedModes: IntentModes { .background }
     static var allowedExecutionTargets: IntentExecutionTargets { .main }
 
     func perform() async throws -> some IntentResult {
         #if !WIDGET_EXTENSION
+            // Live Activity は Intent の実行中でないとバックグラウンドから表示できない。
+            // 録音が始まる前に表示し、前の Live Activity があれば閉じて作り直す
+            let recordingActivityService = Dependencies.Dependency(\.recordingActivityService).wrappedValue
+            await recordingActivityService.start(.recording(startedAt: .now))
             let appIntentRequestService = Dependencies.Dependency(\.appIntentRequestService).wrappedValue
             appIntentRequestService.send(.startRecording)
         #endif
