@@ -80,10 +80,8 @@ struct SpeakerReport {
 /// アプリの `ConversationAnalysisService` / `VectorMatchingService` と同じ規則で本人と相手を決める。
 struct SelfIdentificationResult {
     var speakers: [SpeakerReport]
-    /// しきい値を超えた話者がちょうど 1 人のときだけ決まる。
+    /// 本人の声との類似度が最も高い話者。ベクトルを持つ話者がいなければ `nil`。
     var selfID: String?
-    /// しきい値を超えた話者の数 (0 または 2 以上ならアプリでは手動選択になる)。
-    var passedCount: Int
     /// 本人以外でベクトルを持つ話者のうち、発話時間が最も長い話者。
     var partnerID: String?
 
@@ -91,7 +89,6 @@ struct SelfIdentificationResult {
         segments: [LabeledSegment],
         audio: [Float],
         selfVector: [Float],
-        threshold: Float,
         embedder: SpeakerEmbedder
     ) throws -> SelfIdentificationResult {
         let rate = Double(SpeakerEmbedder.sampleRate)
@@ -109,15 +106,16 @@ struct SelfIdentificationResult {
             ))
         }
 
-        let passed = speakers.filter { ($0.selfSimilarity ?? -1) > threshold }
-        let selfID = passed.count == 1 ? passed[0].id : nil
+        let selfID = speakers
+            .filter { $0.selfSimilarity != nil }
+            .max { $0.selfSimilarity! < $1.selfSimilarity! }?.id
         let partnerID = selfID.flatMap { selfID in
             speakers
                 .filter { $0.id != selfID && $0.selfSimilarity != nil }
                 .max { $0.duration < $1.duration }?.id
         }
         return SelfIdentificationResult(
-            speakers: speakers, selfID: selfID, passedCount: passed.count, partnerID: partnerID
+            speakers: speakers, selfID: selfID, partnerID: partnerID
         )
     }
 

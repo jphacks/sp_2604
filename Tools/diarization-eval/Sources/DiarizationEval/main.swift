@@ -117,8 +117,7 @@ for setting in options.settings {
         }
         if let embedder, let selfVector {
             let identification = try SelfIdentificationResult.identify(
-                segments: hypothesis, audio: audio, selfVector: selfVector,
-                threshold: options.selfThreshold, embedder: embedder
+                segments: hypothesis, audio: audio, selfVector: selfVector, embedder: embedder
             )
             result.identification = identification
             if reference?.contains(where: { $0.speaker == Labels.selfLabel }) == true {
@@ -155,7 +154,7 @@ for setting in options.settings {
         if let identification = result.identification {
             var line = "  判定: "
             if identification.selfID == nil {
-                line += "本人を自動判定できない (しきい値を超えた話者 \(identification.passedCount) 人 → 手動選択)"
+                line += "本人を判定できない (ベクトルを作れた話者がいない)"
             } else {
                 line += "本人 " + (result.selfCorrect.map { $0 ? "✓" : "✗" } ?? "?")
                 line += " / 相手 " + (identification.partnerID == nil ? "なし" : result.partnerCorrect.map { $0 ? "✓" : "✗ (本人の声を相手に選んでいる)" } ?? "?")
