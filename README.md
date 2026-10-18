@@ -131,6 +131,8 @@
 - Apple Watch (録音・通知・Live Activity)
 - AirPods (着信の読み上げ)
 
+専用のハードウェアは作らず、多くの人がすでに持っている iPhone・Apple Watch・AirPods だけで動くようにした。新しい機器を買ったり身に着けたりする必要がなく、アプリを入れればその日から使える。Apple Watch と AirPods は任意で、iPhone だけでもすべての機能を使える。
+
 ### 独自技術
 
 #### ハッカソンで開発した独自機能・技術
