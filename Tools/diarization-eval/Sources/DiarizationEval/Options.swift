@@ -19,9 +19,10 @@ struct Options {
         .deletingLastPathComponent()
         .appendingPathComponent("App/Dareda/Resources/ECAPATDNN.mlpackage")
     /// アプリの `ProvisionalParameters.selfIdentificationThreshold` と同じ既定値
-    var selfThreshold: Float = 0.5
+    var selfThreshold: Float = 0.7
     var outputDirectory: URL?
     var collar = 0.25
+    var transcribe = false
 
     static let usage = """
         使い方: diarization-eval <録音のディレクトリ> [オプション]
@@ -36,10 +37,13 @@ struct Options {
         本人識別 (アプリと同じロジックで本人と相手を判定する):
           --self <音声ファイル>            本人の声の登録用録音
           --ecapa <.mlpackage>             ECAPA-TDNN モデル (既定 App/Dareda/Resources/ECAPATDNN.mlpackage)
-          --self-threshold <値>            本人識別のしきい値 (既定 0.5)
+          --self-threshold <値>            本人識別のしきい値 (既定 0.7)
+
+        文字起こし (アプリと同じ SpeechTranscriber、ja_JP):
+          --transcribe                     発言ごとに話者を割り当てて表示する。アプリと同じ区間単位の割り当てと、単語単位の割り当てを比べる
 
         その他:
-          --out <ディレクトリ>             設定ごとの分離結果を RTTM で書き出す
+          --out <ディレクトリ>             設定ごとの分離結果を RTTM で書き出す。--transcribe と併用すると正解ラベルの下書きも書き出す
           --collar <秒>                    DER の算出で無視する境界の幅 (既定 0.25)
 
         正解ラベル: 録音と同じ名前の .rttm または .txt (Audacity のラベル書き出し形式) を置くと DER を算出する。
@@ -53,6 +57,11 @@ struct Options {
         while index < arguments.count {
             let argument = arguments[index]
             if argument == "-h" || argument == "--help" { throw OptionsError.help }
+            if booleanFlags.contains(argument) {
+                flags[argument] = "true"
+                index += 1
+                continue
+            }
             if argument.hasPrefix("--") {
                 guard index + 1 < arguments.count else { throw OptionsError.invalid("\(argument) に値がありません") }
                 flags[argument] = arguments[index + 1]
@@ -77,11 +86,15 @@ struct Options {
             case "--self-threshold": options.selfThreshold = try single(value, flag) { Float($0) }
             case "--out": options.outputDirectory = URL(fileURLWithPath: value)
             case "--collar": options.collar = try single(value, flag) { Double($0) }
+            case "--transcribe": options.transcribe = true
             default: throw OptionsError.invalid("不明なオプション: \(flag)")
             }
         }
         return options
     }
+
+    /// 値を取らないオプション。
+    private static let booleanFlags: Set<String> = ["--transcribe"]
 
     /// 評価するすべての設定の組み合わせ。
     var settings: [DiarizationSetting] {

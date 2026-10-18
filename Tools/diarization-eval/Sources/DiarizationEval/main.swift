@@ -19,6 +19,12 @@ struct FileResult {
     var selfCorrect: Bool?
     /// 相手の選択が正しいか。相手が決まらなかった場合は `nil`。
     var partnerCorrect: Bool?
+    /// 文字起こしの発言のうち、途中で話者が替わるもの (単語単位で見て 2 人以上にまたがる) の数。
+    var switchedSpeechCount: Int?
+    var speechCount: Int?
+    /// 発言の話者が正解と一致した文字数の割合。アプリと同じ区間単位の割り当てと、単語単位の割り当て。
+    var segmentAttributionAccuracy: Double?
+    var wordAttributionAccuracy: Double?
 }
 
 let options: Options
@@ -68,6 +74,14 @@ var references: [URL: [LabeledSegment]] = [:]
 for url in audioFiles {
     audios[url] = try converter.resampleAudioFile(url)
     references[url] = try Labels.reference(for: url)
+}
+
+var transcripts: [URL: [TranscribedSpeech]] = [:]
+if options.transcribe {
+    log("文字起こししています (初回は日本語のモデルをダウンロードします)")
+    for url in audioFiles {
+        transcripts[url] = try await Transcriber.transcribe(url)
+    }
 }
 
 var summary: [(setting: DiarizationSetting, results: [FileResult])] = []
@@ -148,6 +162,27 @@ for setting in options.settings {
             }
             print(line)
         }
+
+        if let transcript = transcripts[url] {
+            let attribution = attribute(
+                transcript, hypothesis: hypothesis, reference: reference, mapping: mapping,
+                identification: result.identification
+            )
+            results[results.count - 1].switchedSpeechCount = attribution.switchedCount
+            results[results.count - 1].speechCount = transcript.count
+            results[results.count - 1].segmentAttributionAccuracy = attribution.segmentAccuracy
+            results[results.count - 1].wordAttributionAccuracy = attribution.wordAccuracy
+
+            if let outputDirectory = options.outputDirectory {
+                // 正解ラベルの下書き。話者名を直して録音の隣に置けば、そのまま正解ラベルになる
+                let fileID = url.deletingPathExtension().lastPathComponent
+                try Labels.audacity(attribution.draft)
+                    .write(
+                        to: outputDirectory.appendingPathComponent(setting.slug).appendingPathComponent(fileID + ".txt"),
+                        atomically: true, encoding: .utf8
+                    )
+            }
+        }
     }
     summary.append((setting, results))
 }
@@ -175,5 +210,76 @@ for (setting, results) in summary {
         let partnerJudged = results.compactMap(\.partnerCorrect)
         if !partnerJudged.isEmpty { line += "  相手正解 \(partnerJudged.filter { $0 }.count)/\(partnerJudged.count)" }
     }
+    let switched = results.compactMap(\.switchedSpeechCount).reduce(0, +)
+    let speeches = results.compactMap(\.speechCount).reduce(0, +)
+    if speeches > 0 { line += "  話者が途中で替わる発言 \(switched)/\(speeches)" }
+    let segmentAccuracies = results.compactMap(\.segmentAttributionAccuracy)
+    let wordAccuracies = results.compactMap(\.wordAttributionAccuracy)
+    if !segmentAccuracies.isEmpty {
+        line += "  発言の話者正解率 区間単位 \(percent(segmentAccuracies.reduce(0, +) / Double(segmentAccuracies.count)))"
+        line += " / 単語単位 \(percent(wordAccuracies.reduce(0, +) / Double(wordAccuracies.count)))"
+    }
     print(line)
+}
+
+/// 文字起こしの発言に話者を割り当てて表示し、正解ラベルがあれば割り当ての正解率を求める。
+func attribute(
+    _ transcript: [TranscribedSpeech],
+    hypothesis: [LabeledSegment],
+    reference: [LabeledSegment]?,
+    mapping: [String: String],
+    identification: SelfIdentificationResult?
+) -> (switchedCount: Int, segmentAccuracy: Double?, wordAccuracy: Double?, draft: [(start: Double, end: Double, label: String)]) {
+    func describe(_ id: String?) -> String {
+        guard let id else { return "(話者なし)" }
+        if id == identification?.selfID { return "\(id)[本人]" }
+        if id == identification?.partnerID { return "\(id)[相手]" }
+        return id
+    }
+    func time(_ start: Double, _ end: Double) -> String { String(format: "%6.1f-%6.1f", start, end) }
+
+    print("  文字起こし (アプリと同じ区間単位の割り当て。途中で話者が替わる発言は └ に単語単位の内訳):")
+    var switchedCount = 0
+    var draft: [(start: Double, end: Double, label: String)] = []
+    var total = 0
+    var segmentCorrect = 0
+    var wordCorrect = 0
+    for speech in transcript {
+        let segmentSpeaker = Transcriber.speaker(from: speech.start, to: speech.end, in: hypothesis)
+        print("  \(time(speech.start, speech.end))  \(describe(segmentSpeaker))  \(speech.text)")
+
+        let parts = Transcriber.splitBySpeaker(speech, in: hypothesis)
+        if parts.count > 1 {
+            switchedCount += 1
+            for part in parts {
+                print("      └ \(time(part.words.first!.start, part.words.last!.end))  \(describe(part.speaker))  \(part.words.map(\.text).joined())")
+            }
+        }
+        if parts.isEmpty {
+            draft.append((speech.start, speech.end, "\(segmentSpeaker ?? "unknown") \(speech.text)"))
+        } else {
+            for part in parts {
+                let text = part.words.map(\.text).joined().trimmingCharacters(in: .whitespaces)
+                draft.append((part.words.first!.start, part.words.last!.end, "\(part.speaker ?? "unknown") \(text)"))
+            }
+        }
+
+        guard let reference else { continue }
+        let segmentGuess = segmentSpeaker.flatMap { mapping[$0] }
+        for word in speech.words {
+            guard let truth = Transcriber.nearestSpeaker(from: word.start, to: word.end, in: reference) else { continue }
+            let characters = word.text.filter { !$0.isWhitespace }.count
+            total += characters
+            if segmentGuess == truth { segmentCorrect += characters }
+            let wordGuess = Transcriber.nearestSpeaker(from: word.start, to: word.end, in: hypothesis).flatMap { mapping[$0] }
+            if wordGuess == truth { wordCorrect += characters }
+        }
+    }
+
+    print("  話者が途中で替わる発言: \(switchedCount)/\(transcript.count)")
+    guard total > 0 else { return (switchedCount, nil, nil, draft) }
+    let segmentAccuracy = Double(segmentCorrect) / Double(total)
+    let wordAccuracy = Double(wordCorrect) / Double(total)
+    print("  発言の話者の正解率 (文字数): 区間単位 \(percent(segmentAccuracy)) / 単語単位 \(percent(wordAccuracy))")
+    return (switchedCount, segmentAccuracy, wordAccuracy, draft)
 }
