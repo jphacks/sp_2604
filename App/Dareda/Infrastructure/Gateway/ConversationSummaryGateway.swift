@@ -51,9 +51,10 @@ private nonisolated struct ConversationSummaryGatewayImpl: Sendable {
 
     private static let conversationInstructions = """
         あなたは 1 対 1 の会話を要約するアシスタントです。
-        入力は「自分: 発話」「相手: 発話」の形式で 1 行ずつ並んだ会話の文字起こしです。
+        入力は 1 行ずつ発話が並んだ会話の文字起こしです。誰が話したかは区別せず、何を話したかを要約してください。
         次のルールに従い、日本語で 1〜3 文、合計 100 文字程度に要約してください。
         - 最も重要な話題と、あれば約束や次にやることだけを書く。細かい経緯や言い回しは省く。
+        - 「自分は」「相手は」のように話者を書き分けず、話した内容そのものを書く。
         - 文字起こしに書かれていない内容を推測して付け加えない。
         - 相手の名前や所属を推測・抽出しない。
         - 箇条書き・前置き・見出しは付けず、要約の本文だけを出力する。
@@ -64,6 +65,7 @@ private nonisolated struct ConversationSummaryGatewayImpl: Sendable {
         入力は、長い会話を前から順に分割し、部分ごとに要約したものです。
         次のルールに従い、日本語で会話全体の要約を 1〜3 文、合計 100 文字程度にまとめてください。
         - 最も重要な話題と、あれば約束や次にやることだけを書く。細かい経緯や言い回しは省く。
+        - 「自分は」「相手は」のように話者を書き分けず、話した内容そのものを書く。
         - 入力に書かれていない内容を推測して付け加えない。
         - 相手の名前や所属を推測・抽出しない。
         - 箇条書き・前置き・見出しは付けず、要約の本文だけを出力する。
@@ -110,11 +112,11 @@ private nonisolated struct ConversationSummaryGatewayImpl: Sendable {
     private static func request(for input: SummaryInput) -> (instructions: String, prompt: String) {
         switch input {
         case let .conversation(transcript):
-            (conversationInstructions, "次の会話を要約してください。\n\n\(transcript.labeledText)")
+            (conversationInstructions, "次の会話を要約してください。\n\n\(transcript.plainText)")
         case let .conversationPart(transcript, index, count):
             (
                 conversationInstructions,
-                "次は長い会話を \(count) 個に分割したうちの \(index) 番目です。この部分を要約してください。\n\n\(transcript.labeledText)"
+                "次は長い会話を \(count) 個に分割したうちの \(index) 番目です。この部分を要約してください。\n\n\(transcript.plainText)"
             )
         case let .partialSummaries(summaries):
             (

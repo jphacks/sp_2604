@@ -31,10 +31,10 @@ nonisolated struct Transcript: Sendable, Equatable {
         meaningfulSegments.isEmpty
     }
 
-    /// 要約の入力に使う、1 発話 1 行の「話者: 発話」形式のテキスト。
-    var labeledText: String {
+    /// 要約の入力に使う、1 発話 1 行のテキスト。要約では誰の発話かを区別しないため、話者は含めない。
+    var plainText: String {
         meaningfulSegments
-            .map { "\($0.speaker.label): \($0.text.trimmingCharacters(in: .whitespacesAndNewlines))" }
+            .map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
             .joined(separator: "\n")
     }
 }
