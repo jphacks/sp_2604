@@ -9,6 +9,8 @@
 
 [プロモーション動画](https://drive.google.com/file/d/1GNp6YJ_4w0l8VMu3yBd_hzAsZILUIQUd/view?usp=sharing)
 
+[デモ動画](https://drive.google.com/file/d/16M0TWeIlwyjJubA1oRe7BwV7zrB0y82j/view?usp=drivesdk)
+
 ## 製品概要
 
 ### 背景(製品開発のきっかけ、課題等）
