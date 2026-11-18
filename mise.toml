@@ -4,6 +4,7 @@ npm.package_manager = "bun"
 ruby.compile = false
 
 [tools]
+bun = "1.4.4"
 jq = "1.8.2"
 node = "26.13.1"
 "npm:rulesync" = "43.9.0"
