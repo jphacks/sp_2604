@@ -1,6 +1,7 @@
 [settings]
 minimum_release_age = "24h"
 npm.package_manager = "bun"
+ruby.compile = false
 
 [tools]
 jq = "1.8.2"
@@ -8,7 +9,6 @@ node = "26.13.1"
 "npm:rulesync" = "43.9.0"
 ruby = "4.0.9"
 terraform = "1.17.2"
-xcodes = "2.2.0"
 
 [tasks.bootstrap]
 description = "プロジェクトをセットアップする"

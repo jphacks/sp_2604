@@ -23,7 +23,8 @@ jobs:
 
       - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          install_args: xcodes
+          cache: true
+          github_token: ${{ github.token }}
 
       - name: Xcode を選択
         run: |
@@ -69,6 +70,8 @@ jobs:
 
       - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          cache: true
+          github_token: ${{ github.token }}
           install_args: xcodes node jq
 
       - name: Xcode を選択
@@ -87,7 +90,7 @@ jobs:
           key: spm-${{ runner.os }}-${{ hashFiles('**/Package.resolved') }}
           restore-keys: spm-${{ runner.os }}-
 
-      - name: '#Preview のスナップショットを撮る'
+      - name: "#Preview のスナップショットを撮る"
         run: mise run test:snapshot
 
       - name: Google Cloud に認証 (Workload Identity Federation)
